@@ -123,6 +123,19 @@ public class StatsManager {
                 List<String> kitOrder = ps.getStringList("kit-order");
                 stats.setKitOrder(kitOrder.isEmpty() ? new ArrayList<>() : new ArrayList<>(kitOrder));
 
+                // Load kit slot layouts (stored as "kitname:0,1,2,...35" entries)
+                ConfigurationSection layoutsSection = ps.getConfigurationSection("kit-slot-layouts");
+                if (layoutsSection != null) {
+                    for (String kitName : layoutsSection.getKeys(false)) {
+                        List<Integer> slotList = layoutsSection.getIntegerList(kitName);
+                        if (slotList.size() == 36) {
+                            int[] arr = new int[36];
+                            for (int i = 0; i < 36; i++) arr[i] = slotList.get(i);
+                            stats.setKitSlotLayout(kitName, arr);
+                        }
+                    }
+                }
+
                 statsMap.put(uuid, stats);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Ungültige UUID in stats.yml: " + uuidStr);
@@ -149,6 +162,13 @@ public class StatsManager {
             statsConfig.set(path + ".highest-bot-level", stats.getHighestBotLevel());
             statsConfig.set(path + ".rank", stats.getRank().name());
             statsConfig.set(path + ".kit-order", stats.getKitOrder());
+
+            // Save kit slot layouts
+            for (Map.Entry<String, int[]> entry : stats.getKitSlotLayouts().entrySet()) {
+                List<Integer> slotList = new ArrayList<>();
+                for (int s : entry.getValue()) slotList.add(s);
+                statsConfig.set(path + ".kit-slot-layouts." + entry.getKey(), slotList);
+            }
         }
 
         try {

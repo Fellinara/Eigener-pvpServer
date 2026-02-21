@@ -12,11 +12,11 @@ commands:
     aliases: [duel, pvp]
   arena:
     description: Arena-Verwaltung
-    usage: /arena <create|delete|setspawn|list|tp>
+    usage: /arena <create|delete|setspawn|setpos1|setpos2|snapshot|list>
     permission: duell.admin
   kit:
-    description: Kit-Auswahl
-    usage: /kit [name]
+    description: Kit-Auswahl und Layout
+    usage: /kit [name | savelayout <kit> | resetlayout <kit>]
   stats:
     description: Statistiken anzeigen
     usage: /stats [spieler]
@@ -37,7 +37,7 @@ commands:
     aliases: [code, redeem]
   rang:
     description: Rang-System (Kauf von Rängen mit ELO)
-    usage: /rang [info | kaufen <rang>]
+    usage: /rang [info | kaufen <rang> | setrang <spieler> <rang>]
     aliases: [rank]
 
 permissions:
@@ -62,3 +62,6 @@ permissions:
   duell.rang:
     description: Ränge kaufen
     default: true
+  duell.setrang:
+    description: Ränge an Spieler vergeben (Staff-Ränge)
+    default: op

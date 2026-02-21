@@ -248,10 +248,47 @@ public class DuellManager {
         player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
 
         if (kit != null) {
-            player.getInventory().setStorageContents(kit.getContents());
+            ItemStack[] contents = applySlotLayout(player, kit);
+            player.getInventory().setStorageContents(contents);
             player.getInventory().setArmorContents(kit.getArmor());
         }
         // Always give a shield in the off-hand
         player.getInventory().setItemInOffHand(new org.bukkit.inventory.ItemStack(org.bukkit.Material.SHIELD));
+    }
+
+    /**
+     * Returns the kit's contents rearranged according to the player's saved slot layout.
+     * Falls back to the default layout if no custom layout is saved.
+     */
+    private org.bukkit.inventory.ItemStack[] applySlotLayout(Player player, Kit kit) {
+        var stats = plugin.getStatsManager().getStats(player.getUniqueId());
+        if (stats == null) return kit.getContents();
+
+        int[] layout = stats.getKitSlotLayout(kit.getName());
+        if (layout == null) return kit.getContents();
+
+        org.bukkit.inventory.ItemStack[] defaultContents = kit.getContents();
+        org.bukkit.inventory.ItemStack[] result = new org.bukkit.inventory.ItemStack[36];
+
+        for (int src = 0; src < 36; src++) {
+            if (defaultContents[src] == null) continue;
+            int tgt = layout[src];
+            if (tgt >= 0 && tgt < 36 && result[tgt] == null) {
+                result[tgt] = defaultContents[src];
+            } else {
+                // Target slot occupied or invalid – find the first free slot
+                boolean placed = false;
+                for (int i = 0; i < 36; i++) {
+                    if (result[i] == null) {
+                        result[i] = defaultContents[src];
+                        placed = true;
+                        break;
+                    }
+                }
+                // If no free slot at all, fall back to overwriting the original source slot
+                if (!placed) result[src] = defaultContents[src];
+            }
+        }
+        return result;
     }
 }

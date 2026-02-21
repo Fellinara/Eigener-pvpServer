@@ -3,6 +3,8 @@ package de.duellplugin.managers;
 import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.Arena;
 import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -18,14 +20,11 @@ public class ArenaManager {
     private final Map<String, Arena> arenas;
     private final File arenaFile;
     private FileConfiguration arenaConfig;
-    /** Tracks original block states changed during a fight, keyed by arena name. */
-    private final Map<String, List<BlockState>> arenaBlockChanges;
 
     public ArenaManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.arenas = new HashMap<>();
         this.arenaFile = new File(plugin.getDataFolder(), "arenas.yml");
-        this.arenaBlockChanges = new HashMap<>();
         loadArenas();
     }
 
@@ -63,14 +62,87 @@ public class ArenaManager {
     public void setSpawn(String name, int spawnNumber, Location location) {
         Arena arena = arenas.get(name.toLowerCase());
         if (arena != null) {
-            if (spawnNumber == 1) {
-                arena.setSpawn1(location);
-            } else {
-                arena.setSpawn2(location);
-            }
+            if (spawnNumber == 1) arena.setSpawn1(location);
+            else arena.setSpawn2(location);
             saveArenas();
         }
     }
+
+    /**
+     * Sets one corner of the reset region for the given arena and saves.
+     * If both corners are now defined, automatically takes a fresh snapshot.
+     */
+    public void setRegionPos(String arenaName, int corner, Location location) {
+        Arena arena = arenas.get(arenaName.toLowerCase());
+        if (arena == null) return;
+        if (corner == 1) arena.setRegionPos1(location);
+        else arena.setRegionPos2(location);
+        saveArenas();
+        if (arena.isRegionDefined()) {
+            takeSnapshot(arenaName);
+        }
+    }
+
+    /**
+     * Captures the current state of every block in the arena's region as a snapshot.
+     * This snapshot is used to restore the arena after each fight.
+     */
+    public void takeSnapshot(String arenaName) {
+        Arena arena = arenas.get(arenaName.toLowerCase());
+        if (arena == null || !arena.isRegionDefined()) return;
+
+        Location p1 = arena.getRegionPos1();
+        Location p2 = arena.getRegionPos2();
+        World world = p1.getWorld();
+
+        int minX = Math.min(p1.getBlockX(), p2.getBlockX());
+        int minY = Math.min(p1.getBlockY(), p2.getBlockY());
+        int minZ = Math.min(p1.getBlockZ(), p2.getBlockZ());
+        int maxX = Math.max(p1.getBlockX(), p2.getBlockX());
+        int maxY = Math.max(p1.getBlockY(), p2.getBlockY());
+        int maxZ = Math.max(p1.getBlockZ(), p2.getBlockZ());
+
+        List<BlockState> snapshot = new ArrayList<>();
+        for (int x = minX; x <= maxX; x++) {
+            for (int y = minY; y <= maxY; y++) {
+                for (int z = minZ; z <= maxZ; z++) {
+                    snapshot.add(world.getBlockAt(x, y, z).getState());
+                }
+            }
+        }
+        arena.setSnapshot(snapshot);
+        plugin.getLogger().info("Snapshot für Arena '" + arenaName + "' aufgenommen: "
+                + snapshot.size() + " Blöcke.");
+    }
+
+    /**
+     * Restores all blocks in the arena's region to their snapshotted state.
+     * If no snapshot exists but the region is defined, takes one first.
+     */
+    public void resetArena(String arenaName) {
+        Arena arena = arenas.get(arenaName.toLowerCase());
+        if (arena == null) return;
+
+        List<BlockState> snapshot = arena.getSnapshot();
+        if (snapshot == null || snapshot.isEmpty()) {
+            if (arena.isRegionDefined()) {
+                plugin.getLogger().warning("Kein Snapshot für Arena '" + arenaName
+                        + "' – nehme jetzt einen auf. Nutze /arena snapshot vor dem Kampf für bessere Ergebnisse.");
+                takeSnapshot(arenaName);
+            }
+            return;
+        }
+
+        // Restore all captured block states
+        for (BlockState state : snapshot) {
+            // update(force=true, physics=false): force-restores the block without triggering block physics
+            state.update(true, false);
+        }
+    }
+
+    // ──────────────────────────────────────────────
+    // Persistence
+    // ──────────────────────────────────────────────
 
     private void loadArenas() {
         if (!arenaFile.exists()) {
@@ -90,6 +162,8 @@ public class ArenaManager {
 
             Location spawn1 = null;
             Location spawn2 = null;
+            Location pos1 = null;
+            Location pos2 = null;
 
             if (arenaSection.contains("spawn1")) {
                 spawn1 = deserializeLocation(arenaSection.getConfigurationSection("spawn1"));
@@ -97,10 +171,28 @@ public class ArenaManager {
             if (arenaSection.contains("spawn2")) {
                 spawn2 = deserializeLocation(arenaSection.getConfigurationSection("spawn2"));
             }
+            if (arenaSection.contains("region.pos1")) {
+                pos1 = deserializeLocation(arenaSection.getConfigurationSection("region.pos1"));
+            }
+            if (arenaSection.contains("region.pos2")) {
+                pos2 = deserializeLocation(arenaSection.getConfigurationSection("region.pos2"));
+            }
 
-            arenas.put(name, new Arena(name, spawn1, spawn2));
+            Arena arena = new Arena(name, spawn1, spawn2);
+            arena.setRegionPos1(pos1);
+            arena.setRegionPos2(pos2);
+            arenas.put(name, arena);
         }
         plugin.getLogger().info(arenas.size() + " Arenen geladen.");
+
+        // Take snapshots for arenas that have regions defined (server is assumed to be in clean state)
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            for (Arena arena : arenas.values()) {
+                if (arena.isRegionDefined()) {
+                    takeSnapshot(arena.getName());
+                }
+            }
+        });
     }
 
     private void createDefaultArenas() {
@@ -124,28 +216,7 @@ public class ArenaManager {
         arenas.put("arena2", new Arena("arena2", spawn1Arena2, spawn2Arena2));
 
         saveArenas();
-        plugin.getLogger().info("2 Standard-Arenen erstellt (arena1, arena2). Nutze /arena setspawn um Spawns anzupassen.");
-    }
-
-    /**
-     * Records the original state of a block before it is changed during a fight.
-     * Call this BEFORE the block is altered (break/place).
-     */
-    public void recordBlockChange(String arenaName, BlockState originalState) {
-        arenaBlockChanges.computeIfAbsent(arenaName, k -> new ArrayList<>()).add(originalState);
-    }
-
-    /**
-     * Restores all blocks that were changed during a fight in the given arena.
-     */
-    public void resetArena(String arenaName) {
-        List<BlockState> changes = arenaBlockChanges.remove(arenaName);
-        if (changes == null || changes.isEmpty()) return;
-        // Restore in reverse order to correctly undo layered changes.
-        // update(force=true, physics=false): force-places the block without triggering block physics.
-        for (int i = changes.size() - 1; i >= 0; i--) {
-            changes.get(i).update(true, false);
-        }
+        plugin.getLogger().info("2 Standard-Arenen erstellt. Nutze /arena setpos1 | setpos2 für den Reset-Bereich.");
     }
 
     public void saveArenas() {
@@ -159,6 +230,12 @@ public class ArenaManager {
             }
             if (arena.getSpawn2() != null) {
                 serializeLocation(arenaConfig, path + ".spawn2", arena.getSpawn2());
+            }
+            if (arena.getRegionPos1() != null) {
+                serializeLocation(arenaConfig, path + ".region.pos1", arena.getRegionPos1());
+            }
+            if (arena.getRegionPos2() != null) {
+                serializeLocation(arenaConfig, path + ".region.pos2", arena.getRegionPos2());
             }
         }
 

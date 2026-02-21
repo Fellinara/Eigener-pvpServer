@@ -1,7 +1,9 @@
 package de.duellplugin.models;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class PlayerStats {
@@ -20,6 +22,8 @@ public class PlayerStats {
     private String selectedKit;
     private Rank rank;
     private List<String> kitOrder;
+    /** Per-kit custom inventory slot layout. Key = kit name, value = 36-element slot permutation. */
+    private final Map<String, int[]> kitSlotLayouts;
 
     public PlayerStats(UUID uuid, String name) {
         this.uuid = uuid;
@@ -36,6 +40,7 @@ public class PlayerStats {
         this.selectedKit = "nodebuff";
         this.rank = Rank.SPIELER;
         this.kitOrder = new ArrayList<>();
+        this.kitSlotLayouts = new HashMap<>();
     }
 
     public UUID getUuid() {
@@ -199,5 +204,30 @@ public class PlayerStats {
         } else if (idx < 0) {
             kitOrder.add(kitName);
         }
+    }
+
+    // ── Kit slot layout ──────────────────────────────────────────
+
+    /**
+     * Returns the custom slot layout for a kit, or null if none has been saved.
+     * The array has 36 entries: {@code layout[sourceSlot] = targetSlot}.
+     * A value of -1 means "keep in the original slot".
+     */
+    public int[] getKitSlotLayout(String kitName) {
+        return kitSlotLayouts.get(kitName.toLowerCase());
+    }
+
+    /** Stores a custom slot layout for a kit. */
+    public void setKitSlotLayout(String kitName, int[] layout) {
+        kitSlotLayouts.put(kitName.toLowerCase(), layout);
+    }
+
+    /** Removes the custom slot layout for a kit. */
+    public void removeKitSlotLayout(String kitName) {
+        kitSlotLayouts.remove(kitName.toLowerCase());
+    }
+
+    public Map<String, int[]> getKitSlotLayouts() {
+        return kitSlotLayouts;
     }
 }

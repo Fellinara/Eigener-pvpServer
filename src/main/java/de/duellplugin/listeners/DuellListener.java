@@ -108,15 +108,6 @@ public class DuellListener implements Listener {
 
         if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
-            return;
-        }
-
-        // Record block state before it is broken so we can restore it on arena reset
-        if (inDuel) {
-            Duel duel = plugin.getDuellManager().getDuel(player.getUniqueId());
-            if (duel != null) {
-                plugin.getArenaManager().recordBlockChange(duel.getArenaName(), event.getBlock().getState());
-            }
         }
     }
 
@@ -128,15 +119,6 @@ public class DuellListener implements Listener {
 
         if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
-            return;
-        }
-
-        // Record the old state (air) of the block being placed so we can remove the placed block on reset
-        if (inDuel) {
-            Duel duel = plugin.getDuellManager().getDuel(player.getUniqueId());
-            if (duel != null) {
-                plugin.getArenaManager().recordBlockChange(duel.getArenaName(), event.getBlock().getState());
-            }
         }
     }
 

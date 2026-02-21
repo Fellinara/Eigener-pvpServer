@@ -3,6 +3,7 @@ package de.duellplugin.commands;
 import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.PlayerStats;
 import de.duellplugin.models.Rank;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -22,12 +23,43 @@ public class RankCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage("§cDieser Befehl ist nur für Spieler!");
+        String prefix = plugin.getPrefix();
+
+        // /rang setrang <player> <rang> — admin only, works from console too
+        if (args.length >= 1 && args[0].equalsIgnoreCase("setrang")) {
+            if (!sender.hasPermission("duell.setrang")) {
+                sender.sendMessage(prefix + "§cDu hast keine Berechtigung!");
+                return true;
+            }
+            if (args.length < 3) {
+                sender.sendMessage(prefix + "§cBenutzung: §f/rang setrang <spieler> <rang>");
+                return true;
+            }
+            Player target = Bukkit.getPlayer(args[1]);
+            if (target == null) {
+                sender.sendMessage(prefix + "§cSpieler §6" + args[1] + " §cnicht gefunden!");
+                return true;
+            }
+            Rank targetRank = Rank.fromName(args[2]);
+            if (targetRank == null) {
+                sender.sendMessage(prefix + "§cUnbekannter Rang: §e" + args[2]);
+                return true;
+            }
+            PlayerStats targetStats = plugin.getStatsManager()
+                    .getOrCreateStats(target.getUniqueId(), target.getName());
+            targetStats.setRank(targetRank);
+            plugin.getStatsManager().saveStats();
+            sender.sendMessage(prefix + "§aRang von §6" + target.getName()
+                    + " §awurde auf " + targetRank.getDisplayName() + " §agesetzt.");
+            target.sendMessage(prefix + "§aDein Rang wurde auf " + targetRank.getDisplayName() + " §agesetzt!");
             return true;
         }
 
-        String prefix = plugin.getPrefix();
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("§cDieser Befehl ist nur für Spieler (außer setrang)!");
+            return true;
+        }
+
         PlayerStats stats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
 
         if (args.length == 0 || args[0].equalsIgnoreCase("info")) {
@@ -35,7 +67,7 @@ public class RankCommand implements CommandExecutor, TabCompleter {
             player.sendMessage(prefix + "§7Dein ELO: §6" + stats.getElo());
             player.sendMessage(prefix + "§7Kaufbare Ränge:");
             for (Rank rank : Rank.values()) {
-                if (rank == Rank.SPIELER) continue;
+                if (rank == Rank.SPIELER || rank.isStaff()) continue;
                 String status;
                 if (stats.getRank().ordinal() >= rank.ordinal()) {
                     status = "§a✔ Besessen";
@@ -57,14 +89,14 @@ public class RankCommand implements CommandExecutor, TabCompleter {
             }
 
             Rank targetRank = Rank.fromName(args[1]);
-            if (targetRank == null || targetRank == Rank.SPIELER) {
-                player.sendMessage(prefix + "§cUnbekannter Rang: §e" + args[1]);
-                player.sendMessage(prefix + "§7Verfügbare Ränge: VIP, VIP_PLUS, ELITE, LEGENDE");
+            if (targetRank == null || targetRank == Rank.SPIELER || targetRank.isStaff()) {
+                player.sendMessage(prefix + "§cUnbekannter oder nicht kaufbarer Rang: §e" + args[1]);
+                player.sendMessage(prefix + "§7Kaufbare Ränge: VIP, VIP_PLUS, ELITE, LEGENDE");
                 return true;
             }
 
             if (stats.getRank().ordinal() >= targetRank.ordinal()) {
-                player.sendMessage(prefix + "§cDu hast diesen Rang bereits!");
+                player.sendMessage(prefix + "§cDu hast diesen Rang bereits (oder einen höheren)!");
                 return true;
             }
 
@@ -80,7 +112,6 @@ public class RankCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
 
-            // Purchase the rank
             stats.setElo(stats.getElo() - targetRank.getEloCost());
             stats.setRank(targetRank);
             plugin.getStatsManager().saveStats();
@@ -98,15 +129,34 @@ public class RankCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return List.of("info", "kaufen");
+            List<String> subs = new ArrayList<>(List.of("info", "kaufen"));
+            if (sender.hasPermission("duell.setrang")) subs.add("setrang");
+            return subs;
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("kaufen") || args[0].equalsIgnoreCase("buy"))) {
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("kaufen") || args[0].equalsIgnoreCase("buy")) {
+                List<String> result = new ArrayList<>();
+                String partial = args[1].toLowerCase();
+                for (Rank rank : Rank.values()) {
+                    if (rank == Rank.SPIELER || rank.isStaff()) continue;
+                    if (rank.name().toLowerCase().startsWith(partial)) result.add(rank.name());
+                }
+                return result;
+            }
+            if (args[0].equalsIgnoreCase("setrang") && sender.hasPermission("duell.setrang")) {
+                List<String> names = new ArrayList<>();
+                String partial = args[1].toLowerCase();
+                for (Player p : Bukkit.getOnlinePlayers()) {
+                    if (p.getName().toLowerCase().startsWith(partial)) names.add(p.getName());
+                }
+                return names;
+            }
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("setrang") && sender.hasPermission("duell.setrang")) {
             List<String> result = new ArrayList<>();
-            String partial = args[1].toLowerCase();
+            String partial = args[2].toLowerCase();
             for (Rank rank : Rank.values()) {
-                if (rank == Rank.SPIELER) continue;
-                String name = rank.name().toLowerCase();
-                if (name.startsWith(partial)) result.add(rank.name());
+                if (rank.name().toLowerCase().startsWith(partial)) result.add(rank.name());
             }
             return result;
         }
