@@ -9,6 +9,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
@@ -18,21 +19,26 @@ import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.util.Vector;
 
 import java.util.*;
 
 public class BotManager {
 
+    private static final int COBWEB_INTERVAL_TICKS = 100; // 5 seconds
+
     private final DuellPlugin plugin;
     private final Map<UUID, UUID> playerBotMap;
     private final Set<UUID> activeBots;
     private final Map<UUID, String> playerArenaMap;
+    private final Map<UUID, BukkitRunnable> botAiTasks;
 
     public BotManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.playerBotMap = new HashMap<>();
         this.activeBots = new HashSet<>();
         this.playerArenaMap = new HashMap<>();
+        this.botAiTasks = new HashMap<>();
     }
 
     public void startBotFight(Player player, int level) {
@@ -62,8 +68,8 @@ public class BotManager {
         player.setSaturation(20.0f);
         player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
         if (kit != null) {
+            player.getInventory().setStorageContents(kit.getContents());
             player.getInventory().setArmorContents(kit.getArmor());
-            player.getInventory().setContents(kit.getContents());
         }
 
         final int botLevel = level;
@@ -90,11 +96,98 @@ public class BotManager {
                 duel.setBotLevel(botLevel);
                 duel.setState(Duel.DuelState.ACTIVE);
 
+                startBotAi(bot, player, botLevel);
+
                 String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
                 player.sendMessage(prefix + "§eBot-Kampf gestartet! §cLevel " + botLevel);
                 player.sendTitle("§c⚔ KAMPF!", "§eBot Level " + botLevel, 10, 40, 10);
             }
         }.runTaskLater(plugin, 40L);
+    }
+
+    private void startBotAi(Zombie bot, Player player, int level) {
+        // Arrow shoot interval: level 1-30 = 60 ticks (3s), 31-60 = 40 ticks, 61-100 = 20 ticks
+        long shootInterval = level <= 30 ? 60L : (level <= 60 ? 40L : 20L);
+        // Cobweb placement starts at level 20+ every 5 seconds
+        boolean useCobwebs = level >= 20;
+        // Golden apple healing: bot "heals" below 40% health at level 30+
+        boolean useGapple = level >= 30;
+
+        BukkitRunnable aiTask = new BukkitRunnable() {
+            private int ticksSinceLastShot = 0;
+            private int ticksSinceLastCobweb = 0;
+
+            @Override
+            public void run() {
+                if (!bot.isValid() || bot.isDead() || !player.isOnline()) {
+                    cancel();
+                    return;
+                }
+
+                ticksSinceLastShot++;
+                ticksSinceLastCobweb++;
+
+                // Heal with golden apple effect when below 40% health
+                if (useGapple) {
+                    var maxHealthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    if (maxHealthAttr != null) {
+                        double healthPercent = bot.getHealth() / maxHealthAttr.getValue();
+                        if (healthPercent < 0.4 && !bot.hasPotionEffect(PotionEffectType.REGENERATION)) {
+                            bot.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1, false, false));
+                            bot.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 2400, 0, false, false));
+                        }
+                    }
+                }
+
+                // Shoot arrow at player
+                if (ticksSinceLastShot >= shootInterval) {
+                    ticksSinceLastShot = 0;
+                    double distance = bot.getLocation().distance(player.getLocation());
+                    if (distance > 3.0 && distance < 30.0) {
+                        Location eyeLoc = bot.getEyeLocation();
+                        Location targetEye = player.getEyeLocation();
+                        Vector direction = targetEye.toVector().subtract(eyeLoc.toVector());
+                        if (direction.lengthSquared() > 0) {
+                            direction.normalize().setY(direction.getY() + (distance * 0.025));
+                            Arrow arrow = bot.getWorld().spawnArrow(eyeLoc, direction, 1.6f, 1.0f);
+                            arrow.setShooter(bot);
+                            arrow.setMetadata("duell_bot_arrow", new FixedMetadataValue(plugin, true));
+                        }
+                    }
+                }
+
+                // Place cobweb near player
+                if (useCobwebs && ticksSinceLastCobweb >= COBWEB_INTERVAL_TICKS) {
+                    ticksSinceLastCobweb = 0;
+                    double distance = bot.getLocation().distance(player.getLocation());
+                    if (distance < 6.0) {
+                        Location cobwebLoc = player.getLocation().clone();
+                        if (cobwebLoc.getWorld() != null
+                                && cobwebLoc.getBlock().getType() == Material.AIR) {
+                            cobwebLoc.getBlock().setType(Material.COBWEB);
+                            // Remove cobweb after 3 seconds
+                            new BukkitRunnable() {
+                                @Override
+                                public void run() {
+                                    if (cobwebLoc.getBlock().getType() == Material.COBWEB) {
+                                        cobwebLoc.getBlock().setType(Material.AIR);
+                                    }
+                                }
+                            }.runTaskLater(plugin, 60L);
+                        }
+                    }
+                }
+            }
+        };
+        aiTask.runTaskTimer(plugin, 20L, 1L);
+        botAiTasks.put(bot.getUniqueId(), aiTask);
+    }
+
+    private void cancelBotAi(UUID botUUID) {
+        BukkitRunnable task = botAiTasks.remove(botUUID);
+        if (task != null) {
+            task.cancel();
+        }
     }
 
     private void configureBot(Zombie bot, int level) {
@@ -227,6 +320,7 @@ public class BotManager {
 
     public void handleBotDeath(UUID botUUID) {
         activeBots.remove(botUUID);
+        cancelBotAi(botUUID);
 
         UUID playerUUID = null;
         for (Map.Entry<UUID, UUID> entry : playerBotMap.entrySet()) {
@@ -262,6 +356,7 @@ public class BotManager {
         UUID botUUID = playerBotMap.remove(player.getUniqueId());
         if (botUUID != null) {
             activeBots.remove(botUUID);
+            cancelBotAi(botUUID);
 
             var entity = Bukkit.getEntity(botUUID);
             if (entity != null) {
@@ -306,6 +401,7 @@ public class BotManager {
 
     public void cleanupBots() {
         for (UUID botUUID : new ArrayList<>(activeBots)) {
+            cancelBotAi(botUUID);
             var entity = Bukkit.getEntity(botUUID);
             if (entity != null) {
                 entity.remove();
@@ -314,6 +410,7 @@ public class BotManager {
         activeBots.clear();
         playerBotMap.clear();
         playerArenaMap.clear();
+        botAiTasks.clear();
     }
 
     private ItemStack enchant(ItemStack item, Enchantment enchantment, int level) {

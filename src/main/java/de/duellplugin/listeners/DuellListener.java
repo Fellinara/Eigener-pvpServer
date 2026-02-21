@@ -100,14 +100,20 @@ public class DuellListener implements Listener {
 
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
-        if (!event.getPlayer().hasPermission("duell.admin")) {
+        Player player = event.getPlayer();
+        if (!player.hasPermission("duell.admin")
+                && !plugin.getDuellManager().isInDuel(player.getUniqueId())
+                && !plugin.getBotManager().isInBotFight(player.getUniqueId())) {
             event.setCancelled(true);
         }
     }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
-        if (!event.getPlayer().hasPermission("duell.admin")) {
+        Player player = event.getPlayer();
+        if (!player.hasPermission("duell.admin")
+                && !plugin.getDuellManager().isInDuel(player.getUniqueId())
+                && !plugin.getBotManager().isInBotFight(player.getUniqueId())) {
             event.setCancelled(true);
         }
     }

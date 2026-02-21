@@ -52,13 +52,13 @@ public class Kit {
 
     public static Kit createNoDebuff() {
         ItemStack[] armor = new ItemStack[4];
-        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 2);
-        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
-        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 2);
-        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 2);
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 4);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 4);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 4);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 4);
 
         ItemStack[] contents = new ItemStack[36];
-        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3);
+        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 4);
         contents[1] = new ItemStack(Material.ENDER_PEARL, 16);
 
         ItemStack healPotion = createSplashPotion(PotionType.STRONG_HEALING, "§cHeilungstrank");
@@ -72,13 +72,13 @@ public class Kit {
 
     public static Kit createDebuff() {
         ItemStack[] armor = new ItemStack[4];
-        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 2);
-        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
-        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 2);
-        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 2);
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 4);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 4);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 4);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 4);
 
         ItemStack[] contents = new ItemStack[36];
-        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3);
+        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 4);
         contents[1] = new ItemStack(Material.ENDER_PEARL, 16);
 
         ItemStack healPotion = createSplashPotion(PotionType.STRONG_HEALING, "§cHeilungstrank");
@@ -99,23 +99,24 @@ public class Kit {
 
     public static Kit createClassic() {
         ItemStack[] armor = new ItemStack[4];
-        armor[3] = enchant(new ItemStack(Material.IRON_HELMET), Enchantment.PROTECTION, 1);
-        armor[2] = enchant(new ItemStack(Material.IRON_CHESTPLATE), Enchantment.PROTECTION, 1);
-        armor[1] = enchant(new ItemStack(Material.IRON_LEGGINGS), Enchantment.PROTECTION, 1);
-        armor[0] = enchant(new ItemStack(Material.IRON_BOOTS), Enchantment.PROTECTION, 1);
+        armor[3] = enchant(new ItemStack(Material.IRON_HELMET), Enchantment.PROTECTION, 2);
+        armor[2] = enchant(new ItemStack(Material.IRON_CHESTPLATE), Enchantment.PROTECTION, 2);
+        armor[1] = enchant(new ItemStack(Material.IRON_LEGGINGS), Enchantment.PROTECTION, 2);
+        armor[0] = enchant(new ItemStack(Material.IRON_BOOTS), Enchantment.PROTECTION, 2);
 
         ItemStack[] contents = new ItemStack[36];
-        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 1);
+        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3);
         contents[1] = enchant(new ItemStack(Material.BOW), Enchantment.POWER, 2);
         contents[2] = new ItemStack(Material.GOLDEN_APPLE, 8);
-        contents[3] = new ItemStack(Material.ENDER_PEARL, 8);
-        contents[4] = new ItemStack(Material.LAVA_BUCKET);
-        contents[5] = new ItemStack(Material.WATER_BUCKET);
-        contents[6] = new ItemStack(Material.COOKED_BEEF, 64);
+        contents[3] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[4] = new ItemStack(Material.COBWEB, 16);
+        contents[5] = new ItemStack(Material.LAVA_BUCKET);
+        contents[6] = new ItemStack(Material.WATER_BUCKET);
+        contents[7] = new ItemStack(Material.COOKED_BEEF, 64);
         contents[9] = new ItemStack(Material.ARROW, 32);
 
         return new Kit("classic", "§6⚜ Classic", Material.DIAMOND_SWORD,
-                "§7Eisen-Rüstung, Schwert, Bogen & Pearls", armor, contents);
+                "§7Eisen-Rüstung, Schwert, Bogen & Cobwebs", armor, contents);
     }
 
     public static Kit createGapple() {

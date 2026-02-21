@@ -247,8 +247,8 @@ public class DuellManager {
         player.getActivePotionEffects().forEach(e -> player.removePotionEffect(e.getType()));
 
         if (kit != null) {
+            player.getInventory().setStorageContents(kit.getContents());
             player.getInventory().setArmorContents(kit.getArmor());
-            player.getInventory().setContents(kit.getContents());
         }
     }
 }

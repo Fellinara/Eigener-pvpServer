@@ -31,6 +31,10 @@ commands:
   bot:
     description: Bot-Kampf starten
     usage: /bot [level]
+  farmcode:
+    description: Farmcode einlösen
+    usage: /farmcode <code>
+    aliases: [code, redeem]
 
 permissions:
   duell.use:
@@ -47,4 +51,7 @@ permissions:
     default: true
   duell.bot:
     description: Bot-Kaempfe starten
+    default: true
+  duell.farmcode:
+    description: Farmcodes einloesen
     default: true

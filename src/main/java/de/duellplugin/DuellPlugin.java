@@ -13,6 +13,7 @@ public class DuellPlugin extends JavaPlugin {
     private DuellManager duellManager;
     private BotManager botManager;
     private LobbyManager lobbyManager;
+    private FarmCodeManager farmCodeManager;
 
     @Override
     public void onEnable() {
@@ -24,6 +25,7 @@ public class DuellPlugin extends JavaPlugin {
         duellManager = new DuellManager(this);
         botManager = new BotManager(this);
         lobbyManager = new LobbyManager(this);
+        farmCodeManager = new FarmCodeManager(this);
 
         registerCommands();
         registerListeners();
@@ -68,6 +70,10 @@ public class DuellPlugin extends JavaPlugin {
         BotCommand botCmd = new BotCommand(this);
         getCommand("bot").setExecutor(botCmd);
         getCommand("bot").setTabCompleter(botCmd);
+
+        FarmCodeCommand farmCodeCmd = new FarmCodeCommand(this);
+        getCommand("farmcode").setExecutor(farmCodeCmd);
+        getCommand("farmcode").setTabCompleter(farmCodeCmd);
     }
 
     private void registerListeners() {
@@ -99,5 +105,9 @@ public class DuellPlugin extends JavaPlugin {
 
     public LobbyManager getLobbyManager() {
         return lobbyManager;
+    }
+
+    public FarmCodeManager getFarmCodeManager() {
+        return farmCodeManager;
     }
 }
