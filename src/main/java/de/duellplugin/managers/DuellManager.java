@@ -176,6 +176,7 @@ public class DuellManager {
         Arena arena = plugin.getArenaManager().getArena(duel.getArenaName());
         if (arena != null) {
             arena.setInUse(false);
+            plugin.getArenaManager().resetArena(duel.getArenaName());
         }
 
         activeDuels.remove(winner);
@@ -250,5 +251,7 @@ public class DuellManager {
             player.getInventory().setStorageContents(kit.getContents());
             player.getInventory().setArmorContents(kit.getArmor());
         }
+        // Always give a shield in the off-hand
+        player.getInventory().setItemInOffHand(new org.bukkit.inventory.ItemStack(org.bukkit.Material.SHIELD));
     }
 }

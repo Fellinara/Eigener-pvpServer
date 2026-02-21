@@ -35,6 +35,10 @@ commands:
     description: Farmcode einlösen
     usage: /farmcode <code>
     aliases: [code, redeem]
+  rang:
+    description: Rang-System (Kauf von Rängen mit ELO)
+    usage: /rang [info | kaufen <rang>]
+    aliases: [rank]
 
 permissions:
   duell.use:
@@ -54,4 +58,7 @@ permissions:
     default: true
   duell.farmcode:
     description: Farmcodes einloesen
+    default: true
+  duell.rang:
+    description: Ränge kaufen
     default: true

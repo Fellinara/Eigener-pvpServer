@@ -2,6 +2,7 @@ package de.duellplugin.managers;
 
 import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.PlayerStats;
+import de.duellplugin.models.Rank;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -112,6 +113,16 @@ public class StatsManager {
                 stats.loadBotLosses(ps.getInt("bot-losses", 0));
                 stats.setHighestBotLevel(ps.getInt("highest-bot-level", 0));
 
+                String rankName = ps.getString("rank", "SPIELER");
+                try {
+                    stats.setRank(Rank.valueOf(rankName));
+                } catch (IllegalArgumentException ignored) {
+                    stats.setRank(Rank.SPIELER);
+                }
+
+                List<String> kitOrder = ps.getStringList("kit-order");
+                stats.setKitOrder(kitOrder.isEmpty() ? new ArrayList<>() : new ArrayList<>(kitOrder));
+
                 statsMap.put(uuid, stats);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Ungültige UUID in stats.yml: " + uuidStr);
@@ -136,6 +147,8 @@ public class StatsManager {
             statsConfig.set(path + ".bot-wins", stats.getBotWins());
             statsConfig.set(path + ".bot-losses", stats.getBotLosses());
             statsConfig.set(path + ".highest-bot-level", stats.getHighestBotLevel());
+            statsConfig.set(path + ".rank", stats.getRank().name());
+            statsConfig.set(path + ".kit-order", stats.getKitOrder());
         }
 
         try {

@@ -74,6 +74,10 @@ public class DuellPlugin extends JavaPlugin {
         FarmCodeCommand farmCodeCmd = new FarmCodeCommand(this);
         getCommand("farmcode").setExecutor(farmCodeCmd);
         getCommand("farmcode").setTabCompleter(farmCodeCmd);
+
+        RankCommand rankCmd = new RankCommand(this);
+        getCommand("rang").setExecutor(rankCmd);
+        getCommand("rang").setTabCompleter(rankCmd);
     }
 
     private void registerListeners() {
@@ -81,6 +85,7 @@ public class DuellPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new LobbyItemListener(this), this);
         getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
         getServer().getPluginManager().registerEvents(new DuellListener(this), this);
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
     }
 
     public ArenaManager getArenaManager() {

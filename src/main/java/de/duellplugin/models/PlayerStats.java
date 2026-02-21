@@ -1,5 +1,7 @@
 package de.duellplugin.models;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class PlayerStats {
@@ -16,6 +18,8 @@ public class PlayerStats {
     private int botLosses;
     private int highestBotLevel;
     private String selectedKit;
+    private Rank rank;
+    private List<String> kitOrder;
 
     public PlayerStats(UUID uuid, String name) {
         this.uuid = uuid;
@@ -30,6 +34,8 @@ public class PlayerStats {
         this.botLosses = 0;
         this.highestBotLevel = 0;
         this.selectedKit = "nodebuff";
+        this.rank = Rank.SPIELER;
+        this.kitOrder = new ArrayList<>();
     }
 
     public UUID getUuid() {
@@ -155,5 +161,43 @@ public class PlayerStats {
     public double getKD() {
         if (losses == 0) return wins;
         return (double) wins / losses;
+    }
+
+    public Rank getRank() {
+        return rank;
+    }
+
+    public void setRank(Rank rank) {
+        this.rank = rank;
+    }
+
+    public List<String> getKitOrder() {
+        return kitOrder;
+    }
+
+    public void setKitOrder(List<String> kitOrder) {
+        this.kitOrder = kitOrder != null ? kitOrder : new ArrayList<>();
+    }
+
+    /** Moves a kit name one position earlier in the preferred order. */
+    public void moveKitUp(String kitName) {
+        int idx = kitOrder.indexOf(kitName);
+        if (idx > 0) {
+            kitOrder.remove(idx);
+            kitOrder.add(idx - 1, kitName);
+        } else if (idx < 0 && !kitOrder.isEmpty()) {
+            kitOrder.add(0, kitName);
+        }
+    }
+
+    /** Moves a kit name one position later in the preferred order. */
+    public void moveKitDown(String kitName) {
+        int idx = kitOrder.indexOf(kitName);
+        if (idx >= 0 && idx < kitOrder.size() - 1) {
+            kitOrder.remove(idx);
+            kitOrder.add(idx + 1, kitName);
+        } else if (idx < 0) {
+            kitOrder.add(kitName);
+        }
     }
 }

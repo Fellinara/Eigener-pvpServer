@@ -3,6 +3,7 @@ package de.duellplugin.managers;
 import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.Arena;
 import org.bukkit.Location;
+import org.bukkit.block.BlockState;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -17,11 +18,14 @@ public class ArenaManager {
     private final Map<String, Arena> arenas;
     private final File arenaFile;
     private FileConfiguration arenaConfig;
+    /** Tracks original block states changed during a fight, keyed by arena name. */
+    private final Map<String, List<BlockState>> arenaBlockChanges;
 
     public ArenaManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.arenas = new HashMap<>();
         this.arenaFile = new File(plugin.getDataFolder(), "arenas.yml");
+        this.arenaBlockChanges = new HashMap<>();
         loadArenas();
     }
 
@@ -121,6 +125,27 @@ public class ArenaManager {
 
         saveArenas();
         plugin.getLogger().info("2 Standard-Arenen erstellt (arena1, arena2). Nutze /arena setspawn um Spawns anzupassen.");
+    }
+
+    /**
+     * Records the original state of a block before it is changed during a fight.
+     * Call this BEFORE the block is altered (break/place).
+     */
+    public void recordBlockChange(String arenaName, BlockState originalState) {
+        arenaBlockChanges.computeIfAbsent(arenaName, k -> new ArrayList<>()).add(originalState);
+    }
+
+    /**
+     * Restores all blocks that were changed during a fight in the given arena.
+     */
+    public void resetArena(String arenaName) {
+        List<BlockState> changes = arenaBlockChanges.remove(arenaName);
+        if (changes == null || changes.isEmpty()) return;
+        // Restore in reverse order to correctly undo layered changes.
+        // update(force=true, physics=false): force-places the block without triggering block physics.
+        for (int i = changes.size() - 1; i >= 0; i--) {
+            changes.get(i).update(true, false);
+        }
     }
 
     public void saveArenas() {

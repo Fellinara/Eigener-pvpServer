@@ -8,8 +8,10 @@ import org.bukkit.entity.Zombie;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityRegainHealthEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.entity.FoodLevelChangeEvent;
@@ -101,20 +103,81 @@ public class DuellListener implements Listener {
     @EventHandler
     public void onBlockBreak(BlockBreakEvent event) {
         Player player = event.getPlayer();
-        if (!player.hasPermission("duell.admin")
-                && !plugin.getDuellManager().isInDuel(player.getUniqueId())
-                && !plugin.getBotManager().isInBotFight(player.getUniqueId())) {
+        boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
+        boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
+
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
+            return;
+        }
+
+        // Record block state before it is broken so we can restore it on arena reset
+        if (inDuel) {
+            Duel duel = plugin.getDuellManager().getDuel(player.getUniqueId());
+            if (duel != null) {
+                plugin.getArenaManager().recordBlockChange(duel.getArenaName(), event.getBlock().getState());
+            }
         }
     }
 
     @EventHandler
     public void onBlockPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
-        if (!player.hasPermission("duell.admin")
-                && !plugin.getDuellManager().isInDuel(player.getUniqueId())
-                && !plugin.getBotManager().isInBotFight(player.getUniqueId())) {
+        boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
+        boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
+
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
+            return;
+        }
+
+        // Record the old state (air) of the block being placed so we can remove the placed block on reset
+        if (inDuel) {
+            Duel duel = plugin.getDuellManager().getDuel(player.getUniqueId());
+            if (duel != null) {
+                plugin.getArenaManager().recordBlockChange(duel.getArenaName(), event.getBlock().getState());
+            }
+        }
+    }
+
+    /** Prevents natural mob spawning in the lobby world. */
+    @EventHandler
+    public void onCreatureSpawn(CreatureSpawnEvent event) {
+        var lobbySpawn = plugin.getLobbyManager().getLobbySpawn();
+        if (lobbySpawn == null) return;
+        if (!event.getLocation().getWorld().equals(lobbySpawn.getWorld())) return;
+
+        CreatureSpawnEvent.SpawnReason reason = event.getSpawnReason();
+        if (reason != CreatureSpawnEvent.SpawnReason.CUSTOM
+                && reason != CreatureSpawnEvent.SpawnReason.SPAWNER_EGG) {
+            event.setCancelled(true);
+        }
+    }
+
+    /** Disables natural health regeneration for UHC kit players during a duel or bot fight. */
+    @EventHandler
+    public void onEntityRegainHealth(EntityRegainHealthEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+
+        EntityRegainHealthEvent.RegainReason reason = event.getRegainReason();
+        if (reason != EntityRegainHealthEvent.RegainReason.SATIATED
+                && reason != EntityRegainHealthEvent.RegainReason.REGEN) {
+            return;
+        }
+
+        if (plugin.getDuellManager().isInDuel(player.getUniqueId())) {
+            Duel duel = plugin.getDuellManager().getDuel(player.getUniqueId());
+            if (duel != null && "uhc".equals(duel.getKitName())) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+
+        if (plugin.getBotManager().isInBotFight(player.getUniqueId())) {
+            var stats = plugin.getStatsManager().getStats(player.getUniqueId());
+            if (stats != null && "uhc".equals(stats.getSelectedKit())) {
+                event.setCancelled(true);
+            }
         }
     }
 }

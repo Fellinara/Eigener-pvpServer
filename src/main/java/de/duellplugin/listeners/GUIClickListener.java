@@ -8,10 +8,14 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class GUIClickListener implements Listener {
 
@@ -43,7 +47,7 @@ public class GUIClickListener implements Listener {
         } else if (title.contains("☠ Bot")) {
             handleBotClick(player, event.getSlot());
         } else if (title.contains("Kit-Auswahl")) {
-            handleKitClick(player, clicked);
+            handleKitClick(player, clicked, event.getClick());
         } else if (title.contains("Arena-Auswahl")) {
             handleArenaClick(player, clicked);
         }
@@ -74,7 +78,7 @@ public class GUIClickListener implements Listener {
         plugin.getBotManager().startBotFight(player, level);
     }
 
-    private void handleKitClick(Player player, ItemStack clicked) {
+    private void handleKitClick(Player player, ItemStack clicked, org.bukkit.event.inventory.ClickType clickType) {
         if (!clicked.hasItemMeta()) return;
         ItemMeta meta = clicked.getItemMeta();
         if (meta == null || !meta.hasDisplayName()) return;
@@ -83,11 +87,41 @@ public class GUIClickListener implements Listener {
         for (Kit kit : plugin.getKitManager().getAllKits()) {
             if (displayName.contains(kit.getName()) || displayName.contains(kit.getDisplayName())) {
                 var stats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
-                stats.setSelectedKit(kit.getName());
-                plugin.getStatsManager().saveStats();
 
-                player.sendMessage("§aKit §6" + kit.getDisplayName() + " §aausgewählt!");
-                player.closeInventory();
+                if (clickType.isShiftClick()) {
+                    // Move kit up in personal order
+                    List<String> order = new ArrayList<>(stats.getKitOrder());
+                    // Ensure all kits are in the order list
+                    plugin.getKitManager().getAllKits().forEach(k -> {
+                        if (!order.contains(k.getName())) order.add(k.getName());
+                    });
+                    stats.setKitOrder(order);
+                    stats.moveKitUp(kit.getName());
+                    plugin.getStatsManager().saveStats();
+                    player.sendMessage("§6Kit " + kit.getDisplayName() + " §6nach oben verschoben!");
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        if (player.isOnline()) new de.duellplugin.gui.KitGUI(plugin).open(player);
+                    }, 1L);
+                } else if (clickType == org.bukkit.event.inventory.ClickType.RIGHT) {
+                    // Move kit down in personal order
+                    List<String> order = new ArrayList<>(stats.getKitOrder());
+                    plugin.getKitManager().getAllKits().forEach(k -> {
+                        if (!order.contains(k.getName())) order.add(k.getName());
+                    });
+                    stats.setKitOrder(order);
+                    stats.moveKitDown(kit.getName());
+                    plugin.getStatsManager().saveStats();
+                    player.sendMessage("§6Kit " + kit.getDisplayName() + " §6nach unten verschoben!");
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        new de.duellplugin.gui.KitGUI(plugin).open(player);
+                    }, 1L);
+                } else {
+                    // Regular left-click: select kit
+                    stats.setSelectedKit(kit.getName());
+                    plugin.getStatsManager().saveStats();
+                    player.sendMessage("§aKit §6" + kit.getDisplayName() + " §aausgewählt!");
+                    player.closeInventory();
+                }
                 return;
             }
         }

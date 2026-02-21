@@ -59,10 +59,11 @@ public class Kit {
 
         ItemStack[] contents = new ItemStack[36];
         contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 4);
-        contents[1] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[1] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 2);
+        contents[2] = new ItemStack(Material.ENDER_PEARL, 16);
 
         ItemStack healPotion = createSplashPotion(PotionType.STRONG_HEALING, "§cHeilungstrank");
-        for (int i = 2; i < 36; i++) {
+        for (int i = 3; i < 36; i++) {
             contents[i] = healPotion.clone();
         }
 
@@ -79,17 +80,18 @@ public class Kit {
 
         ItemStack[] contents = new ItemStack[36];
         contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 4);
-        contents[1] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[1] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 2);
+        contents[2] = new ItemStack(Material.ENDER_PEARL, 16);
 
         ItemStack healPotion = createSplashPotion(PotionType.STRONG_HEALING, "§cHeilungstrank");
         ItemStack poisonPotion = createSplashPotion(PotionType.STRONG_POISON, "§2Gifttrank");
         ItemStack slowPotion = createSplashPotion(PotionType.STRONG_SLOWNESS, "§9Langsamkeitstrank");
 
-        contents[2] = poisonPotion.clone();
         contents[3] = poisonPotion.clone();
-        contents[4] = slowPotion.clone();
+        contents[4] = poisonPotion.clone();
         contents[5] = slowPotion.clone();
-        for (int i = 6; i < 36; i++) {
+        contents[6] = slowPotion.clone();
+        for (int i = 7; i < 36; i++) {
             contents[i] = healPotion.clone();
         }
 
@@ -99,10 +101,10 @@ public class Kit {
 
     public static Kit createClassic() {
         ItemStack[] armor = new ItemStack[4];
-        armor[3] = enchant(new ItemStack(Material.IRON_HELMET), Enchantment.PROTECTION, 2);
-        armor[2] = enchant(new ItemStack(Material.IRON_CHESTPLATE), Enchantment.PROTECTION, 2);
-        armor[1] = enchant(new ItemStack(Material.IRON_LEGGINGS), Enchantment.PROTECTION, 2);
-        armor[0] = enchant(new ItemStack(Material.IRON_BOOTS), Enchantment.PROTECTION, 2);
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 2);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 2);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 2);
 
         ItemStack[] contents = new ItemStack[36];
         contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3);
@@ -113,10 +115,11 @@ public class Kit {
         contents[5] = new ItemStack(Material.LAVA_BUCKET);
         contents[6] = new ItemStack(Material.WATER_BUCKET);
         contents[7] = new ItemStack(Material.COOKED_BEEF, 64);
+        contents[8] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 2);
         contents[9] = new ItemStack(Material.ARROW, 32);
 
         return new Kit("classic", "§6⚜ Classic", Material.DIAMOND_SWORD,
-                "§7Eisen-Rüstung, Schwert, Bogen & Cobwebs", armor, contents);
+                "§7Diamant-Rüstung, Schwert, Bogen, Axt & Cobwebs", armor, contents);
     }
 
     public static Kit createGapple() {
@@ -128,13 +131,14 @@ public class Kit {
 
         ItemStack[] contents = new ItemStack[36];
         contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 4);
-        contents[1] = new ItemStack(Material.GOLDEN_APPLE, 64);
+        contents[1] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 2);
         contents[2] = new ItemStack(Material.GOLDEN_APPLE, 64);
-        contents[3] = new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 3);
-        contents[4] = new ItemStack(Material.COOKED_BEEF, 64);
+        contents[3] = new ItemStack(Material.GOLDEN_APPLE, 64);
+        contents[4] = new ItemStack(Material.ENCHANTED_GOLDEN_APPLE, 3);
+        contents[5] = new ItemStack(Material.COOKED_BEEF, 64);
 
         return new Kit("gapple", "§e🍎 Gapple", Material.GOLDEN_APPLE,
-                "§7Volle Diamant-Rüstung & Goldene Äpfel", armor, contents);
+                "§7Volle Diamant-Rüstung, Axt & Goldene Äpfel", armor, contents);
     }
 
     public static Kit createBuildUHC() {
@@ -157,7 +161,7 @@ public class Kit {
         contents[9] = new ItemStack(Material.ARROW, 64);
 
         return new Kit("builduhc", "§9🏗 BuildUHC", Material.OAK_PLANKS,
-                "§7Diamant-Rüstung, Bogen & Baumaterial", armor, contents);
+                "§7Diamant-Rüstung, Bogen, Axt & Baumaterial", armor, contents);
     }
 
     public static Kit createUHC() {
@@ -176,23 +180,25 @@ public class Kit {
         contents[5] = new ItemStack(Material.LAVA_BUCKET);
         contents[6] = new ItemStack(Material.WATER_BUCKET);
         contents[7] = new ItemStack(Material.WATER_BUCKET);
-        contents[8] = new ItemStack(Material.WATER_BUCKET);
+        contents[8] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 2);
         contents[9] = new ItemStack(Material.ARROW, 64);
         contents[10] = new ItemStack(Material.COBWEB, 8);
         contents[11] = new ItemStack(Material.OAK_PLANKS, 64);
         contents[12] = new ItemStack(Material.OAK_PLANKS, 64);
         contents[13] = new ItemStack(Material.WATER_BUCKET);
+        contents[14] = new ItemStack(Material.WATER_BUCKET);
+        contents[15] = enchant(new ItemStack(Material.DIAMOND_PICKAXE), Enchantment.EFFICIENCY, 3);
 
         return new Kit("uhc", "§3⛏ UHC", Material.DIAMOND_PICKAXE,
-                "§7Diamant-Rüstung Prot 3, Bogen, Armbrust & Baumaterial", armor, contents);
+                "§7Diamant Prot 3, Axt, Bogen, Armbrust, Spitzhacke – kein Regen", armor, contents);
     }
 
     public static Kit createCombo() {
         ItemStack[] armor = new ItemStack[4];
-        armor[3] = enchant(new ItemStack(Material.IRON_HELMET), Enchantment.PROTECTION, 2);
-        armor[2] = enchant(new ItemStack(Material.IRON_CHESTPLATE), Enchantment.PROTECTION, 2);
-        armor[1] = enchant(new ItemStack(Material.IRON_LEGGINGS), Enchantment.PROTECTION, 2);
-        armor[0] = enchant(new ItemStack(Material.IRON_BOOTS), Enchantment.PROTECTION, 2);
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 2);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 2);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 2);
 
         ItemStack[] contents = new ItemStack[36];
         ItemStack sword = new ItemStack(Material.DIAMOND_SWORD);
@@ -203,16 +209,17 @@ public class Kit {
             sword.setItemMeta(swordMeta);
         }
         contents[0] = sword;
-        contents[1] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[1] = enchant(new ItemStack(Material.DIAMOND_AXE), Enchantment.SHARPNESS, 1);
+        contents[2] = new ItemStack(Material.ENDER_PEARL, 16);
 
         ItemStack speedPotion = createDrinkablePotion(PotionType.STRONG_SWIFTNESS, "§bSpeed II");
-        contents[2] = speedPotion.clone();
         contents[3] = speedPotion.clone();
-        contents[4] = new ItemStack(Material.GOLDEN_APPLE, 8);
-        contents[5] = new ItemStack(Material.COOKED_BEEF, 64);
+        contents[4] = speedPotion.clone();
+        contents[5] = new ItemStack(Material.GOLDEN_APPLE, 8);
+        contents[6] = new ItemStack(Material.COOKED_BEEF, 64);
 
         return new Kit("combo", "§b⚡ Combo", Material.FEATHER,
-                "§7Eisen-Rüstung, Knockback-Schwert & Speed", armor, contents);
+                "§7Diamant-Rüstung, Knockback-Schwert, Axt & Speed", armor, contents);
     }
 
     private static ItemStack createSplashPotion(PotionType type, String name) {

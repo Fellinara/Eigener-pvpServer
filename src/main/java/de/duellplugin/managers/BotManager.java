@@ -74,6 +74,8 @@ public class BotManager {
             player.getInventory().setStorageContents(kit.getContents());
             player.getInventory().setArmorContents(kit.getArmor());
         }
+        // Always give a shield in the off-hand
+        player.getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
 
         final int botLevel = level;
 
