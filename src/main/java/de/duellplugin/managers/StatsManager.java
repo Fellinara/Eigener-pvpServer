@@ -164,10 +164,10 @@ public class StatsManager {
             statsConfig.set(path + ".kit-order", stats.getKitOrder());
 
             // Save kit slot layouts
-            for (Map.Entry<String, int[]> entry : stats.getKitSlotLayouts().entrySet()) {
+            for (Map.Entry<String, int[]> layoutEntry : stats.getKitSlotLayouts().entrySet()) {
                 List<Integer> slotList = new ArrayList<>();
-                for (int s : entry.getValue()) slotList.add(s);
-                statsConfig.set(path + ".kit-slot-layouts." + entry.getKey(), slotList);
+                for (int s : layoutEntry.getValue()) slotList.add(s);
+                statsConfig.set(path + ".kit-slot-layouts." + layoutEntry.getKey(), slotList);
             }
         }
 

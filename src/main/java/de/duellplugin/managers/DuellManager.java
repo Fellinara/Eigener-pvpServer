@@ -6,8 +6,10 @@ import de.duellplugin.models.Duel;
 import de.duellplugin.models.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
@@ -253,22 +255,22 @@ public class DuellManager {
             player.getInventory().setArmorContents(kit.getArmor());
         }
         // Always give a shield in the off-hand
-        player.getInventory().setItemInOffHand(new org.bukkit.inventory.ItemStack(org.bukkit.Material.SHIELD));
+        player.getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
     }
 
     /**
      * Returns the kit's contents rearranged according to the player's saved slot layout.
      * Falls back to the default layout if no custom layout is saved.
      */
-    private org.bukkit.inventory.ItemStack[] applySlotLayout(Player player, Kit kit) {
+    private ItemStack[] applySlotLayout(Player player, Kit kit) {
         var stats = plugin.getStatsManager().getStats(player.getUniqueId());
         if (stats == null) return kit.getContents();
 
         int[] layout = stats.getKitSlotLayout(kit.getName());
         if (layout == null) return kit.getContents();
 
-        org.bukkit.inventory.ItemStack[] defaultContents = kit.getContents();
-        org.bukkit.inventory.ItemStack[] result = new org.bukkit.inventory.ItemStack[36];
+        ItemStack[] defaultContents = kit.getContents();
+        ItemStack[] result = new ItemStack[36];
 
         for (int src = 0; src < 36; src++) {
             if (defaultContents[src] == null) continue;
