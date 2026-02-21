@@ -99,7 +99,6 @@ public class BotManager {
 
     private void configureBot(Zombie bot, int level) {
         bot.setBaby(false);
-        bot.setShouldBurnInDay(false);
         bot.setRemoveWhenFarAway(false);
         bot.setCanPickupItems(false);
 
@@ -112,25 +111,25 @@ public class BotManager {
 
         double healthMultiplier = 1.0 + (level - 1) * 0.3;
         double maxHealth = Math.min(20.0 * healthMultiplier, 200.0);
-        var healthAttr = bot.getAttribute(Attribute.MAX_HEALTH);
+        var healthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (healthAttr != null) {
             healthAttr.setBaseValue(maxHealth);
         }
         bot.setHealth(maxHealth);
 
         double damageMultiplier = 1.0 + (level - 1) * 0.08;
-        var damageAttr = bot.getAttribute(Attribute.ATTACK_DAMAGE);
+        var damageAttr = bot.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (damageAttr != null) {
             damageAttr.setBaseValue(Math.min(3.0 * damageMultiplier, 30.0));
         }
 
         double speedMultiplier = 1.0 + (level - 1) * 0.005;
-        var speedAttr = bot.getAttribute(Attribute.MOVEMENT_SPEED);
+        var speedAttr = bot.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
         if (speedAttr != null) {
             speedAttr.setBaseValue(Math.min(0.23 * speedMultiplier, 0.45));
         }
 
-        var armorAttr = bot.getAttribute(Attribute.ARMOR);
+        var armorAttr = bot.getAttribute(Attribute.GENERIC_ARMOR);
         if (armorAttr != null) {
             armorAttr.setBaseValue(Math.min(level * 0.2, 20.0));
         }
