@@ -40,6 +40,19 @@ commands:
     usage: /rang [info | kaufen <rang> | setrang <spieler> <rang>]
     aliases: [rank]
 
+  freund:
+    description: Freundschafts-System
+    usage: /freund <add|remove|annehmen|ablehnen|liste|anfragen>
+    aliases: [friend, f]
+  party:
+    description: Party-System (Gruppen & Team-Duelle)
+    usage: /party <create|invite|accept|decline|leave|kick|disband|list|duel>
+    aliases: [gruppe]
+  npc:
+    description: NPC-Verwaltung
+    usage: /npc <create|remove|list>
+    permission: duell.admin
+
 permissions:
   duell.use:
     description: Erlaubt die Nutzung des Duell-Systems
@@ -64,4 +77,13 @@ permissions:
     default: true
   duell.setrang:
     description: Ränge an Spieler vergeben (Staff-Ränge)
+    default: op
+  duell.friend:
+    description: Freundschafts-System nutzen
+    default: true
+  duell.party:
+    description: Party-System nutzen
+    default: true
+  duell.npc:
+    description: NPC-Verwaltung (Admin)
     default: op

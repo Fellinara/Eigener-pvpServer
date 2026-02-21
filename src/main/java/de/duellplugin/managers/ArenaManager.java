@@ -20,11 +20,17 @@ public class ArenaManager {
     private final Map<String, Arena> arenas;
     private final File arenaFile;
     private FileConfiguration arenaConfig;
+    /** Tracks blocks placed during fights: arenaName → set of "x,y,z" location keys. */
+    private final Map<String, Set<String>> arenaPlacedBlocks;
+    /** Callbacks to run when an arena becomes available again (for the duel queue). */
+    private final List<Runnable> arenaFreeCallbacks;
 
     public ArenaManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.arenas = new HashMap<>();
         this.arenaFile = new File(plugin.getDataFolder(), "arenas.yml");
+        this.arenaPlacedBlocks = new HashMap<>();
+        this.arenaFreeCallbacks = new ArrayList<>();
         loadArenas();
     }
 
@@ -84,6 +90,42 @@ public class ArenaManager {
     }
 
     /**
+     * Records a block as placed during a fight so it can be broken by duel participants.
+     * Call this on BlockPlaceEvent.
+     */
+    public void addPlacedBlock(String arenaName, Location loc) {
+        arenaPlacedBlocks
+                .computeIfAbsent(arenaName.toLowerCase(), k -> new HashSet<>())
+                .add(locKey(loc));
+    }
+
+    /**
+     * Returns true if the block at the given location was placed during the current fight in that arena.
+     * Original arena blocks will return false.
+     */
+    public boolean isPlacedBlock(String arenaName, Location loc) {
+        Set<String> set = arenaPlacedBlocks.get(arenaName.toLowerCase());
+        return set != null && set.contains(locKey(loc));
+    }
+
+    /** Removes placed-block tracking for an arena (call on arena reset). */
+    private void clearPlacedBlocks(String arenaName) {
+        arenaPlacedBlocks.remove(arenaName.toLowerCase());
+    }
+
+    private static String locKey(Location loc) {
+        return loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
+    }
+
+    /**
+     * Registers a callback to be invoked the next time any arena becomes available.
+     * Used by the duel queue in DuellManager.
+     */
+    public void onNextArenaFree(Runnable callback) {
+        arenaFreeCallbacks.add(callback);
+    }
+
+    /**
      * Captures the current state of every block in the arena's region as a snapshot.
      * This snapshot is used to restore the arena after each fight.
      */
@@ -137,6 +179,16 @@ public class ArenaManager {
         for (BlockState state : snapshot) {
             // update(force=true, physics=false): force-restores the block without triggering block physics
             state.update(true, false);
+        }
+
+        // Clear placed-block tracking for this arena
+        clearPlacedBlocks(arenaName);
+
+        // Notify the duel queue that an arena is now free
+        if (!arenaFreeCallbacks.isEmpty()) {
+            Runnable next = arenaFreeCallbacks.remove(0);
+            // Run on next tick so arena state is fully reset first
+            plugin.getServer().getScheduler().runTask(plugin, next);
         }
     }
 

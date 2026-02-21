@@ -14,6 +14,9 @@ public class DuellPlugin extends JavaPlugin {
     private BotManager botManager;
     private LobbyManager lobbyManager;
     private FarmCodeManager farmCodeManager;
+    private FriendManager friendManager;
+    private PartyManager partyManager;
+    private NpcManager npcManager;
 
     @Override
     public void onEnable() {
@@ -26,6 +29,9 @@ public class DuellPlugin extends JavaPlugin {
         botManager = new BotManager(this);
         lobbyManager = new LobbyManager(this);
         farmCodeManager = new FarmCodeManager(this);
+        friendManager = new FriendManager(this);
+        partyManager = new PartyManager(this);
+        npcManager = new NpcManager(this);
 
         registerCommands();
         registerListeners();
@@ -36,15 +42,11 @@ public class DuellPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        if (statsManager != null) {
-            statsManager.saveStats();
-        }
-        if (arenaManager != null) {
-            arenaManager.saveArenas();
-        }
-        if (botManager != null) {
-            botManager.cleanupBots();
-        }
+        if (statsManager != null) statsManager.saveStats();
+        if (arenaManager != null) arenaManager.saveArenas();
+        if (botManager != null) botManager.cleanupBots();
+        if (friendManager != null) friendManager.saveFriends();
+        if (npcManager != null) npcManager.saveNpcs();
         getLogger().info("DuellPlugin deaktiviert. Daten gespeichert.");
     }
 
@@ -78,6 +80,18 @@ public class DuellPlugin extends JavaPlugin {
         RankCommand rankCmd = new RankCommand(this);
         getCommand("rang").setExecutor(rankCmd);
         getCommand("rang").setTabCompleter(rankCmd);
+
+        FriendCommand friendCmd = new FriendCommand(this);
+        getCommand("freund").setExecutor(friendCmd);
+        getCommand("freund").setTabCompleter(friendCmd);
+
+        PartyCommand partyCmd = new PartyCommand(this);
+        getCommand("party").setExecutor(partyCmd);
+        getCommand("party").setTabCompleter(partyCmd);
+
+        NpcCommand npcCmd = new NpcCommand(this);
+        getCommand("npc").setExecutor(npcCmd);
+        getCommand("npc").setTabCompleter(npcCmd);
     }
 
     private void registerListeners() {
@@ -86,35 +100,19 @@ public class DuellPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
         getServer().getPluginManager().registerEvents(new DuellListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getServer().getPluginManager().registerEvents(new NpcListener(this), this);
     }
 
-    public ArenaManager getArenaManager() {
-        return arenaManager;
-    }
-
-    public KitManager getKitManager() {
-        return kitManager;
-    }
-
-    public StatsManager getStatsManager() {
-        return statsManager;
-    }
-
-    public DuellManager getDuellManager() {
-        return duellManager;
-    }
-
-    public BotManager getBotManager() {
-        return botManager;
-    }
-
-    public LobbyManager getLobbyManager() {
-        return lobbyManager;
-    }
-
-    public FarmCodeManager getFarmCodeManager() {
-        return farmCodeManager;
-    }
+    public ArenaManager getArenaManager() { return arenaManager; }
+    public KitManager getKitManager() { return kitManager; }
+    public StatsManager getStatsManager() { return statsManager; }
+    public DuellManager getDuellManager() { return duellManager; }
+    public BotManager getBotManager() { return botManager; }
+    public LobbyManager getLobbyManager() { return lobbyManager; }
+    public FarmCodeManager getFarmCodeManager() { return farmCodeManager; }
+    public FriendManager getFriendManager() { return friendManager; }
+    public PartyManager getPartyManager() { return partyManager; }
+    public NpcManager getNpcManager() { return npcManager; }
 
     /** Returns the configured message prefix with color codes translated. */
     public String getPrefix() {

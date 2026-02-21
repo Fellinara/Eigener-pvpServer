@@ -33,7 +33,8 @@ public class GUIClickListener implements Listener {
         ItemStack clicked = event.getCurrentItem();
 
         if (title.contains("⚔ Duell") || title.contains("☠ Bot") || title.contains("Kit-Auswahl")
-                || title.contains("Arena-Auswahl") || title.contains("Statistiken")) {
+                || title.contains("Arena-Auswahl") || title.contains("Statistiken")
+                || title.contains("◆ PvP Server")) {
             event.setCancelled(true);
         }
 
@@ -42,7 +43,9 @@ public class GUIClickListener implements Listener {
             return;
         }
 
-        if (title.contains("⚔ Duell")) {
+        if (title.contains("◆ PvP Server")) {
+            handleMainMenuClick(player, clicked);
+        } else if (title.contains("⚔ Duell")) {
             handleDuellClick(player, clicked);
         } else if (title.contains("☠ Bot")) {
             handleBotClick(player, event.getSlot());
@@ -50,6 +53,27 @@ public class GUIClickListener implements Listener {
             handleKitClick(player, clicked, event.getClick());
         } else if (title.contains("Arena-Auswahl")) {
             handleArenaClick(player, clicked);
+        }
+    }
+
+    private void handleMainMenuClick(Player player, ItemStack clicked) {
+        if (!clicked.hasItemMeta()) return;
+        String name = clicked.getItemMeta().getDisplayName();
+        player.closeInventory();
+        if (name.contains("Duell")) {
+            new de.duellplugin.gui.DuellGUI(plugin).open(player);
+        } else if (name.contains("Kit")) {
+            new de.duellplugin.gui.KitGUI(plugin).open(player);
+        } else if (name.contains("Bot")) {
+            new de.duellplugin.gui.BotGUI(plugin).open(player);
+        } else if (name.contains("Statistiken")) {
+            new de.duellplugin.gui.StatsGUI(plugin).open(player);
+        } else if (name.contains("Rang")) {
+            player.performCommand("rang info");
+        } else if (name.contains("Party")) {
+            player.performCommand("party");
+        } else if (name.contains("Freunde")) {
+            player.performCommand("freund liste");
         }
     }
 

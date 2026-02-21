@@ -45,6 +45,7 @@ public class PlayerJoinLeaveListener implements Listener {
         event.setQuitMessage(leaveMsg);
 
         plugin.getDuellManager().handleDisconnect(player.getUniqueId());
+        plugin.getPartyManager().handleDisconnect(player.getUniqueId());
 
         if (plugin.getBotManager().isInBotFight(player.getUniqueId())) {
             plugin.getBotManager().handlePlayerDeathInBotFight(player);

@@ -407,6 +407,11 @@ public class BotManager {
         return playerBotMap.containsKey(uuid);
     }
 
+    /** Returns the arena name used by the given player's bot fight, or null. */
+    public String getPlayerArenaName(UUID uuid) {
+        return playerArenaMap.get(uuid);
+    }
+
     public boolean isBot(UUID uuid) {
         return activeBots.contains(uuid);
     }

@@ -44,7 +44,35 @@ public class DuellListener implements Listener {
             event.setDroppedExp(0);
 
             Duel duel = plugin.getDuellManager().getDuel(dead.getUniqueId());
-            if (duel != null) {
+            if (duel == null) return;
+
+            if (duel.isTeamDuel()) {
+                // Mark player as eliminated
+                duel.eliminatePlayer(dead.getUniqueId());
+                int myTeam = duel.getTeamNumber(dead.getUniqueId());
+                int otherTeam = (myTeam == 1) ? 2 : 1;
+
+                if (!duel.isTeamAlive(myTeam)) {
+                    // All of this player's team is out → the other team wins
+                    java.util.List<java.util.UUID> winners = (otherTeam == 1)
+                            ? duel.getAliveTeam1() : duel.getAliveTeam2();
+                    java.util.UUID winnerUUID = winners.isEmpty()
+                            ? duel.getPlayer1() : winners.get(0);
+                    plugin.getDuellManager().endDuel(winnerUUID, dead.getUniqueId());
+                } else {
+                    // Team still has alive members; respawn dead player into spectator mode
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        if (dead.isOnline()) {
+                            dead.spigot().respawn();
+                            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                dead.setGameMode(org.bukkit.GameMode.SPECTATOR);
+                                dead.sendMessage(plugin.getPrefix() + "§cDu bist ausgeschieden! Warte auf das Spielende.");
+                            });
+                        }
+                    }, 1L);
+                }
+            } else {
+                // Standard 1v1
                 java.util.UUID winner = duel.getOpponent(dead.getUniqueId());
                 plugin.getDuellManager().endDuel(winner, dead.getUniqueId());
             }
@@ -108,6 +136,16 @@ public class DuellListener implements Listener {
 
         if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
+            return;
+        }
+
+        // During a fight, only blocks that were placed during this fight may be broken
+        if (inDuel || inBot) {
+            String arenaName = getArenaName(player.getUniqueId(), inDuel);
+            if (arenaName != null
+                    && !plugin.getArenaManager().isPlacedBlock(arenaName, event.getBlock().getLocation())) {
+                event.setCancelled(true);
+            }
         }
     }
 
@@ -119,7 +157,25 @@ public class DuellListener implements Listener {
 
         if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
             event.setCancelled(true);
+            return;
         }
+
+        // Record the placed block so it can later be broken or removed on reset
+        if (inDuel || inBot) {
+            String arenaName = getArenaName(player.getUniqueId(), inDuel);
+            if (arenaName != null) {
+                plugin.getArenaManager().addPlacedBlock(arenaName, event.getBlock().getLocation());
+            }
+        }
+    }
+
+    /** Helper: returns the arena name for a player in duel or bot fight. */
+    private String getArenaName(java.util.UUID uuid, boolean inDuel) {
+        if (inDuel) {
+            Duel duel = plugin.getDuellManager().getDuel(uuid);
+            return duel != null ? duel.getArenaName() : null;
+        }
+        return plugin.getBotManager().getPlayerArenaName(uuid);
     }
 
     /** Prevents natural mob spawning in the lobby world. */

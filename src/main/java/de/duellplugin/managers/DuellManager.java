@@ -6,6 +6,7 @@ import de.duellplugin.models.Duel;
 import de.duellplugin.models.Kit;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
@@ -23,6 +24,22 @@ public class DuellManager {
     private final int requestTimeout;
     private final int countdown;
 
+    /** Queued duel entries waiting for an arena to become free. */
+    private final Queue<QueueEntry> duelQueue;
+
+    /** A queued duel pair waiting for an arena. */
+    private static final class QueueEntry {
+        final List<UUID> team1;
+        final List<UUID> team2;
+        final String kitName;
+
+        QueueEntry(List<UUID> team1, List<UUID> team2, String kitName) {
+            this.team1 = team1;
+            this.team2 = team2;
+            this.kitName = kitName;
+        }
+    }
+
     public DuellManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.pendingRequests = new HashMap<>();
@@ -30,6 +47,7 @@ public class DuellManager {
         this.requestTimestamps = new HashMap<>();
         this.requestTimeout = plugin.getConfig().getInt("duel.request-timeout", 30);
         this.countdown = plugin.getConfig().getInt("duel.countdown", 5);
+        this.duelQueue = new LinkedList<>();
     }
 
     public boolean sendRequest(Player sender, Player target) {
@@ -94,8 +112,14 @@ public class DuellManager {
 
         Arena arena = plugin.getArenaManager().getAvailableArena();
         if (arena == null) {
-            accepter.sendMessage("§cKeine Arena verfügbar! Bitte warte einen Moment.");
-            challenger.sendMessage("§cKeine Arena verfügbar! Bitte warte einen Moment.");
+            String prefix = plugin.getPrefix();
+            accepter.sendMessage(prefix + "§eKeine Arena frei – du wirst in die Warteschlange eingereiht!");
+            challenger.sendMessage(prefix + "§eKeine Arena frei – Duell mit §6" + accepter.getName() + " §ewird in die Warteschlange eingereiht!");
+            queueDuel(
+                    Collections.singletonList(challenger.getUniqueId()),
+                    Collections.singletonList(accepter.getUniqueId()),
+                    kitName
+            );
             return false;
         }
 
@@ -127,46 +151,127 @@ public class DuellManager {
     }
 
     public void startDuel(Player player1, Player player2, Arena arena, String kitName) {
-        Duel duel = new Duel(player1.getUniqueId(), player2.getUniqueId(), arena.getName(), kitName);
+        startTeamDuel(
+                Collections.singletonList(player1.getUniqueId()),
+                Collections.singletonList(player2.getUniqueId()),
+                arena,
+                kitName
+        );
+    }
+
+    /**
+     * Starts a duel between two teams. Each team may have 1–4 members.
+     * All team1 members teleport to spawn1; all team2 members teleport to spawn2.
+     */
+    public void startTeamDuel(List<UUID> team1UUIDs, List<UUID> team2UUIDs, Arena arena, String kitName) {
+        Duel duel = new Duel(team1UUIDs, team2UUIDs, arena.getName(), kitName);
         arena.setInUse(true);
         duel.setState(Duel.DuelState.COUNTDOWN);
 
-        activeDuels.put(player1.getUniqueId(), duel);
-        activeDuels.put(player2.getUniqueId(), duel);
-
-        player1.teleport(arena.getSpawn1());
-        player2.teleport(arena.getSpawn2());
+        // Register the duel for all participants
+        for (UUID uid : duel.getAllMembers()) {
+            activeDuels.put(uid, duel);
+        }
 
         Kit kit = plugin.getKitManager().getKit(kitName);
-        applyKit(player1, kit);
-        applyKit(player2, kit);
-
         String prefix = plugin.getPrefix();
+
+        // Teleport + kit for team 1
+        Location spawn1 = arena.getSpawn1();
+        for (int i = 0; i < team1UUIDs.size(); i++) {
+            Player p = Bukkit.getPlayer(team1UUIDs.get(i));
+            if (p == null || !p.isOnline()) continue;
+            // Slight offset so players don't overlap
+            Location tpLoc = spawn1.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
+            p.teleport(tpLoc);
+            applyKit(p, kit);
+        }
+
+        // Teleport + kit for team 2
+        Location spawn2 = arena.getSpawn2();
+        for (int i = 0; i < team2UUIDs.size(); i++) {
+            Player p = Bukkit.getPlayer(team2UUIDs.get(i));
+            if (p == null || !p.isOnline()) continue;
+            Location tpLoc = spawn2.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
+            p.teleport(tpLoc);
+            applyKit(p, kit);
+        }
 
         new BukkitRunnable() {
             int count = countdown;
 
             @Override
             public void run() {
+                for (UUID uid : duel.getAllMembers()) {
+                    Player p = Bukkit.getPlayer(uid);
+                    if (p == null || !p.isOnline()) continue;
+                    if (count <= 0) {
+                        duel.setState(Duel.DuelState.ACTIVE);
+                        String startMsg = plugin.getMsg("duel-start", "&aKAMPF!");
+                        p.sendMessage(prefix + startMsg);
+                        p.playSound(p.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
+                    } else {
+                        String color = count <= 3 ? "§c" : "§e";
+                        p.sendTitle(color + count, "§7Bereite dich vor!", 0, 25, 5);
+                        p.playSound(p.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
+                    }
+                }
                 if (count <= 0) {
-                    duel.setState(Duel.DuelState.ACTIVE);
-                    String startMsg = plugin.getMsg("duel-start", "&aKAMPF!");
-                    player1.sendMessage(prefix + startMsg);
-                    player2.sendMessage(prefix + startMsg);
-                    player1.playSound(player1.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
-                    player2.playSound(player2.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
                     cancel();
                     return;
                 }
-
-                String color = count <= 3 ? "§c" : "§e";
-                player1.sendTitle(color + count, "§7Bereite dich vor!", 0, 25, 5);
-                player2.sendTitle(color + count, "§7Bereite dich vor!", 0, 25, 5);
-                player1.playSound(player1.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
-                player2.playSound(player2.getLocation(), Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, 1.0f);
                 count--;
             }
         }.runTaskTimer(plugin, 0L, 20L);
+    }
+
+    /**
+     * Queues a team duel to start as soon as an arena becomes available.
+     */
+    public void queueDuel(List<UUID> team1, List<UUID> team2, String kitName) {
+        duelQueue.add(new QueueEntry(team1, team2, kitName));
+        plugin.getArenaManager().onNextArenaFree(this::checkQueue);
+    }
+
+    /** Starts the next queued duel if an arena is now available. */
+    private void checkQueue() {
+        if (duelQueue.isEmpty()) return;
+        Arena arena = plugin.getArenaManager().getAvailableArena();
+        if (arena == null) {
+            // Re-register callback for next free arena
+            plugin.getArenaManager().onNextArenaFree(this::checkQueue);
+            return;
+        }
+        QueueEntry entry = duelQueue.poll();
+        if (entry == null) return;
+
+        String prefix = plugin.getPrefix();
+        // Verify all players are still online; if not, skip
+        if (!allPlayersOnline(entry.team1) || !allPlayersOnline(entry.team2)) {
+            // Send message to whoever is online
+            for (UUID uid : entry.team1) {
+                Player p = Bukkit.getPlayer(uid);
+                if (p != null) p.sendMessage(prefix + "§cEin Spieler des anderen Teams ist offline. Duell abgebrochen.");
+            }
+            for (UUID uid : entry.team2) {
+                Player p = Bukkit.getPlayer(uid);
+                if (p != null) p.sendMessage(prefix + "§cEin Spieler deines Teams ist offline. Duell abgebrochen.");
+            }
+            // Try next in queue
+            checkQueue();
+            return;
+        }
+
+        for (UUID uid : entry.team1) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null) p.sendMessage(prefix + "§aEine Arena ist frei! Dein Duell beginnt...");
+        }
+        for (UUID uid : entry.team2) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p != null) p.sendMessage(prefix + "§aEine Arena ist frei! Dein Duell beginnt...");
+        }
+
+        startTeamDuel(entry.team1, entry.team2, arena, entry.kitName);
     }
 
     public void endDuel(UUID winner, UUID loser) {
@@ -181,8 +286,10 @@ public class DuellManager {
             plugin.getArenaManager().resetArena(duel.getArenaName());
         }
 
-        activeDuels.remove(winner);
-        activeDuels.remove(loser);
+        // Remove all participants from activeDuels
+        for (UUID uid : duel.getAllMembers()) {
+            activeDuels.remove(uid);
+        }
 
         Player winnerPlayer = Bukkit.getPlayer(winner);
         Player loserPlayer = Bukkit.getPlayer(loser);
@@ -209,11 +316,12 @@ public class DuellManager {
         new BukkitRunnable() {
             @Override
             public void run() {
-                if (winnerPlayer != null && winnerPlayer.isOnline()) {
-                    plugin.getLobbyManager().sendToLobby(winnerPlayer);
-                }
-                if (loserPlayer != null && loserPlayer.isOnline()) {
-                    plugin.getLobbyManager().sendToLobby(loserPlayer);
+                // Send all participants to lobby
+                for (UUID uid : duel.getAllMembers()) {
+                    Player p = Bukkit.getPlayer(uid);
+                    if (p != null && p.isOnline()) {
+                        plugin.getLobbyManager().sendToLobby(p);
+                    }
                 }
             }
         }.runTaskLater(plugin, 60L);
@@ -239,6 +347,18 @@ public class DuellManager {
 
     public boolean hasPendingRequest(UUID uuid) {
         return pendingRequests.containsKey(uuid);
+    }
+
+    /** Spacing between team members at the arena spawn point (blocks). */
+    private static final double TEAM_SPAWN_OFFSET = 1.2;
+
+    /** Returns true if every player in the list is online. */
+    private static boolean allPlayersOnline(List<UUID> team) {
+        for (UUID uid : team) {
+            Player p = Bukkit.getPlayer(uid);
+            if (p == null || !p.isOnline()) return false;
+        }
+        return true;
     }
 
     private void applyKit(Player player, Kit kit) {
