@@ -24,6 +24,7 @@ public class KitManager {
         Kit classic = Kit.createClassic();
         Kit gapple = Kit.createGapple();
         Kit builduhc = Kit.createBuildUHC();
+        Kit uhc = Kit.createUHC();
         Kit combo = Kit.createCombo();
 
         kits.put(nodebuff.getName(), nodebuff);
@@ -31,6 +32,7 @@ public class KitManager {
         kits.put(classic.getName(), classic);
         kits.put(gapple.getName(), gapple);
         kits.put(builduhc.getName(), builduhc);
+        kits.put(uhc.getName(), uhc);
         kits.put(combo.getName(), combo);
 
         plugin.getLogger().info(kits.size() + " Kits geladen.");

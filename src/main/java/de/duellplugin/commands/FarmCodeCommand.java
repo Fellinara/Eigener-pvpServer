@@ -25,7 +25,7 @@ public class FarmCodeCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+        String prefix = plugin.getPrefix();
 
         if (args.length == 0) {
             player.sendMessage(prefix + "§eVerfügbare Farmcodes: §f/farmcode <code>");

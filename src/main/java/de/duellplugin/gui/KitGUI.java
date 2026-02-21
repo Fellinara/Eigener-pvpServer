@@ -46,7 +46,6 @@ public class KitGUI {
                 item.setItemMeta(meta);
             }
             inv.setItem(slot++, item);
-            if (slot == 13) slot = 14;
         }
 
         ItemStack border = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);

@@ -32,6 +32,7 @@ public class BotManager {
     private final Set<UUID> activeBots;
     private final Map<UUID, String> playerArenaMap;
     private final Map<UUID, BukkitRunnable> botAiTasks;
+    private final Map<UUID, Integer> botLevelMap;
 
     public BotManager(DuellPlugin plugin) {
         this.plugin = plugin;
@@ -39,10 +40,12 @@ public class BotManager {
         this.activeBots = new HashSet<>();
         this.playerArenaMap = new HashMap<>();
         this.botAiTasks = new HashMap<>();
+        this.botLevelMap = new HashMap<>();
     }
 
     public void startBotFight(Player player, int level) {
-        if (plugin.getDuellManager().isInDuel(player.getUniqueId())) {
+        if (plugin.getDuellManager().isInDuel(player.getUniqueId())
+                || isInBotFight(player.getUniqueId())) {
             player.sendMessage("§cDu bist bereits in einem Kampf!");
             return;
         }
@@ -90,6 +93,7 @@ public class BotManager {
                 UUID botUUID = bot.getUniqueId();
                 activeBots.add(botUUID);
                 playerBotMap.put(player.getUniqueId(), botUUID);
+                botLevelMap.put(botUUID, botLevel);
 
                 Duel duel = new Duel(player.getUniqueId(), botUUID, arena.getName(), kitName);
                 duel.setBotDuel(true);
@@ -98,7 +102,7 @@ public class BotManager {
 
                 startBotAi(bot, player, botLevel);
 
-                String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+                String prefix = plugin.getPrefix();
                 player.sendMessage(prefix + "§eBot-Kampf gestartet! §cLevel " + botLevel);
                 player.sendTitle("§c⚔ KAMPF!", "§eBot Level " + botLevel, 10, 40, 10);
             }
@@ -321,6 +325,8 @@ public class BotManager {
     public void handleBotDeath(UUID botUUID) {
         activeBots.remove(botUUID);
         cancelBotAi(botUUID);
+        int botLevel = botLevelMap.getOrDefault(botUUID, 1);
+        botLevelMap.remove(botUUID);
 
         UUID playerUUID = null;
         for (Map.Entry<UUID, UUID> entry : playerBotMap.entrySet()) {
@@ -332,9 +338,11 @@ public class BotManager {
 
         if (playerUUID != null) {
             playerBotMap.remove(playerUUID);
+            plugin.getStatsManager().processBotWin(playerUUID, botLevel);
+
             Player player = Bukkit.getPlayer(playerUUID);
             if (player != null && player.isOnline()) {
-                String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+                String prefix = plugin.getPrefix();
                 player.sendMessage(prefix + "§aDu hast den Bot besiegt!");
                 player.sendTitle("§a§lSIEG!", "§eDu hast den Bot besiegt!", 10, 40, 10);
 
@@ -357,6 +365,7 @@ public class BotManager {
         if (botUUID != null) {
             activeBots.remove(botUUID);
             cancelBotAi(botUUID);
+            botLevelMap.remove(botUUID);
 
             var entity = Bukkit.getEntity(botUUID);
             if (entity != null) {
@@ -365,7 +374,7 @@ public class BotManager {
 
             plugin.getStatsManager().processBotLoss(player.getUniqueId());
 
-            String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+            String prefix = plugin.getPrefix();
             player.sendMessage(prefix + "§cDu wurdest vom Bot besiegt!");
 
             new BukkitRunnable() {
@@ -411,6 +420,7 @@ public class BotManager {
         playerBotMap.clear();
         playerArenaMap.clear();
         botAiTasks.clear();
+        botLevelMap.clear();
     }
 
     private ItemStack enchant(ItemStack item, Enchantment enchantment, int level) {

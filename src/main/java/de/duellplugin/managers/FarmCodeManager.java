@@ -103,7 +103,7 @@ public class FarmCodeManager {
             return false;
         }
 
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+        String prefix = plugin.getPrefix();
         player.sendMessage(prefix + "§aFarmcode §e" + code.toUpperCase() + " §aeingelöst: §6" + farmCode.displayName());
 
         for (ItemStack item : farmCode.items()) {

@@ -36,7 +36,7 @@ public class DuellManager {
             return false;
         }
 
-        if (pendingRequests.containsKey(sender.getUniqueId())) {
+        if (pendingRequests.containsValue(sender.getUniqueId())) {
             sender.sendMessage("§cDu hast bereits eine ausstehende Anfrage!");
             return false;
         }
@@ -49,9 +49,9 @@ public class DuellManager {
         pendingRequests.put(target.getUniqueId(), sender.getUniqueId());
         requestTimestamps.put(target.getUniqueId(), System.currentTimeMillis());
 
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
-        String requestMsg = plugin.getConfig().getString("messages.duel-request",
-                "§6%player% §ehat dich zu einem Duell herausgefordert! §a/duell annehmen");
+        String prefix = plugin.getPrefix();
+        String requestMsg = plugin.getMsg("duel-request",
+                "&6%player% &ehat dich zu einem Duell herausgefordert! &a/duell annehmen");
         target.sendMessage(prefix + requestMsg.replace("%player%", sender.getName()));
         sender.sendMessage(prefix + "§aDu hast §6" + target.getName() + " §aherausgefordert!");
 
@@ -114,8 +114,8 @@ public class DuellManager {
         }
 
         Player challenger = Bukkit.getPlayer(challengerUUID);
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
-        String declineMsg = plugin.getConfig().getString("messages.duel-declined", "§cDuell abgelehnt.");
+        String prefix = plugin.getPrefix();
+        String declineMsg = plugin.getMsg("duel-declined", "&cDuell abgelehnt.");
 
         decliner.sendMessage(prefix + declineMsg);
         if (challenger != null && challenger.isOnline()) {
@@ -139,7 +139,7 @@ public class DuellManager {
         applyKit(player1, kit);
         applyKit(player2, kit);
 
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
+        String prefix = plugin.getPrefix();
 
         new BukkitRunnable() {
             int count = countdown;
@@ -148,7 +148,7 @@ public class DuellManager {
             public void run() {
                 if (count <= 0) {
                     duel.setState(Duel.DuelState.ACTIVE);
-                    String startMsg = plugin.getConfig().getString("messages.duel-start", "§aKAMPF!");
+                    String startMsg = plugin.getMsg("duel-start", "&aKAMPF!");
                     player1.sendMessage(prefix + startMsg);
                     player2.sendMessage(prefix + startMsg);
                     player1.playSound(player1.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
@@ -190,9 +190,9 @@ public class DuellManager {
             plugin.getStatsManager().processBotWin(winner, duel.getBotLevel());
         }
 
-        String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
-        String winMsg = plugin.getConfig().getString("messages.duel-win",
-                "§6%winner% §ahat das Duell gegen §6%loser% §agewonnen!");
+        String prefix = plugin.getPrefix();
+        String winMsg = plugin.getMsg("duel-win",
+                "&6%winner% &ahat das Duell gegen &6%loser% &agewonnen!");
 
         String winnerName = winnerPlayer != null ? winnerPlayer.getName() : "Unbekannt";
         String loserName = loserPlayer != null ? loserPlayer.getName() : "Bot";

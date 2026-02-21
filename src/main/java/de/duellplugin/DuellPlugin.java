@@ -110,4 +110,14 @@ public class DuellPlugin extends JavaPlugin {
     public FarmCodeManager getFarmCodeManager() {
         return farmCodeManager;
     }
+
+    /** Returns the configured message prefix with color codes translated. */
+    public String getPrefix() {
+        return ChatUtils.color(getConfig().getString("messages.prefix", "&8[&6DuellPlugin&8] "));
+    }
+
+    /** Returns a configured message string with color codes translated. */
+    public String getMsg(String key, String def) {
+        return ChatUtils.color(getConfig().getString("messages." + key, def));
+    }
 }

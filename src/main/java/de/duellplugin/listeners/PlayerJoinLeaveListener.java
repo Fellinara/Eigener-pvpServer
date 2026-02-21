@@ -21,8 +21,8 @@ public class PlayerJoinLeaveListener implements Listener {
         Player player = event.getPlayer();
         String serverName = plugin.getConfig().getString("server-name", "Bestes PvP Duo");
 
-        String joinMsg = plugin.getConfig().getString("messages.join",
-                "§8[§a+§8] §6%player% §eist der PvP Arena von §6%server% §ebeigetreten!");
+        String joinMsg = plugin.getMsg("join",
+                "&8[&a+&8] &6%player% &eist der PvP Arena von &6%server% &ebeigetreten!");
         joinMsg = joinMsg.replace("%player%", player.getName()).replace("%server%", serverName);
         event.setJoinMessage(joinMsg);
 
@@ -39,8 +39,8 @@ public class PlayerJoinLeaveListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
 
-        String leaveMsg = plugin.getConfig().getString("messages.leave",
-                "§8[§c-§8] §7%player% §7hat den Server verlassen");
+        String leaveMsg = plugin.getMsg("leave",
+                "&8[&c-&8] &7%player% &7hat den Server verlassen");
         leaveMsg = leaveMsg.replace("%player%", player.getName());
         event.setQuitMessage(leaveMsg);
 

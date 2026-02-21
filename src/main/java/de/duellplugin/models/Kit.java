@@ -160,6 +160,33 @@ public class Kit {
                 "§7Diamant-Rüstung, Bogen & Baumaterial", armor, contents);
     }
 
+    public static Kit createUHC() {
+        ItemStack[] armor = new ItemStack[4];
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 3);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 3);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 3);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 3);
+
+        ItemStack[] contents = new ItemStack[36];
+        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3);
+        contents[1] = enchant(new ItemStack(Material.BOW), Enchantment.POWER, 1);
+        contents[2] = enchant(new ItemStack(Material.CROSSBOW), Enchantment.PIERCING, 1);
+        contents[3] = new ItemStack(Material.GOLDEN_APPLE, 8);
+        contents[4] = new ItemStack(Material.LAVA_BUCKET);
+        contents[5] = new ItemStack(Material.LAVA_BUCKET);
+        contents[6] = new ItemStack(Material.WATER_BUCKET);
+        contents[7] = new ItemStack(Material.WATER_BUCKET);
+        contents[8] = new ItemStack(Material.WATER_BUCKET);
+        contents[9] = new ItemStack(Material.ARROW, 64);
+        contents[10] = new ItemStack(Material.COBWEB, 8);
+        contents[11] = new ItemStack(Material.OAK_PLANKS, 64);
+        contents[12] = new ItemStack(Material.OAK_PLANKS, 64);
+        contents[13] = new ItemStack(Material.WATER_BUCKET);
+
+        return new Kit("uhc", "§3⛏ UHC", Material.DIAMOND_PICKAXE,
+                "§7Diamant-Rüstung Prot 3, Bogen, Armbrust & Baumaterial", armor, contents);
+    }
+
     public static Kit createCombo() {
         ItemStack[] armor = new ItemStack[4];
         armor[3] = enchant(new ItemStack(Material.IRON_HELMET), Enchantment.PROTECTION, 2);
