@@ -70,11 +70,15 @@ public class ArenaManager {
 
     private void loadArenas() {
         if (!arenaFile.exists()) {
+            createDefaultArenas();
             return;
         }
         arenaConfig = YamlConfiguration.loadConfiguration(arenaFile);
         ConfigurationSection section = arenaConfig.getConfigurationSection("arenas");
-        if (section == null) return;
+        if (section == null) {
+            createDefaultArenas();
+            return;
+        }
 
         for (String name : section.getKeys(false)) {
             ConfigurationSection arenaSection = section.getConfigurationSection(name);
@@ -93,6 +97,30 @@ public class ArenaManager {
             arenas.put(name, new Arena(name, spawn1, spawn2));
         }
         plugin.getLogger().info(arenas.size() + " Arenen geladen.");
+    }
+
+    private void createDefaultArenas() {
+        var world = plugin.getServer().getWorlds().isEmpty() ? null : plugin.getServer().getWorlds().get(0);
+        if (world == null) {
+            plugin.getLogger().warning("Keine Welt gefunden! Standard-Arenen konnten nicht erstellt werden.");
+            return;
+        }
+
+        Location worldSpawn = world.getSpawnLocation();
+        double baseX = worldSpawn.getX();
+        double baseY = worldSpawn.getY();
+        double baseZ = worldSpawn.getZ();
+
+        Location spawn1Arena1 = new Location(world, baseX + 20, baseY, baseZ + 20, -135, 0);
+        Location spawn2Arena1 = new Location(world, baseX + 40, baseY, baseZ + 40, 45, 0);
+        arenas.put("arena1", new Arena("arena1", spawn1Arena1, spawn2Arena1));
+
+        Location spawn1Arena2 = new Location(world, baseX - 20, baseY, baseZ + 20, -45, 0);
+        Location spawn2Arena2 = new Location(world, baseX - 40, baseY, baseZ + 40, 135, 0);
+        arenas.put("arena2", new Arena("arena2", spawn1Arena2, spawn2Arena2));
+
+        saveArenas();
+        plugin.getLogger().info("2 Standard-Arenen erstellt (arena1, arena2). Nutze /arena setspawn um Spawns anzupassen.");
     }
 
     public void saveArenas() {

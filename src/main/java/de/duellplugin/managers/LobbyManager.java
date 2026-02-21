@@ -40,6 +40,8 @@ public class LobbyManager {
 
         if (lobbySpawn != null) {
             player.teleport(lobbySpawn);
+        } else if (!Bukkit.getWorlds().isEmpty()) {
+            player.teleport(Bukkit.getWorlds().get(0).getSpawnLocation());
         }
 
         giveLobbyItems(player);
@@ -108,6 +110,10 @@ public class LobbyManager {
     private void loadLobbySpawn() {
         String worldName = plugin.getConfig().getString("lobby.world", "world");
         var world = Bukkit.getWorld(worldName);
+        if (world == null && !Bukkit.getWorlds().isEmpty()) {
+            world = Bukkit.getWorlds().get(0);
+            plugin.getLogger().warning("Lobby-Welt '" + worldName + "' nicht gefunden! Verwende Standard-Welt: " + world.getName());
+        }
         if (world != null) {
             lobbySpawn = new Location(
                     world,
@@ -117,6 +123,8 @@ public class LobbyManager {
                     (float) plugin.getConfig().getDouble("lobby.yaw", 0.0),
                     (float) plugin.getConfig().getDouble("lobby.pitch", 0.0)
             );
+        } else {
+            plugin.getLogger().severe("Keine Welt gefunden! Lobby-Spawn konnte nicht gesetzt werden.");
         }
     }
 
