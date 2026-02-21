@@ -1,0 +1,45 @@
+# DuellPlugin - Konfiguration
+# Das ultimative PvP-Duell-Plugin
+
+server-name: "Bestes PvP Duo"
+
+# Duell-Einstellungen
+duel:
+  countdown: 5
+  request-timeout: 30
+  min-distance: 5
+
+# ELO-Einstellungen
+elo:
+  start-elo: 1000
+  k-factor: 32
+
+# Bot-Einstellungen
+bot:
+  enabled: true
+  max-level: 100
+
+# Arena-Einstellungen
+arena:
+  auto-reset: true
+
+# Lobby-Einstellungen
+lobby:
+  world: "world"
+  x: 0.5
+  y: 100.0
+  z: 0.5
+  yaw: 0.0
+  pitch: 0.0
+
+# Nachrichten
+messages:
+  prefix: "&8[&6DuellPlugin&8] "
+  join: "&8[&a+&8] &6%player% &eist der PvP Arena von &6%server% &ebeigetreten!"
+  leave: "&8[&c-&8] &7%player% &7hat den Server verlassen"
+  duel-request: "&6%player% &ehat dich zu einem Duell herausgefordert! &a/duell annehmen"
+  duel-accepted: "&aDuell angenommen! Kampf beginnt in %countdown% Sekunden..."
+  duel-declined: "&cDuell abgelehnt."
+  duel-win: "&6%winner% &ahat das Duell gegen &6%loser% &agewonnen!"
+  duel-start: "&aKAMPF!"
+  no-permission: "&cDu hast keine Berechtigung!"

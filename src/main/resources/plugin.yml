@@ -1,0 +1,50 @@
+name: DuellPlugin
+version: ${project.version}
+main: de.duellplugin.DuellPlugin
+api-version: '1.21'
+description: Das ultimative PvP-Duell-Plugin
+author: BestesPvPDuo
+
+commands:
+  duell:
+    description: Duell-System Befehle
+    usage: /duell <fordern|annehmen|ablehnen|info>
+    aliases: [duel, pvp]
+  arena:
+    description: Arena-Verwaltung
+    usage: /arena <create|delete|setspawn|list|tp>
+    permission: duell.admin
+  kit:
+    description: Kit-Auswahl
+    usage: /kit [name]
+  stats:
+    description: Statistiken anzeigen
+    usage: /stats [spieler]
+  lobby:
+    description: Zur Lobby teleportieren
+    usage: /lobby
+    aliases: [hub, spawn]
+  setlobby:
+    description: Lobby-Spawn setzen
+    usage: /setlobby
+    permission: duell.admin
+  bot:
+    description: Bot-Kampf starten
+    usage: /bot [level]
+
+permissions:
+  duell.use:
+    description: Erlaubt die Nutzung des Duell-Systems
+    default: true
+  duell.admin:
+    description: Admin-Befehle fuer das Duell-Plugin
+    default: op
+  duell.stats:
+    description: Statistiken anzeigen
+    default: true
+  duell.kit:
+    description: Kits verwenden
+    default: true
+  duell.bot:
+    description: Bot-Kaempfe starten
+    default: true
