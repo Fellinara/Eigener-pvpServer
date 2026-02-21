@@ -64,6 +64,26 @@ public class PlayerStats {
         }
     }
 
+    public void loadWins(int wins) {
+        this.wins = wins;
+    }
+
+    public void loadLosses(int losses) {
+        this.losses = losses;
+    }
+
+    public void loadBestKillStreak(int bestKillStreak) {
+        this.bestKillStreak = bestKillStreak;
+    }
+
+    public void loadBotWins(int botWins) {
+        this.botWins = botWins;
+    }
+
+    public void loadBotLosses(int botLosses) {
+        this.botLosses = botLosses;
+    }
+
     public int getLosses() {
         return losses;
     }

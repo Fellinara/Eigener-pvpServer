@@ -26,11 +26,13 @@ public class BotManager {
     private final DuellPlugin plugin;
     private final Map<UUID, UUID> playerBotMap;
     private final Set<UUID> activeBots;
+    private final Map<UUID, String> playerArenaMap;
 
     public BotManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.playerBotMap = new HashMap<>();
         this.activeBots = new HashSet<>();
+        this.playerArenaMap = new HashMap<>();
     }
 
     public void startBotFight(Player player, int level) {
@@ -47,6 +49,7 @@ public class BotManager {
 
         level = Math.max(1, Math.min(100, level));
         arena.setInUse(true);
+        playerArenaMap.put(player.getUniqueId(), arena.getName());
         player.teleport(arena.getSpawn1());
 
         String kitName = plugin.getStatsManager()
@@ -285,10 +288,11 @@ public class BotManager {
     }
 
     private void freeArenaForPlayer(UUID playerUUID) {
-        for (Arena arena : plugin.getArenaManager().getAllArenas()) {
-            if (arena.isInUse()) {
+        String arenaName = playerArenaMap.remove(playerUUID);
+        if (arenaName != null) {
+            Arena arena = plugin.getArenaManager().getArena(arenaName);
+            if (arena != null) {
                 arena.setInUse(false);
-                break;
             }
         }
     }
@@ -310,6 +314,7 @@ public class BotManager {
         }
         activeBots.clear();
         playerBotMap.clear();
+        playerArenaMap.clear();
     }
 
     private ItemStack enchant(ItemStack item, Enchantment enchantment, int level) {

@@ -79,8 +79,9 @@ public class GUIClickListener implements Listener {
         ItemMeta meta = clicked.getItemMeta();
         if (meta == null || !meta.hasDisplayName()) return;
 
+        String displayName = meta.getDisplayName();
         for (Kit kit : plugin.getKitManager().getAllKits()) {
-            if (meta.getDisplayName().contains(kit.getDisplayName().substring(2))) {
+            if (displayName.contains(kit.getName()) || displayName.contains(kit.getDisplayName())) {
                 var stats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
                 stats.setSelectedKit(kit.getName());
                 plugin.getStatsManager().saveStats();

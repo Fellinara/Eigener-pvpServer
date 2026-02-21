@@ -77,7 +77,7 @@ public class StatsGUI {
                 String medal = switch (i) {
                     case 0 -> "§6🥇";
                     case 1 -> "§f🥈";
-                    case 2 -> "§6🥉";
+                    case 2 -> "§e🥉";
                     default -> "§7#" + (i + 1);
                 };
                 lore[i + 1] = medal + " §e" + ps.getName() + " §7- §f" + ps.getElo() + " ELO";

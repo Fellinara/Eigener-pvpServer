@@ -28,10 +28,8 @@ public class DuellPlugin extends JavaPlugin {
         registerCommands();
         registerListeners();
 
-        getLogger().info("§a╔══════════════════════════════════╗");
-        getLogger().info("§a║  DuellPlugin v" + getDescription().getVersion() + " aktiviert!     ║");
-        getLogger().info("§a║  Das ultimative PvP-Erlebnis!    ║");
-        getLogger().info("§a╚══════════════════════════════════╝");
+        getLogger().info("DuellPlugin v" + getDescription().getVersion() + " aktiviert!");
+        getLogger().info("Das ultimative PvP-Erlebnis ist bereit!");
     }
 
     @Override

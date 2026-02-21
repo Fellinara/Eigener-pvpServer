@@ -104,12 +104,12 @@ public class StatsManager {
 
                 PlayerStats stats = new PlayerStats(uuid, ps.getString("name", "Unknown"));
                 stats.setElo(ps.getInt("elo", 1000));
-                for (int i = 0; i < ps.getInt("wins", 0); i++) stats.addWin();
-                // Reset killstreak after loading wins since addWin increments it
-                for (int i = 0; i < ps.getInt("losses", 0); i++) stats.addLoss();
+                stats.loadWins(ps.getInt("wins", 0));
+                stats.loadLosses(ps.getInt("losses", 0));
+                stats.loadBestKillStreak(ps.getInt("best-streak", 0));
                 stats.setSelectedKit(ps.getString("kit", "swordsman"));
-                for (int i = 0; i < ps.getInt("bot-wins", 0); i++) stats.addBotWin();
-                for (int i = 0; i < ps.getInt("bot-losses", 0); i++) stats.addBotLoss();
+                stats.loadBotWins(ps.getInt("bot-wins", 0));
+                stats.loadBotLosses(ps.getInt("bot-losses", 0));
                 stats.setHighestBotLevel(ps.getInt("highest-bot-level", 0));
 
                 statsMap.put(uuid, stats);
