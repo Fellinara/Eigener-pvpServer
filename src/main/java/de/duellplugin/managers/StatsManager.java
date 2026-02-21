@@ -107,7 +107,7 @@ public class StatsManager {
                 stats.loadWins(ps.getInt("wins", 0));
                 stats.loadLosses(ps.getInt("losses", 0));
                 stats.loadBestKillStreak(ps.getInt("best-streak", 0));
-                stats.setSelectedKit(ps.getString("kit", "swordsman"));
+                stats.setSelectedKit(ps.getString("kit", "nodebuff"));
                 stats.loadBotWins(ps.getInt("bot-wins", 0));
                 stats.loadBotLosses(ps.getInt("bot-losses", 0));
                 stats.setHighestBotLevel(ps.getInt("highest-bot-level", 0));

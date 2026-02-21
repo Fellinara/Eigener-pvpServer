@@ -19,19 +19,19 @@ public class KitManager {
     }
 
     private void loadDefaultKits() {
-        Kit swordsman = Kit.createSwordsman();
-        Kit archer = Kit.createArcher();
-        Kit tank = Kit.createTank();
-        Kit berserker = Kit.createBerserker();
-        Kit alchemist = Kit.createAlchemist();
-        Kit knight = Kit.createKnight();
+        Kit nodebuff = Kit.createNoDebuff();
+        Kit debuff = Kit.createDebuff();
+        Kit classic = Kit.createClassic();
+        Kit gapple = Kit.createGapple();
+        Kit builduhc = Kit.createBuildUHC();
+        Kit combo = Kit.createCombo();
 
-        kits.put(swordsman.getName(), swordsman);
-        kits.put(archer.getName(), archer);
-        kits.put(tank.getName(), tank);
-        kits.put(berserker.getName(), berserker);
-        kits.put(alchemist.getName(), alchemist);
-        kits.put(knight.getName(), knight);
+        kits.put(nodebuff.getName(), nodebuff);
+        kits.put(debuff.getName(), debuff);
+        kits.put(classic.getName(), classic);
+        kits.put(gapple.getName(), gapple);
+        kits.put(builduhc.getName(), builduhc);
+        kits.put(combo.getName(), combo);
 
         plugin.getLogger().info(kits.size() + " Kits geladen.");
     }

@@ -29,7 +29,7 @@ public class PlayerStats {
         this.botWins = 0;
         this.botLosses = 0;
         this.highestBotLevel = 0;
-        this.selectedKit = "swordsman";
+        this.selectedKit = "nodebuff";
     }
 
     public UUID getUuid() {
