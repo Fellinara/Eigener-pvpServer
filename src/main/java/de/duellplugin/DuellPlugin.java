@@ -17,6 +17,7 @@ public class DuellPlugin extends JavaPlugin {
     private FriendManager friendManager;
     private PartyManager partyManager;
     private NpcManager npcManager;
+    private FfaManager ffaManager;
 
     @Override
     public void onEnable() {
@@ -32,6 +33,7 @@ public class DuellPlugin extends JavaPlugin {
         friendManager = new FriendManager(this);
         partyManager = new PartyManager(this);
         npcManager = new NpcManager(this);
+        ffaManager = new FfaManager(this);
 
         registerCommands();
         registerListeners();
@@ -92,6 +94,10 @@ public class DuellPlugin extends JavaPlugin {
         NpcCommand npcCmd = new NpcCommand(this);
         getCommand("npc").setExecutor(npcCmd);
         getCommand("npc").setTabCompleter(npcCmd);
+
+        FfaCommand ffaCmd = new FfaCommand(this);
+        getCommand("ffa").setExecutor(ffaCmd);
+        getCommand("ffa").setTabCompleter(ffaCmd);
     }
 
     private void registerListeners() {
@@ -113,6 +119,7 @@ public class DuellPlugin extends JavaPlugin {
     public FriendManager getFriendManager() { return friendManager; }
     public PartyManager getPartyManager() { return partyManager; }
     public NpcManager getNpcManager() { return npcManager; }
+    public FfaManager getFfaManager() { return ffaManager; }
 
     /** Returns the configured message prefix with color codes translated. */
     public String getPrefix() {

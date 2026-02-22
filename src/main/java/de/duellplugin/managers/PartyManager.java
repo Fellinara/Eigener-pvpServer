@@ -66,8 +66,11 @@ public class PartyManager {
             return false;
         }
         Party party = parties.get(leader.getUniqueId());
-        if (party.isFull()) {
-            leader.sendMessage(plugin.getPrefix() + "§cDeine Party ist voll! (Max " + Party.MAX_SIZE + " Spieler)");
+        // Determine max party size based on the leader's rank
+        var leaderStats = plugin.getStatsManager().getStats(leader.getUniqueId());
+        int maxSize = Party.getMaxSizeForRank(leaderStats != null ? leaderStats.getRank() : null);
+        if (party.size() >= maxSize) {
+            leader.sendMessage(plugin.getPrefix() + "§cDeine Party ist voll! (Max " + maxSize + " Spieler)");
             return false;
         }
         if (party.isMember(target.getUniqueId())) {

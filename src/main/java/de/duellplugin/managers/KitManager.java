@@ -26,6 +26,7 @@ public class KitManager {
         Kit builduhc = Kit.createBuildUHC();
         Kit uhc = Kit.createUHC();
         Kit combo = Kit.createCombo();
+        Kit mace = Kit.createMace();
 
         kits.put(nodebuff.getName(), nodebuff);
         kits.put(debuff.getName(), debuff);
@@ -34,6 +35,7 @@ public class KitManager {
         kits.put(builduhc.getName(), builduhc);
         kits.put(uhc.getName(), uhc);
         kits.put(combo.getName(), combo);
+        kits.put(mace.getName(), mace);
 
         plugin.getLogger().info(kits.size() + " Kits geladen.");
     }

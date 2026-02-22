@@ -361,7 +361,7 @@ public class DuellManager {
         return true;
     }
 
-    private void applyKit(Player player, Kit kit) {
+    public void applyKit(Player player, Kit kit) {
         player.getInventory().clear();
         player.setGameMode(GameMode.SURVIVAL);
         player.setHealth(20.0);
@@ -374,8 +374,9 @@ public class DuellManager {
             player.getInventory().setStorageContents(contents);
             player.getInventory().setArmorContents(kit.getArmor());
         }
-        // Always give a shield in the off-hand
-        player.getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
+        ItemStack offHand = (kit != null && kit.getOffHandItem() != null)
+                ? kit.getOffHandItem() : new ItemStack(Material.SHIELD);
+        player.getInventory().setItemInOffHand(offHand);
     }
 
     /**

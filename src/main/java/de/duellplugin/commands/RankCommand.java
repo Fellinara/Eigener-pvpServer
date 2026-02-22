@@ -49,6 +49,8 @@ public class RankCommand implements CommandExecutor, TabCompleter {
                     .getOrCreateStats(target.getUniqueId(), target.getName());
             targetStats.setRank(targetRank);
             plugin.getStatsManager().saveStats();
+            // Refresh tab list name for the target player
+            target.setPlayerListName(targetRank.getDisplayName() + " §7" + target.getName());
             sender.sendMessage(prefix + "§aRang von §6" + target.getName()
                     + " §awurde auf " + targetRank.getDisplayName() + " §agesetzt.");
             target.sendMessage(prefix + "§aDein Rang wurde auf " + targetRank.getDisplayName() + " §agesetzt!");
@@ -115,6 +117,8 @@ public class RankCommand implements CommandExecutor, TabCompleter {
             stats.setElo(stats.getElo() - targetRank.getEloCost());
             stats.setRank(targetRank);
             plugin.getStatsManager().saveStats();
+            // Refresh tab list name
+            player.setPlayerListName(targetRank.getDisplayName() + " §7" + player.getName());
 
             player.sendMessage(prefix + "§aGlückwunsch! Du hast den Rang "
                     + targetRank.getDisplayName() + " §agekauft!");

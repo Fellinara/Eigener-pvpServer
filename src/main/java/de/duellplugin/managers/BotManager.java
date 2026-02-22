@@ -75,8 +75,9 @@ public class BotManager {
             player.getInventory().setStorageContents(contents);
             player.getInventory().setArmorContents(kit.getArmor());
         }
-        // Always give a shield in the off-hand
-        player.getInventory().setItemInOffHand(new ItemStack(Material.SHIELD));
+        ItemStack botOffHand = (kit != null && kit.getOffHandItem() != null)
+                ? kit.getOffHandItem() : new ItemStack(Material.SHIELD);
+        player.getInventory().setItemInOffHand(botOffHand);
 
         final int botLevel = level;
 
@@ -399,6 +400,7 @@ public class BotManager {
             Arena arena = plugin.getArenaManager().getArena(arenaName);
             if (arena != null) {
                 arena.setInUse(false);
+                plugin.getArenaManager().resetArena(arenaName);
             }
         }
     }

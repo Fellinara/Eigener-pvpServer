@@ -26,7 +26,9 @@ public class PlayerJoinLeaveListener implements Listener {
         joinMsg = joinMsg.replace("%player%", player.getName()).replace("%server%", serverName);
         event.setJoinMessage(joinMsg);
 
-        plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
+        var stats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
+        // Show rank prefix in the tab player list
+        player.setPlayerListName(stats.getRank().getDisplayName() + " §7" + player.getName());
 
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline()) {
@@ -46,6 +48,7 @@ public class PlayerJoinLeaveListener implements Listener {
 
         plugin.getDuellManager().handleDisconnect(player.getUniqueId());
         plugin.getPartyManager().handleDisconnect(player.getUniqueId());
+        plugin.getFfaManager().handleDisconnect(player.getUniqueId());
 
         if (plugin.getBotManager().isInBotFight(player.getUniqueId())) {
             plugin.getBotManager().handlePlayerDeathInBotFight(player);

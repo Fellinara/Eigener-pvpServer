@@ -4,8 +4,10 @@ import java.util.*;
 
 public class Party {
 
-    /** Maximum party size (leader + members). */
+    /** Default maximum party size (leader + members). */
     public static final int MAX_SIZE = 4;
+    /** Maximum party size for Elite rank and above. */
+    public static final int MAX_SIZE_ELITE = 10;
 
     private final UUID leader;
     private final List<UUID> members;
@@ -25,9 +27,22 @@ public class Party {
 
     public boolean isMember(UUID uuid) { return members.contains(uuid); }
 
+    /** @deprecated Use {@link #getMaxSizeForRank(Rank)} and compare with {@link #size()} for rank-aware checks. */
+    @Deprecated
     public boolean isFull() { return members.size() >= MAX_SIZE; }
 
     public int size() { return members.size(); }
+
+    /**
+     * Returns the maximum party size for the given leader rank.
+     * Elite, Legend, and all staff ranks allow up to 10 members.
+     */
+    public static int getMaxSizeForRank(Rank rank) {
+        if (rank == null) return MAX_SIZE;
+        if (rank.isStaff()) return MAX_SIZE_ELITE;
+        // ordinal: SPIELER=0, VIP=1, VIP_PLUS=2, ELITE=3, LEGENDE=4
+        return rank.ordinal() >= Rank.ELITE.ordinal() ? MAX_SIZE_ELITE : MAX_SIZE;
+    }
 
     public void addMember(UUID uuid) {
         if (!members.contains(uuid)) members.add(uuid);

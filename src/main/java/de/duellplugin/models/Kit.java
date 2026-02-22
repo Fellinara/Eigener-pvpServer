@@ -15,6 +15,8 @@ public class Kit {
     private final ItemStack[] armor;
     private final ItemStack[] contents;
     private final String description;
+    /** Optional item placed in the offhand slot; null means a shield is used by default. */
+    private ItemStack offHandItem;
 
     public Kit(String name, String displayName, Material icon, String description,
                ItemStack[] armor, ItemStack[] contents) {
@@ -24,6 +26,18 @@ public class Kit {
         this.description = description;
         this.armor = armor;
         this.contents = contents;
+        this.offHandItem = null;
+    }
+
+    /** Sets a custom offhand item for this kit (e.g. a totem). Returns {@code this} for chaining. */
+    public Kit withOffHand(ItemStack item) {
+        this.offHandItem = item;
+        return this;
+    }
+
+    /** Returns the kit's offhand item, or {@code null} if the default shield should be used. */
+    public ItemStack getOffHandItem() {
+        return offHandItem != null ? offHandItem.clone() : null;
     }
 
     public String getName() {
@@ -220,6 +234,63 @@ public class Kit {
 
         return new Kit("combo", "§b⚡ Combo", Material.FEATHER,
                 "§7Diamant-Rüstung, Knockback-Schwert, Axt & Speed", armor, contents);
+    }
+
+    public static Kit createMace() {
+        // Full Netherite armor Prot 4 Unbreaking 3; boots also Feather Falling 4
+        ItemStack[] armor = new ItemStack[4];
+        armor[3] = enchant(enchant(new ItemStack(Material.NETHERITE_HELMET),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3);
+        armor[2] = enchant(enchant(new ItemStack(Material.NETHERITE_CHESTPLATE),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3);
+        armor[1] = enchant(enchant(new ItemStack(Material.NETHERITE_LEGGINGS),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3);
+        ItemStack boots = enchant(enchant(new ItemStack(Material.NETHERITE_BOOTS),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3);
+        boots = enchant(boots, Enchantment.FEATHER_FALLING, 4);
+        armor[0] = boots;
+
+        ItemStack[] contents = new ItemStack[36];
+        // Netherite Sword Sharp 5 Unbreaking 3
+        contents[0] = enchant(enchant(new ItemStack(Material.NETHERITE_SWORD),
+                Enchantment.SHARPNESS, 5), Enchantment.UNBREAKING, 3);
+        // Mace: Wind Burst 1, Density 5, Unbreaking 3, Breach 4
+        ItemStack maceItem = new ItemStack(Material.MACE);
+        maceItem = enchant(maceItem, Enchantment.WIND_BURST, 1);
+        maceItem = enchant(maceItem, Enchantment.DENSITY, 5);
+        maceItem = enchant(maceItem, Enchantment.UNBREAKING, 3);
+        maceItem = enchant(maceItem, Enchantment.BREACH, 4);
+        contents[1] = maceItem;
+        // Netherite Axe Sharp 5 Unbreaking 3
+        contents[2] = enchant(enchant(new ItemStack(Material.NETHERITE_AXE),
+                Enchantment.SHARPNESS, 5), Enchantment.UNBREAKING, 3);
+        // 3 × 16 Ender Pearls
+        contents[3] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[4] = new ItemStack(Material.ENDER_PEARL, 16);
+        contents[5] = new ItemStack(Material.ENDER_PEARL, 16);
+        // 2 × 64 Golden Apples
+        contents[6] = new ItemStack(Material.GOLDEN_APPLE, 64);
+        contents[7] = new ItemStack(Material.GOLDEN_APPLE, 64);
+        // 2nd Totem in inventory
+        contents[8] = new ItemStack(Material.TOTEM_OF_UNDYING);
+        // 2 × 64 Wind Charges
+        contents[9] = new ItemStack(Material.WIND_CHARGE, 64);
+        contents[10] = new ItemStack(Material.WIND_CHARGE, 64);
+        // Elytra
+        contents[11] = new ItemStack(Material.ELYTRA);
+        // 11 Strength II splash potions
+        ItemStack strengthPot = createSplashPotion(PotionType.STRONG_STRENGTH, "§cStärke II");
+        for (int i = 12; i <= 22; i++) contents[i] = strengthPot.clone();
+        // 10 Speed II drinkable potions
+        ItemStack speedPot = createDrinkablePotion(PotionType.STRONG_SWIFTNESS, "§bSpeed II");
+        for (int i = 23; i <= 32; i++) contents[i] = speedPot.clone();
+        // Shield Unbreaking 3 at slot 33
+        contents[33] = enchant(new ItemStack(Material.SHIELD), Enchantment.UNBREAKING, 3);
+
+        // First Totem of Undying goes in offhand
+        return new Kit("mace", "§5💥 Mace", Material.MACE,
+                "§7Netherite-Rüstung, Keule, Elytra, Totem & Windladungen", armor, contents)
+                .withOffHand(new ItemStack(Material.TOTEM_OF_UNDYING));
     }
 
     private static ItemStack createSplashPotion(PotionType type, String name) {

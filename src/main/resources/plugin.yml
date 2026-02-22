@@ -52,6 +52,10 @@ commands:
     description: NPC-Verwaltung
     usage: /npc <create|remove|list>
     permission: duell.admin
+  ffa:
+    description: FFA-Arena beitreten oder verlassen
+    usage: /ffa [join | leave | info | setspawn]
+    aliases: [freierkampf]
 
 permissions:
   duell.use:
@@ -87,3 +91,6 @@ permissions:
   duell.npc:
     description: NPC-Verwaltung (Admin)
     default: op
+  duell.ffa:
+    description: FFA-Arena nutzen
+    default: true

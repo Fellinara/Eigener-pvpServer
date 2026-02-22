@@ -30,6 +30,31 @@ public class DuellListener implements Listener {
     public void onPlayerDeath(PlayerDeathEvent event) {
         Player dead = event.getEntity();
 
+        // ── FFA death ────────────────────────────────────────────────────
+        if (plugin.getFfaManager().isInFfa(dead.getUniqueId())) {
+            event.setDeathMessage(null);
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+
+            Player killer = dead.getKiller();
+            if (killer != null) {
+                plugin.getServer().broadcastMessage(plugin.getPrefix()
+                        + "§6" + killer.getName() + " §ehat §6" + dead.getName() + " §eim FFA besiegt!");
+            }
+
+            plugin.getFfaManager().handleFfaDeath(dead);
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (dead.isOnline()) {
+                    dead.spigot().respawn();
+                    plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                        if (dead.isOnline()) plugin.getFfaManager().respawnInFfa(dead);
+                    }, 2L);
+                }
+            }, 1L);
+            return;
+        }
+
+        // ── Bot fight death ───────────────────────────────────────────────
         if (plugin.getBotManager().isInBotFight(dead.getUniqueId())) {
             event.setDeathMessage(null);
             event.getDrops().clear();
@@ -38,6 +63,7 @@ public class DuellListener implements Listener {
             return;
         }
 
+        // ── Duel death ────────────────────────────────────────────────────
         if (plugin.getDuellManager().isInDuel(dead.getUniqueId())) {
             event.setDeathMessage(null);
             event.getDrops().clear();
@@ -94,8 +120,15 @@ public class DuellListener implements Listener {
         if (event.getDamager() instanceof Player attacker && event.getEntity() instanceof Player victim) {
             boolean attackerInDuel = plugin.getDuellManager().isInDuel(attacker.getUniqueId());
             boolean victimInDuel = plugin.getDuellManager().isInDuel(victim.getUniqueId());
+            boolean attackerInBot = plugin.getBotManager().isInBotFight(attacker.getUniqueId());
+            boolean victimInBot = plugin.getBotManager().isInBotFight(victim.getUniqueId());
+            boolean attackerInFfa = plugin.getFfaManager().isInFfa(attacker.getUniqueId());
+            boolean victimInFfa = plugin.getFfaManager().isInFfa(victim.getUniqueId());
 
-            if (!attackerInDuel && !victimInDuel) {
+            // FFA players may always attack each other
+            if (attackerInFfa && victimInFfa) return;
+
+            if (!attackerInDuel && !victimInDuel && !attackerInBot && !victimInBot) {
                 event.setCancelled(true);
                 return;
             }
@@ -112,7 +145,8 @@ public class DuellListener implements Listener {
     @EventHandler
     public void onPlayerDropItem(PlayerDropItemEvent event) {
         if (!plugin.getDuellManager().isInDuel(event.getPlayer().getUniqueId())
-                && !plugin.getBotManager().isInBotFight(event.getPlayer().getUniqueId())) {
+                && !plugin.getBotManager().isInBotFight(event.getPlayer().getUniqueId())
+                && !plugin.getFfaManager().isInFfa(event.getPlayer().getUniqueId())) {
             event.setCancelled(true);
         }
     }
@@ -121,7 +155,8 @@ public class DuellListener implements Listener {
     public void onFoodLevelChange(FoodLevelChangeEvent event) {
         if (event.getEntity() instanceof Player player) {
             if (!plugin.getDuellManager().isInDuel(player.getUniqueId())
-                    && !plugin.getBotManager().isInBotFight(player.getUniqueId())) {
+                    && !plugin.getBotManager().isInBotFight(player.getUniqueId())
+                    && !plugin.getFfaManager().isInFfa(player.getUniqueId())) {
                 event.setCancelled(true);
                 player.setFoodLevel(20);
             }
@@ -134,12 +169,13 @@ public class DuellListener implements Listener {
         boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
         boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
 
-        if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot
+                && !plugin.getFfaManager().isInFfa(player.getUniqueId())) {
             event.setCancelled(true);
             return;
         }
 
-        // During a fight, only blocks that were placed during this fight may be broken
+        // During a duel/bot fight, only blocks placed during this fight may be broken
         if (inDuel || inBot) {
             String arenaName = getArenaName(player.getUniqueId(), inDuel);
             if (arenaName != null
@@ -155,7 +191,8 @@ public class DuellListener implements Listener {
         boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
         boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
 
-        if (!player.hasPermission("duell.admin") && !inDuel && !inBot) {
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot
+                && !plugin.getFfaManager().isInFfa(player.getUniqueId())) {
             event.setCancelled(true);
             return;
         }
