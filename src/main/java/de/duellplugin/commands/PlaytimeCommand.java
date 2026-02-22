@@ -40,9 +40,11 @@ public class PlaytimeCommand implements CommandExecutor, TabCompleter {
         }
 
         PlayerStats stats;
+        long totalSeconds;
         if (target != null) {
             stats = plugin.getStatsManager().getOrCreateStats(target.getUniqueId(), target.getName());
             targetName = target.getName();
+            totalSeconds = plugin.getStatsManager().getTotalPlaytimeSeconds(target.getUniqueId());
         } else {
             // Try offline lookup by name
             stats = plugin.getStatsManager().getStatsByName(targetName);
@@ -50,9 +52,9 @@ public class PlaytimeCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(prefix + "§cSpieler §6" + targetName + " §cwurde nicht gefunden.");
                 return true;
             }
+            totalSeconds = stats.getPlaytimeSeconds();
         }
 
-        long totalSeconds = stats.getPlaytimeSeconds();
         sender.sendMessage(prefix + "§e⏱ Spielzeit von §6" + stats.getName() + "§e: §a" + formatTime(totalSeconds));
         return true;
     }

@@ -67,6 +67,21 @@ public class StatsManager {
         return null;
     }
 
+    /**
+     * Returns the player's total playtime in seconds, including the current
+     * in-progress session (if they are online).  Unlike {@link PlayerStats#getPlaytimeSeconds()},
+     * this method does not require the player to log out first.
+     */
+    public long getTotalPlaytimeSeconds(UUID uuid) {
+        PlayerStats stats = statsMap.get(uuid);
+        long base = (stats != null) ? stats.getPlaytimeSeconds() : 0;
+        Long loginTime = loginTimes.get(uuid);
+        if (loginTime != null) {
+            base += (System.currentTimeMillis() - loginTime) / 1000L;
+        }
+        return base;
+    }
+
     public void processWin(UUID winner, UUID loser) {
         PlayerStats winnerStats = statsMap.get(winner);
         PlayerStats loserStats = statsMap.get(loser);

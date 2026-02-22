@@ -111,11 +111,17 @@ public class DuellManager {
             return false;
         }
 
-        String kitName = plugin.getStatsManager()
+        String accepterKitName = plugin.getStatsManager()
                 .getOrCreateStats(accepter.getUniqueId(), accepter.getName()).getSelectedKit();
+        String challengerKitName = plugin.getStatsManager()
+                .getOrCreateStats(challengerUUID, challenger.getName()).getSelectedKit();
 
-        Kit resolvedKit = resolveKit(accepter.getUniqueId(), kitName);
-        boolean needsCrystal = resolvedKit != null && resolvedKit.isCrystalOnly();
+        Kit accepterKit = resolveKit(accepter.getUniqueId(), accepterKitName);
+        Kit challengerKit = resolveKit(challengerUUID, challengerKitName);
+        boolean needsCrystal = (accepterKit != null && accepterKit.isCrystalOnly())
+                || (challengerKit != null && challengerKit.isCrystalOnly());
+        // kitName stored in the duel object – use accepter's selection as representative
+        String kitName = accepterKitName;
         Arena arena = plugin.getArenaManager().getAvailableArena(needsCrystal);
         if (arena == null) {
             String prefix = plugin.getPrefix();
@@ -186,7 +192,9 @@ public class DuellManager {
             // Slight offset so players don't overlap
             Location tpLoc = spawn1.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            applyKit(p, resolveKit(p.getUniqueId(), kitName));
+            String pKit = plugin.getStatsManager()
+                    .getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
+            applyKit(p, resolveKit(p.getUniqueId(), pKit));
         }
 
         // Teleport + kit for team 2
@@ -196,7 +204,9 @@ public class DuellManager {
             if (p == null || !p.isOnline()) continue;
             Location tpLoc = spawn2.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            applyKit(p, resolveKit(p.getUniqueId(), kitName));
+            String pKit = plugin.getStatsManager()
+                    .getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
+            applyKit(p, resolveKit(p.getUniqueId(), pKit));
         }
 
         new BukkitRunnable() {
