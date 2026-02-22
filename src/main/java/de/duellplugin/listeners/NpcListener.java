@@ -8,6 +8,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
+import org.bukkit.inventory.EquipmentSlot;
 
 import java.util.UUID;
 
@@ -21,6 +22,8 @@ public class NpcListener implements Listener {
 
     @EventHandler
     public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        // Geyser fires this twice (once per hand) on Bedrock; only process main hand
+        if (event.getHand() != EquipmentSlot.HAND) return;
         if (!(event.getRightClicked() instanceof Villager villager)) return;
 
         UUID npcUUID = villager.getUniqueId();

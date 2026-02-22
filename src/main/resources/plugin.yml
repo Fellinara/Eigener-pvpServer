@@ -94,6 +94,17 @@ commands:
     permission: duell.admin
     aliases: [creativezone, bauzone]
 
+  event:
+    description: Event-System (Turniere & Custom PvP Events)
+    usage: /event <subcommand> [args...]
+    aliases: [evenement, turnier]
+
+  adminkit:
+    description: Admin-Kits erstellen und verwalten (OP)
+    usage: /adminkit <create|delete|list|reload> [args...]
+    permission: duell.admin
+    aliases: [serverkit]
+
 permissions:
   duell.use:
     description: Erlaubt die Nutzung des Duell-Systems
@@ -145,4 +156,10 @@ permissions:
     default: true
   duell.troll:
     description: Troll-Befehle nutzen
+    default: op
+  duell.event:
+    description: Events beitreten
+    default: true
+  duell.event.admin:
+    description: Events erstellen und verwalten
     default: op

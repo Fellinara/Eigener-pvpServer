@@ -29,6 +29,10 @@ public class GUIClickListener implements Listener {
     public void onInventoryClick(InventoryClickEvent event) {
         if (!(event.getWhoClicked() instanceof Player player)) return;
 
+        // Bedrock (via Geyser) sometimes fires inventory events from CREATIVE inventory;
+        // skip those to avoid duplicate handling or item loss
+        if (event.getView().getTopInventory().getType() == org.bukkit.event.inventory.InventoryType.CREATIVE) return;
+
         String title = event.getView().getTitle();
         ItemStack clicked = event.getCurrentItem();
 

@@ -45,7 +45,8 @@ public class DuellListener implements Listener {
             plugin.getFfaManager().handleFfaDeath(dead);
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (dead.isOnline()) {
-                    dead.spigot().respawn();
+                    // isDead() guard: Bedrock players auto-respawn, so only call if still dead
+                    if (dead.isDead()) dead.spigot().respawn();
                     plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                         if (dead.isOnline()) plugin.getFfaManager().respawnInFfa(dead);
                     }, 2L);
@@ -89,7 +90,7 @@ public class DuellListener implements Listener {
                     // Team still has alive members; respawn dead player into spectator mode
                     plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                         if (dead.isOnline()) {
-                            dead.spigot().respawn();
+                            if (dead.isDead()) dead.spigot().respawn();
                             plugin.getServer().getScheduler().runTask(plugin, () -> {
                                 dead.setGameMode(org.bukkit.GameMode.SPECTATOR);
                                 dead.sendMessage(plugin.getPrefix() + "§cDu bist ausgeschieden! Warte auf das Spielende.");

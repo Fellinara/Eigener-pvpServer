@@ -20,6 +20,7 @@ public class DuellPlugin extends JavaPlugin {
     private FfaManager ffaManager;
     private SpectateManager spectateManager;
     private CreativeZoneManager creativeZoneManager;
+    private EventManager eventManager;
 
     @Override
     public void onEnable() {
@@ -38,6 +39,7 @@ public class DuellPlugin extends JavaPlugin {
         ffaManager = new FfaManager(this);
         spectateManager = new SpectateManager(this);
         creativeZoneManager = new CreativeZoneManager(this);
+        eventManager = new EventManager(this);
 
         registerCommands();
         registerListeners();
@@ -132,6 +134,14 @@ public class DuellPlugin extends JavaPlugin {
         CreativeZoneCommand creativeZoneCmd = new CreativeZoneCommand(this);
         getCommand("kitzone").setExecutor(creativeZoneCmd);
         getCommand("kitzone").setTabCompleter(creativeZoneCmd);
+
+        EventCommand eventCmd = new EventCommand(this);
+        getCommand("event").setExecutor(eventCmd);
+        getCommand("event").setTabCompleter(eventCmd);
+
+        AdminKitCommand adminKitCmd = new AdminKitCommand(this);
+        getCommand("adminkit").setExecutor(adminKitCmd);
+        getCommand("adminkit").setTabCompleter(adminKitCmd);
     }
 
     private void registerListeners() {
@@ -158,6 +168,7 @@ public class DuellPlugin extends JavaPlugin {
     public FfaManager getFfaManager() { return ffaManager; }
     public SpectateManager getSpectateManager() { return spectateManager; }
     public CreativeZoneManager getCreativeZoneManager() { return creativeZoneManager; }
+    public EventManager getEventManager() { return eventManager; }
 
     /** Returns the configured message prefix with color codes translated. */
     public String getPrefix() {
