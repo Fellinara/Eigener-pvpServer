@@ -112,8 +112,8 @@ public class FriendCommand implements CommandExecutor, TabCompleter {
     private UUID getUUIDByName(String name) {
         Player online = Bukkit.getPlayer(name);
         if (online != null) return online.getUniqueId();
-        var offline = Bukkit.getOfflinePlayerIfCached(name);
-        return offline != null ? offline.getUniqueId() : null;
+        var offline = Bukkit.getOfflinePlayer(name);
+        return offline.hasPlayedBefore() ? offline.getUniqueId() : null;
     }
 
     @Override

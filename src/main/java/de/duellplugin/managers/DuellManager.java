@@ -110,6 +110,9 @@ public class DuellManager {
             return false;
         }
 
+        String kitName = plugin.getStatsManager()
+                .getOrCreateStats(accepter.getUniqueId(), accepter.getName()).getSelectedKit();
+
         Arena arena = plugin.getArenaManager().getAvailableArena();
         if (arena == null) {
             String prefix = plugin.getPrefix();
@@ -122,9 +125,6 @@ public class DuellManager {
             );
             return false;
         }
-
-        String kitName = plugin.getStatsManager()
-                .getOrCreateStats(accepter.getUniqueId(), accepter.getName()).getSelectedKit();
 
         startDuel(challenger, accepter, arena, kitName);
         return true;
