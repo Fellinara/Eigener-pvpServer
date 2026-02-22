@@ -1,9 +1,12 @@
 package de.duellplugin.managers;
 
 import de.duellplugin.DuellPlugin;
+import de.duellplugin.models.CustomKit;
 import de.duellplugin.models.PlayerStats;
 import de.duellplugin.models.Rank;
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -34,6 +37,14 @@ public class StatsManager {
 
     public PlayerStats getOrCreateStats(UUID uuid, String name) {
         return statsMap.computeIfAbsent(uuid, k -> new PlayerStats(uuid, name));
+    }
+
+    /** Looks up player stats by display name (case-insensitive). Returns null if not found. */
+    public PlayerStats getStatsByName(String name) {
+        for (PlayerStats stats : statsMap.values()) {
+            if (stats.getName().equalsIgnoreCase(name)) return stats;
+        }
+        return null;
     }
 
     public void processWin(UUID winner, UUID loser) {
@@ -136,6 +147,37 @@ public class StatsManager {
                     }
                 }
 
+                // Load custom kits
+                ConfigurationSection customKitsSection = ps.getConfigurationSection("custom-kits");
+                if (customKitsSection != null) {
+                    for (String kitName : customKitsSection.getKeys(false)) {
+                        ConfigurationSection ks = customKitsSection.getConfigurationSection(kitName);
+                        if (ks == null) continue;
+                        ItemStack[] contents = new ItemStack[36];
+                        ItemStack[] armor    = new ItemStack[4];
+                        ConfigurationSection csSection = ks.getConfigurationSection("contents");
+                        if (csSection != null) {
+                            for (String slotStr : csSection.getKeys(false)) {
+                                try {
+                                    int slot = Integer.parseInt(slotStr);
+                                    if (slot >= 0 && slot < 36) contents[slot] = csSection.getItemStack(slotStr);
+                                } catch (NumberFormatException ignored) {}
+                            }
+                        }
+                        ConfigurationSection arSection = ks.getConfigurationSection("armor");
+                        if (arSection != null) {
+                            for (String slotStr : arSection.getKeys(false)) {
+                                try {
+                                    int slot = Integer.parseInt(slotStr);
+                                    if (slot >= 0 && slot < 4) armor[slot] = arSection.getItemStack(slotStr);
+                                } catch (NumberFormatException ignored) {}
+                            }
+                        }
+                        ItemStack offHand = ks.getItemStack("offhand");
+                        stats.putCustomKit(kitName, new CustomKit(kitName, contents, armor, offHand));
+                    }
+                }
+
                 statsMap.put(uuid, stats);
             } catch (IllegalArgumentException e) {
                 plugin.getLogger().warning("Ungültige UUID in stats.yml: " + uuidStr);
@@ -168,6 +210,27 @@ public class StatsManager {
                 List<Integer> slotList = new ArrayList<>();
                 for (int s : layoutEntry.getValue()) slotList.add(s);
                 statsConfig.set(path + ".kit-slot-layouts." + layoutEntry.getKey(), slotList);
+            }
+
+            // Save custom kits
+            for (Map.Entry<String, CustomKit> ckEntry : stats.getCustomKits().entrySet()) {
+                String ckPath = path + ".custom-kits." + ckEntry.getKey();
+                CustomKit ck = ckEntry.getValue();
+                ItemStack[] ckContents = ck.getContents();
+                for (int i = 0; i < 36; i++) {
+                    if (ckContents[i] != null && ckContents[i].getType() != Material.AIR) {
+                        statsConfig.set(ckPath + ".contents." + i, ckContents[i]);
+                    }
+                }
+                ItemStack[] ckArmor = ck.getArmor();
+                for (int i = 0; i < 4; i++) {
+                    if (ckArmor[i] != null && ckArmor[i].getType() != Material.AIR) {
+                        statsConfig.set(ckPath + ".armor." + i, ckArmor[i]);
+                    }
+                }
+                if (ck.getOffHandItem() != null) {
+                    statsConfig.set(ckPath + ".offhand", ck.getOffHandItem());
+                }
             }
         }
 

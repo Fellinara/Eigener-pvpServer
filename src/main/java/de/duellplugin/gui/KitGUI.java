@@ -1,8 +1,10 @@
 package de.duellplugin.gui;
 
 import de.duellplugin.DuellPlugin;
+import de.duellplugin.models.CustomKit;
 import de.duellplugin.models.Kit;
 import de.duellplugin.models.PlayerStats;
+import de.duellplugin.models.Rank;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -46,6 +48,14 @@ public class KitGUI {
             }
         }
         ordered.addAll(allKits);
+
+        // Add custom kits for VIP-ranked players
+        Rank playerRank = stats.getRank();
+        if (playerRank.isStaff() || playerRank.ordinal() >= Rank.VIP.ordinal()) {
+            for (CustomKit ck : stats.getCustomKits().values()) {
+                ordered.add(Kit.fromCustom(ck));
+            }
+        }
 
         // Place kits in the middle rows (slots 10-16 and 19-25)
         int[] kitSlots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25};

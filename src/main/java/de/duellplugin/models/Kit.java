@@ -254,13 +254,16 @@ public class Kit {
         // Netherite Sword Sharp 5 Unbreaking 3
         contents[0] = enchant(enchant(new ItemStack(Material.NETHERITE_SWORD),
                 Enchantment.SHARPNESS, 5), Enchantment.UNBREAKING, 3);
-        // Mace: Wind Burst 1, Density 5, Unbreaking 3, Breach 4
-        ItemStack maceItem = new ItemStack(Material.MACE);
-        maceItem = enchant(maceItem, Enchantment.WIND_BURST, 1);
-        maceItem = enchant(maceItem, Enchantment.DENSITY, 5);
-        maceItem = enchant(maceItem, Enchantment.UNBREAKING, 3);
-        maceItem = enchant(maceItem, Enchantment.BREACH, 4);
-        contents[1] = maceItem;
+        // Mace 1: Wind Burst 1, Density 5, Unbreaking 3
+        ItemStack maceWind = new ItemStack(Material.MACE);
+        maceWind = enchant(maceWind, Enchantment.WIND_BURST, 1);
+        maceWind = enchant(maceWind, Enchantment.DENSITY, 5);
+        maceWind = enchant(maceWind, Enchantment.UNBREAKING, 3);
+        contents[1] = maceWind;
+        // Mace 2: Breach 4, Unbreaking 3
+        ItemStack maceBreach = new ItemStack(Material.MACE);
+        maceBreach = enchant(maceBreach, Enchantment.BREACH, 4);
+        maceBreach = enchant(maceBreach, Enchantment.UNBREAKING, 3);
         // Netherite Axe Sharp 5 Unbreaking 3
         contents[2] = enchant(enchant(new ItemStack(Material.NETHERITE_AXE),
                 Enchantment.SHARPNESS, 5), Enchantment.UNBREAKING, 3);
@@ -281,16 +284,46 @@ public class Kit {
         // 11 Strength II splash potions
         ItemStack strengthPot = createSplashPotion(PotionType.STRONG_STRENGTH, "§cStärke II");
         for (int i = 12; i <= 22; i++) contents[i] = strengthPot.clone();
-        // 10 Speed II drinkable potions
-        ItemStack speedPot = createDrinkablePotion(PotionType.STRONG_SWIFTNESS, "§bSpeed II");
+        // 10 Speed II splash potions (throwable)
+        ItemStack speedPot = createSplashPotion(PotionType.STRONG_SWIFTNESS, "§bSpeed II");
         for (int i = 23; i <= 32; i++) contents[i] = speedPot.clone();
-        // Shield Unbreaking 3 at slot 33
-        contents[33] = enchant(new ItemStack(Material.SHIELD), Enchantment.UNBREAKING, 3);
+        // Second mace (Breach 4 Unbreaking 3) at slot 33
+        contents[33] = maceBreach;
 
         // First Totem of Undying goes in offhand
         return new Kit("mace", "§5💥 Mace", Material.MACE,
                 "§7Netherite-Rüstung, Keule, Elytra, Totem & Windladungen", armor, contents)
                 .withOffHand(new ItemStack(Material.TOTEM_OF_UNDYING));
+    }
+
+    public static Kit createAxe() {
+        ItemStack[] armor = new ItemStack[4];
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET),   Enchantment.PROTECTION, 2);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS),  Enchantment.PROTECTION, 2);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS),     Enchantment.PROTECTION, 2);
+
+        ItemStack[] contents = new ItemStack[36];
+        contents[0] = enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 2);
+        contents[1] = enchant(new ItemStack(Material.BOW),           Enchantment.POWER, 1);
+        contents[2] = enchant(new ItemStack(Material.DIAMOND_AXE),   Enchantment.SHARPNESS, 2);
+        contents[3] = new ItemStack(Material.CROSSBOW);
+        contents[4] = new ItemStack(Material.ARROW, 6);
+
+        return new Kit("axe", "§6🪓 Axe", Material.DIAMOND_AXE,
+                "§7Diamant Prot 2 – Schwert, Bogen, Axt, Armbrust & Pfeile", armor, contents);
+    }
+
+    /**
+     * Creates a standard {@link Kit} from a player-defined {@link CustomKit}.
+     * The kit uses {@code Material.CHEST} as placeholder icon.
+     */
+    public static Kit fromCustom(CustomKit ck) {
+        Kit k = new Kit(ck.getName(), "§f" + ck.getName(), Material.CHEST, "§7Eigenes Kit",
+                ck.getArmor(), ck.getContents());
+        ItemStack oh = ck.getOffHandItem();
+        if (oh != null) k.withOffHand(oh);
+        return k;
     }
 
     private static ItemStack createSplashPotion(PotionType type, String name) {

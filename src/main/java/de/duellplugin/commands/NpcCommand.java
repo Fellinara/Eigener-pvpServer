@@ -61,19 +61,24 @@ public class NpcCommand implements CommandExecutor, TabCompleter {
                 player.sendMessage(prefix + "§aNPC (§6" + type.name() + "§a) erstellt! UUID: §7" + uid);
             }
             case "remove", "löschen" -> {
-                // Remove the NPC the player is looking at, or by UUID if provided
                 if (args.length >= 2) {
                     try {
-                        UUID uid = UUID.fromString(args[1]);
+                        int number = Integer.parseInt(args[1]);
+                        UUID uid = plugin.getNpcManager().getNpcUuidByNumber(number);
+                        if (uid == null) {
+                            player.sendMessage(prefix + "§cKein NPC mit Nummer §6" + number
+                                    + "§c gefunden! §7(/npc list für eine Übersicht)");
+                            return true;
+                        }
                         boolean removed = plugin.getNpcManager().removeNpc(uid);
                         player.sendMessage(removed
-                                ? prefix + "§aNPC entfernt."
-                                : prefix + "§cKein NPC mit dieser UUID gefunden!");
-                    } catch (IllegalArgumentException e) {
-                        player.sendMessage(prefix + "§cUngültige UUID!");
+                                ? prefix + "§aNPC §6#" + number + "§a entfernt."
+                                : prefix + "§cFehler beim Entfernen des NPCs!");
+                    } catch (NumberFormatException e) {
+                        player.sendMessage(prefix + "§cBitte eine Nummer angeben. §7Benutze §f/npc list§7 für eine Übersicht.");
                     }
                 } else {
-                    player.sendMessage(prefix + "§cBenutzung: §f/npc remove <uuid>");
+                    player.sendMessage(prefix + "§cBenutzung: §f/npc remove <nummer>");
                 }
             }
             case "list", "liste" -> {
@@ -83,10 +88,10 @@ public class NpcCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 player.sendMessage("§6§l━━━ NPCs (" + all.size() + ") ━━━");
+                int num = 1;
                 for (var npc : all) {
-                    player.sendMessage("§7- §e" + npc.type().name()
-                            + " §7» §f" + npc.customName()
-                            + " §8[" + npc.entityUUID().toString().substring(0, 8) + "...]");
+                    player.sendMessage("§7" + num++ + ". §e" + npc.type().name()
+                            + " §7» §f" + npc.customName());
                 }
                 player.sendMessage("§6§l━━━━━━━━━━━━━━━━━━━━━");
             }
@@ -98,8 +103,8 @@ public class NpcCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(Player player) {
         player.sendMessage("§6§l━━━ NPC-Befehle ━━━");
         player.sendMessage("§e/npc create <typ> [name] §7- NPC erstellen (an deinem Standort)");
-        player.sendMessage("§e/npc remove <uuid> §7- NPC entfernen");
-        player.sendMessage("§e/npc list §7- Alle NPCs anzeigen");
+        player.sendMessage("§e/npc remove <nummer> §7- NPC nach Nummer entfernen §8(siehe /npc list)");
+        player.sendMessage("§e/npc list §7- Alle NPCs mit Nummern anzeigen");
         player.sendMessage("§7Typen: §e" + getTypeList());
         player.sendMessage("§6§l━━━━━━━━━━━━━━━━━━");
     }

@@ -98,6 +98,18 @@ public class DuellPlugin extends JavaPlugin {
         FfaCommand ffaCmd = new FfaCommand(this);
         getCommand("ffa").setExecutor(ffaCmd);
         getCommand("ffa").setTabCompleter(ffaCmd);
+
+        MyKitCommand myKitCmd = new MyKitCommand(this);
+        getCommand("mykit").setExecutor(myKitCmd);
+        getCommand("mykit").setTabCompleter(myKitCmd);
+
+        ReportCommand reportCmd = new ReportCommand(this);
+        getCommand("reporten").setExecutor(reportCmd);
+        getCommand("reporten").setTabCompleter(reportCmd);
+
+        EloCommand eloCmd = new EloCommand(this);
+        getCommand("elo").setExecutor(eloCmd);
+        getCommand("elo").setTabCompleter(eloCmd);
     }
 
     private void registerListeners() {

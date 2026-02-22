@@ -24,6 +24,8 @@ public class PlayerStats {
     private List<String> kitOrder;
     /** Per-kit custom inventory slot layout. Key = kit name, value = 36-element slot permutation. */
     private final Map<String, int[]> kitSlotLayouts;
+    /** Player-created custom kits. Key = kit name (lower-case). */
+    private final Map<String, CustomKit> customKits;
 
     public PlayerStats(UUID uuid, String name) {
         this.uuid = uuid;
@@ -41,6 +43,7 @@ public class PlayerStats {
         this.rank = Rank.SPIELER;
         this.kitOrder = new ArrayList<>();
         this.kitSlotLayouts = new HashMap<>();
+        this.customKits = new HashMap<>();
     }
 
     public UUID getUuid() {
@@ -230,4 +233,11 @@ public class PlayerStats {
     public Map<String, int[]> getKitSlotLayouts() {
         return kitSlotLayouts;
     }
+
+    // ── Custom kits (player-created) ────────────────────────────────
+    public CustomKit getCustomKit(String name) { return customKits.get(name.toLowerCase()); }
+    public void putCustomKit(String name, CustomKit kit) { customKits.put(name.toLowerCase(), kit); }
+    public void removeCustomKit(String name) { customKits.remove(name.toLowerCase()); }
+    public Map<String, CustomKit> getCustomKits() { return customKits; }
+    public boolean hasCustomKit(String name) { return customKits.containsKey(name.toLowerCase()); }
 }

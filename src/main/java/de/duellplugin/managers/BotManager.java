@@ -63,7 +63,7 @@ public class BotManager {
 
         String kitName = plugin.getStatsManager()
                 .getOrCreateStats(player.getUniqueId(), player.getName()).getSelectedKit();
-        Kit kit = plugin.getKitManager().getKit(kitName);
+        Kit kit = plugin.getDuellManager().resolveKit(player.getUniqueId(), kitName);
 
         player.getInventory().clear();
         player.setHealth(20.0);
@@ -406,7 +406,9 @@ public class BotManager {
     }
 
     public boolean isInBotFight(UUID uuid) {
-        return playerBotMap.containsKey(uuid);
+        // playerArenaMap is set immediately on fight start; playerBotMap 40 ticks later.
+        // Check both so block placement is allowed from the very first moment.
+        return playerBotMap.containsKey(uuid) || playerArenaMap.containsKey(uuid);
     }
 
     /** Returns the arena name used by the given player's bot fight, or null. */

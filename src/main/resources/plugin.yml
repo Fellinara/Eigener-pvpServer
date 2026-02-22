@@ -56,6 +56,18 @@ commands:
     description: FFA-Arena beitreten oder verlassen
     usage: /ffa [join | leave | info | setspawn]
     aliases: [freierkampf]
+  mykit:
+    description: Eigene Kits erstellen und verwalten (VIP+)
+    usage: /mykit <create|delete|list> [name]
+    aliases: [eigeneskit, customkit]
+  reporten:
+    description: Einen Spieler bei den Admins melden
+    usage: /reporten <spieler> [grund]
+    aliases: [report, melden]
+  elo:
+    description: ELO eines Spielers ändern (Admin)
+    usage: /elo <give|remove|set> <spieler> <menge>
+    permission: duell.admin
 
 permissions:
   duell.use:
@@ -93,4 +105,10 @@ permissions:
     default: op
   duell.ffa:
     description: FFA-Arena nutzen
+    default: true
+  duell.mykit:
+    description: Eigene Kits erstellen (VIP+)
+    default: true
+  duell.reporten:
+    description: Spieler melden
     default: true

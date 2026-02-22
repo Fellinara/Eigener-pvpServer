@@ -2,6 +2,7 @@ package de.duellplugin.managers;
 
 import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.Arena;
+import de.duellplugin.models.CustomKit;
 import de.duellplugin.models.Duel;
 import de.duellplugin.models.Kit;
 import org.bukkit.Bukkit;
@@ -173,7 +174,6 @@ public class DuellManager {
             activeDuels.put(uid, duel);
         }
 
-        Kit kit = plugin.getKitManager().getKit(kitName);
         String prefix = plugin.getPrefix();
 
         // Teleport + kit for team 1
@@ -184,7 +184,7 @@ public class DuellManager {
             // Slight offset so players don't overlap
             Location tpLoc = spawn1.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            applyKit(p, kit);
+            applyKit(p, resolveKit(p.getUniqueId(), kitName));
         }
 
         // Teleport + kit for team 2
@@ -194,7 +194,7 @@ public class DuellManager {
             if (p == null || !p.isOnline()) continue;
             Location tpLoc = spawn2.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            applyKit(p, kit);
+            applyKit(p, resolveKit(p.getUniqueId(), kitName));
         }
 
         new BukkitRunnable() {
@@ -359,6 +359,22 @@ public class DuellManager {
             if (p == null || !p.isOnline()) return false;
         }
         return true;
+    }
+
+    /**
+     * Resolves the effective {@link Kit} for a player.
+     * Checks standard kits first; if not found checks the player's own custom kits;
+     * falls back to "nodebuff" if neither is available.
+     */
+    public Kit resolveKit(UUID playerUUID, String kitName) {
+        Kit kit = plugin.getKitManager().getKit(kitName);
+        if (kit != null) return kit;
+        var stats = plugin.getStatsManager().getStats(playerUUID);
+        if (stats != null) {
+            CustomKit ck = stats.getCustomKit(kitName);
+            if (ck != null) return Kit.fromCustom(ck);
+        }
+        return plugin.getKitManager().getKit("nodebuff");
     }
 
     public void applyKit(Player player, Kit kit) {

@@ -149,6 +149,17 @@ public class GUIClickListener implements Listener {
                 return;
             }
         }
+
+        // No standard kit matched – check custom kits by stripped display name
+        String stripped = org.bukkit.ChatColor.stripColor(displayName).trim();
+        if (stripped.startsWith("✔ ")) stripped = stripped.substring(2).trim();
+        var playerStats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
+        if (playerStats.hasCustomKit(stripped)) {
+            playerStats.setSelectedKit(stripped);
+            plugin.getStatsManager().saveStats();
+            player.sendMessage("§aEigenes Kit §f" + stripped + " §aausgewählt!");
+            player.closeInventory();
+        }
     }
 
     private void handleArenaClick(Player player, ItemStack clicked) {

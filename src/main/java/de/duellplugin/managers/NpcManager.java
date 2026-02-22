@@ -69,12 +69,12 @@ public class NpcManager {
     }
 
     private final DuellPlugin plugin;
-    private final Map<UUID, NpcData> npcs; // entity UUID → NpcData
+    private final Map<UUID, NpcData> npcs; // entity UUID → NpcData (LinkedHashMap for stable numbering)
     private final File npcFile;
 
     public NpcManager(DuellPlugin plugin) {
         this.plugin = plugin;
-        this.npcs = new HashMap<>();
+        this.npcs = new LinkedHashMap<>();
         this.npcFile = new File(plugin.getDataFolder(), "npcs.yml");
         // Spawn NPCs on first server tick (world is loaded by then)
         plugin.getServer().getScheduler().runTask(plugin, this::loadAndSpawn);
@@ -136,6 +136,16 @@ public class NpcManager {
 
     public Collection<NpcData> getAllNpcs() {
         return Collections.unmodifiableCollection(npcs.values());
+    }
+
+    /**
+     * Returns the entity UUID of the NPC at position {@code number} (1-based) in the ordered list.
+     * Returns {@code null} if the number is out of range.
+     */
+    public UUID getNpcUuidByNumber(int number) {
+        List<NpcData> list = new ArrayList<>(npcs.values());
+        if (number < 1 || number > list.size()) return null;
+        return list.get(number - 1).entityUUID();
     }
 
     // ── Load / Save ──────────────────────────────────

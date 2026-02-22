@@ -20,22 +20,24 @@ public class KitManager {
 
     private void loadDefaultKits() {
         Kit nodebuff = Kit.createNoDebuff();
-        Kit debuff = Kit.createDebuff();
-        Kit classic = Kit.createClassic();
-        Kit gapple = Kit.createGapple();
+        Kit debuff   = Kit.createDebuff();
+        Kit classic  = Kit.createClassic();
+        Kit gapple   = Kit.createGapple();
         Kit builduhc = Kit.createBuildUHC();
-        Kit uhc = Kit.createUHC();
-        Kit combo = Kit.createCombo();
-        Kit mace = Kit.createMace();
+        Kit uhc      = Kit.createUHC();
+        Kit combo    = Kit.createCombo();
+        Kit mace     = Kit.createMace();
+        Kit axe      = Kit.createAxe();
 
         kits.put(nodebuff.getName(), nodebuff);
-        kits.put(debuff.getName(), debuff);
-        kits.put(classic.getName(), classic);
-        kits.put(gapple.getName(), gapple);
+        kits.put(debuff.getName(),   debuff);
+        kits.put(classic.getName(),  classic);
+        kits.put(gapple.getName(),   gapple);
         kits.put(builduhc.getName(), builduhc);
-        kits.put(uhc.getName(), uhc);
-        kits.put(combo.getName(), combo);
-        kits.put(mace.getName(), mace);
+        kits.put(uhc.getName(),      uhc);
+        kits.put(combo.getName(),    combo);
+        kits.put(mace.getName(),     mace);
+        kits.put(axe.getName(),      axe);
 
         plugin.getLogger().info(kits.size() + " Kits geladen.");
     }

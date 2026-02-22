@@ -71,15 +71,29 @@ public class KitCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        // /kit <name> — select kit
+        // /kit <name> — select kit (standard or custom)
         String kitName = args[0].toLowerCase();
         Kit kit = plugin.getKitManager().getKit(kitName);
 
         if (kit == null) {
+            // Check custom kits
+            var stats = plugin.getStatsManager().getOrCreateStats(player.getUniqueId(), player.getName());
+            if (stats.hasCustomKit(kitName)) {
+                stats.setSelectedKit(kitName);
+                plugin.getStatsManager().saveStats();
+                player.sendMessage(prefix + "§aEigenes Kit §f" + kitName + " §aausgewählt!");
+                return true;
+            }
             player.sendMessage(prefix + "§cKit '§6" + kitName + "§c' nicht gefunden!");
             player.sendMessage(prefix + "§7Verfügbare Kits:");
             for (Kit k : plugin.getKitManager().getAllKits()) {
                 player.sendMessage("§7 - §e" + k.getName() + " §7- " + k.getDisplayName());
+            }
+            if (!stats.getCustomKits().isEmpty()) {
+                player.sendMessage(prefix + "§7Deine eigenen Kits:");
+                for (String ckName : stats.getCustomKits().keySet()) {
+                    player.sendMessage("§7 - §f" + ckName);
+                }
             }
             return true;
         }
@@ -140,6 +154,15 @@ public class KitCommand implements CommandExecutor, TabCompleter {
             for (Kit k : plugin.getKitManager().getAllKits()) {
                 if (k.getName().toLowerCase().startsWith(args[0].toLowerCase())) {
                     options.add(k.getName());
+                }
+            }
+            // Add custom kits
+            if (sender instanceof Player player) {
+                var stats = plugin.getStatsManager().getStats(player.getUniqueId());
+                if (stats != null) {
+                    for (String ckName : stats.getCustomKits().keySet()) {
+                        if (ckName.startsWith(args[0].toLowerCase())) options.add(ckName);
+                    }
                 }
             }
             return options;
