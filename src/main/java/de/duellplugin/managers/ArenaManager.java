@@ -53,12 +53,23 @@ public class ArenaManager {
     }
 
     public Arena getAvailableArena() {
+        return getAvailableArena(false);
+    }
+
+    public Arena getAvailableArena(boolean crystalArena) {
         for (Arena arena : arenas.values()) {
-            if (arena.isReady() && !arena.isInUse()) {
+            if (arena.isReady() && !arena.isInUse() && arena.isCrystalArena() == crystalArena) {
                 return arena;
             }
         }
         return null;
+    }
+
+    public void setCrystalArena(String name, boolean crystal) {
+        Arena arena = arenas.get(name.toLowerCase());
+        if (arena == null) return;
+        arena.setCrystalArena(crystal);
+        saveArenas();
     }
 
     public boolean arenaExists(String name) {
@@ -233,6 +244,7 @@ public class ArenaManager {
             Arena arena = new Arena(name, spawn1, spawn2);
             arena.setRegionPos1(pos1);
             arena.setRegionPos2(pos2);
+            arena.setCrystalArena(arenaSection.getBoolean("crystal", false));
             arenas.put(name, arena);
         }
         plugin.getLogger().info(arenas.size() + " Arenen geladen.");
@@ -288,6 +300,9 @@ public class ArenaManager {
             }
             if (arena.getRegionPos2() != null) {
                 serializeLocation(arenaConfig, path + ".region.pos2", arena.getRegionPos2());
+            }
+            if (arena.isCrystalArena()) {
+                arenaConfig.set(path + ".crystal", true);
             }
         }
 

@@ -17,6 +17,8 @@ public class Kit {
     private final String description;
     /** Optional item placed in the offhand slot; null means a shield is used by default. */
     private ItemStack offHandItem;
+    /** If true, this kit can only be used in crystal arenas, and crystal arenas only allow this kit. */
+    private boolean crystalOnly;
 
     public Kit(String name, String displayName, Material icon, String description,
                ItemStack[] armor, ItemStack[] contents) {
@@ -27,12 +29,24 @@ public class Kit {
         this.armor = armor;
         this.contents = contents;
         this.offHandItem = null;
+        this.crystalOnly = false;
     }
 
     /** Sets a custom offhand item for this kit (e.g. a totem). Returns {@code this} for chaining. */
     public Kit withOffHand(ItemStack item) {
         this.offHandItem = item;
         return this;
+    }
+
+    /** Marks this kit as crystal-only (playable only in crystal arenas). Returns {@code this} for chaining. */
+    public Kit withCrystalOnly() {
+        this.crystalOnly = true;
+        return this;
+    }
+
+    /** Returns true if this kit requires a dedicated crystal arena. */
+    public boolean isCrystalOnly() {
+        return crystalOnly;
     }
 
     /** Returns the kit's offhand item, or {@code null} if the default shield should be used. */
@@ -289,6 +303,8 @@ public class Kit {
         for (int i = 23; i <= 32; i++) contents[i] = speedPot.clone();
         // Second mace (Breach 4 Unbreaking 3) at slot 33
         contents[33] = maceBreach;
+        // Shield at slot 34
+        contents[34] = new ItemStack(Material.SHIELD);
 
         // First Totem of Undying goes in offhand
         return new Kit("mace", "§5💥 Mace", Material.MACE,
@@ -314,8 +330,67 @@ public class Kit {
                 "§7Diamant Prot 2 – Schwert, Bogen, Axt, Armbrust & Pfeile", armor, contents);
     }
 
+    public static Kit createCrystal() {
+        ItemStack[] armor = new ItemStack[4];
+        // Boots: Prot4 Unbreaking3 Feather Falling4 Mending
+        ItemStack boots = enchant(enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_BOOTS),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3),
+                Enchantment.FEATHER_FALLING, 4), Enchantment.MENDING, 1);
+        armor[0] = boots;
+        // Leggings: Blast Prot4 Unbreaking3 Mending
+        ItemStack legs = enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_LEGGINGS),
+                Enchantment.BLAST_PROTECTION, 4), Enchantment.UNBREAKING, 3), Enchantment.MENDING, 1);
+        armor[1] = legs;
+        // Chestplate: Prot4 Unbreaking3 Mending
+        ItemStack chest = enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_CHESTPLATE),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3), Enchantment.MENDING, 1);
+        armor[2] = chest;
+        // Helmet: Prot4 Unbreaking3 Mending
+        ItemStack helmet = enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_HELMET),
+                Enchantment.PROTECTION, 4), Enchantment.UNBREAKING, 3), Enchantment.MENDING, 1);
+        armor[3] = helmet;
+
+        ItemStack[] contents = new ItemStack[36];
+        // Slot 0: Sword Sharp5 Knockback1 Sweeping Edge3 Unbreaking3
+        contents[0] = enchant(enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_SWORD),
+                Enchantment.SHARPNESS, 5), Enchantment.KNOCKBACK, 1),
+                Enchantment.SWEEPING_EDGE, 3), Enchantment.UNBREAKING, 3);
+        // Slots 1-2: 2×64 End Crystals
+        contents[1] = new ItemStack(Material.END_CRYSTAL, 64);
+        contents[2] = new ItemStack(Material.END_CRYSTAL, 64);
+        // Slots 3-20: 18 Totems of Undying in inventory
+        for (int i = 3; i <= 20; i++) {
+            contents[i] = new ItemStack(Material.TOTEM_OF_UNDYING);
+        }
+
+        // 1 Totem of Undying in offhand → 19 totems total
+        return new Kit("crystal", "§d✦ Crystal", Material.END_CRYSTAL,
+                "§7Netherite Prot 4, 2×64 Kristalle & 19 Totems – nur in Crystal-Arenen",
+                armor, contents)
+                .withCrystalOnly()
+                .withOffHand(new ItemStack(Material.TOTEM_OF_UNDYING));
+    }
+
+    public static Kit createOnlySword() {
+        ItemStack[] armor = new ItemStack[4];
+        armor[3] = enchant(new ItemStack(Material.DIAMOND_HELMET),    Enchantment.PROTECTION, 2);
+        armor[2] = enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2);
+        armor[1] = enchant(new ItemStack(Material.DIAMOND_LEGGINGS),   Enchantment.PROTECTION, 2);
+        armor[0] = enchant(new ItemStack(Material.DIAMOND_BOOTS),      Enchantment.PROTECTION, 2);
+
+        ItemStack[] contents = new ItemStack[36];
+        contents[0] = new ItemStack(Material.DIAMOND_SWORD);
+
+        return new Kit("onlysword", "§f⚔ OnlySword", Material.DIAMOND_SWORD,
+                "§7Nur ein Diamant-Schwert & volle Diamant-Rüstung", armor, contents);
+    }
+
     /**
-     * Creates a standard {@link Kit} from a player-defined {@link CustomKit}.
      * The kit uses {@code Material.CHEST} as placeholder icon.
      */
     public static Kit fromCustom(CustomKit ck) {

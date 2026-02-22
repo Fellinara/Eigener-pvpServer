@@ -22,13 +22,33 @@ public class StatsManager {
     private final File statsFile;
     private FileConfiguration statsConfig;
     private final int kFactor;
+    /** In-memory login timestamps for playtime calculation. */
+    private final Map<UUID, Long> loginTimes;
 
     public StatsManager(DuellPlugin plugin) {
         this.plugin = plugin;
         this.statsMap = new HashMap<>();
         this.statsFile = new File(plugin.getDataFolder(), "stats.yml");
         this.kFactor = plugin.getConfig().getInt("elo.k-factor", 32);
+        this.loginTimes = new HashMap<>();
         loadStats();
+    }
+
+    /** Records a player's login time for playtime tracking. */
+    public void recordLogin(UUID uuid) {
+        loginTimes.put(uuid, System.currentTimeMillis());
+    }
+
+    /** Accumulates the session playtime for a player on logout and saves. */
+    public void recordLogout(UUID uuid) {
+        Long loginTime = loginTimes.remove(uuid);
+        if (loginTime == null) return;
+        long sessionSeconds = (System.currentTimeMillis() - loginTime) / 1000L;
+        PlayerStats stats = statsMap.get(uuid);
+        if (stats != null) {
+            stats.addPlaytimeSeconds(sessionSeconds);
+            saveStats();
+        }
     }
 
     public PlayerStats getStats(UUID uuid) {
@@ -123,6 +143,7 @@ public class StatsManager {
                 stats.loadBotWins(ps.getInt("bot-wins", 0));
                 stats.loadBotLosses(ps.getInt("bot-losses", 0));
                 stats.setHighestBotLevel(ps.getInt("highest-bot-level", 0));
+                stats.setPlaytimeSeconds(ps.getLong("playtime-seconds", 0));
 
                 String rankName = ps.getString("rank", "SPIELER");
                 try {
@@ -202,6 +223,7 @@ public class StatsManager {
             statsConfig.set(path + ".bot-wins", stats.getBotWins());
             statsConfig.set(path + ".bot-losses", stats.getBotLosses());
             statsConfig.set(path + ".highest-bot-level", stats.getHighestBotLevel());
+            statsConfig.set(path + ".playtime-seconds", stats.getPlaytimeSeconds());
             statsConfig.set(path + ".rank", stats.getRank().name());
             statsConfig.set(path + ".kit-order", stats.getKitOrder());
 

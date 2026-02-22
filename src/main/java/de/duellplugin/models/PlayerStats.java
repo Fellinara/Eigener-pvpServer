@@ -26,6 +26,8 @@ public class PlayerStats {
     private final Map<String, int[]> kitSlotLayouts;
     /** Player-created custom kits. Key = kit name (lower-case). */
     private final Map<String, CustomKit> customKits;
+    /** Total playtime in seconds (accumulates across sessions). */
+    private long playtimeSeconds;
 
     public PlayerStats(UUID uuid, String name) {
         this.uuid = uuid;
@@ -44,6 +46,7 @@ public class PlayerStats {
         this.kitOrder = new ArrayList<>();
         this.kitSlotLayouts = new HashMap<>();
         this.customKits = new HashMap<>();
+        this.playtimeSeconds = 0;
     }
 
     public UUID getUuid() {
@@ -240,4 +243,9 @@ public class PlayerStats {
     public void removeCustomKit(String name) { customKits.remove(name.toLowerCase()); }
     public Map<String, CustomKit> getCustomKits() { return customKits; }
     public boolean hasCustomKit(String name) { return customKits.containsKey(name.toLowerCase()); }
+
+    // ── Playtime ─────────────────────────────────────────────────────
+    public long getPlaytimeSeconds() { return playtimeSeconds; }
+    public void addPlaytimeSeconds(long seconds) { this.playtimeSeconds += seconds; }
+    public void setPlaytimeSeconds(long seconds) { this.playtimeSeconds = Math.max(0, seconds); }
 }

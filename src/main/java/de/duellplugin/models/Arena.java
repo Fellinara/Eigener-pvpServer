@@ -11,6 +11,8 @@ public class Arena {
     private Location spawn1;
     private Location spawn2;
     private boolean inUse;
+    /** If true, only the crystal kit may be used in this arena (and the crystal kit is restricted to such arenas). */
+    private boolean crystalArena;
     /** Corner 1 of the region used for arena snapshots. */
     private Location regionPos1;
     /** Corner 2 of the region used for arena snapshots. */
@@ -35,6 +37,9 @@ public class Arena {
 
     public boolean isInUse() { return inUse; }
     public void setInUse(boolean inUse) { this.inUse = inUse; }
+
+    public boolean isCrystalArena() { return crystalArena; }
+    public void setCrystalArena(boolean crystalArena) { this.crystalArena = crystalArena; }
 
     public Location getRegionPos1() { return regionPos1; }
     public void setRegionPos1(Location regionPos1) { this.regionPos1 = regionPos1; }

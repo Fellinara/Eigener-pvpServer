@@ -18,6 +18,8 @@ public class DuellPlugin extends JavaPlugin {
     private PartyManager partyManager;
     private NpcManager npcManager;
     private FfaManager ffaManager;
+    private SpectateManager spectateManager;
+    private CreativeZoneManager creativeZoneManager;
 
     @Override
     public void onEnable() {
@@ -34,6 +36,8 @@ public class DuellPlugin extends JavaPlugin {
         partyManager = new PartyManager(this);
         npcManager = new NpcManager(this);
         ffaManager = new FfaManager(this);
+        spectateManager = new SpectateManager(this);
+        creativeZoneManager = new CreativeZoneManager(this);
 
         registerCommands();
         registerListeners();
@@ -49,6 +53,7 @@ public class DuellPlugin extends JavaPlugin {
         if (botManager != null) botManager.cleanupBots();
         if (friendManager != null) friendManager.saveFriends();
         if (npcManager != null) npcManager.saveNpcs();
+        if (creativeZoneManager != null) creativeZoneManager.shutdown();
         getLogger().info("DuellPlugin deaktiviert. Daten gespeichert.");
     }
 
@@ -110,6 +115,23 @@ public class DuellPlugin extends JavaPlugin {
         EloCommand eloCmd = new EloCommand(this);
         getCommand("elo").setExecutor(eloCmd);
         getCommand("elo").setTabCompleter(eloCmd);
+
+        SpectateCommand spectateCmd = new SpectateCommand(this);
+        getCommand("spectate").setExecutor(spectateCmd);
+        getCommand("spectate").setTabCompleter(spectateCmd);
+        getCommand("unspectate").setExecutor(spectateCmd);
+
+        PlaytimeCommand playtimeCmd = new PlaytimeCommand(this);
+        getCommand("playtime").setExecutor(playtimeCmd);
+        getCommand("playtime").setTabCompleter(playtimeCmd);
+
+        TrollCommand trollCmd = new TrollCommand(this);
+        getCommand("troll").setExecutor(trollCmd);
+        getCommand("troll").setTabCompleter(trollCmd);
+
+        CreativeZoneCommand creativeZoneCmd = new CreativeZoneCommand(this);
+        getCommand("kitzone").setExecutor(creativeZoneCmd);
+        getCommand("kitzone").setTabCompleter(creativeZoneCmd);
     }
 
     private void registerListeners() {
@@ -119,6 +141,8 @@ public class DuellPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DuellListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new NpcListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpectateListener(this), this);
+        getServer().getPluginManager().registerEvents(new CreativeZoneListener(this), this);
     }
 
     public ArenaManager getArenaManager() { return arenaManager; }
@@ -132,6 +156,8 @@ public class DuellPlugin extends JavaPlugin {
     public PartyManager getPartyManager() { return partyManager; }
     public NpcManager getNpcManager() { return npcManager; }
     public FfaManager getFfaManager() { return ffaManager; }
+    public SpectateManager getSpectateManager() { return spectateManager; }
+    public CreativeZoneManager getCreativeZoneManager() { return creativeZoneManager; }
 
     /** Returns the configured message prefix with color codes translated. */
     public String getPrefix() {

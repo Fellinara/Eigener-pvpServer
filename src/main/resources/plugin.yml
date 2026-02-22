@@ -12,7 +12,7 @@ commands:
     aliases: [duel, pvp]
   arena:
     description: Arena-Verwaltung
-    usage: /arena <create|delete|setspawn|setpos1|setpos2|snapshot|list>
+    usage: /arena <create|delete|setspawn|setpos1|setpos2|snapshot|setcrystal|list>
     permission: duell.admin
   kit:
     description: Kit-Auswahl und Layout
@@ -69,6 +69,31 @@ commands:
     usage: /elo <give|remove|set> <spieler> <menge>
     permission: duell.admin
 
+  spectate:
+    description: Einem Duell zuschauen
+    usage: /spectate <spieler>
+    aliases: [zuschauen, spec]
+  unspectate:
+    description: Zuschauen beenden
+    usage: /unspectate
+    aliases: [unspec, zuschauenbeenden]
+
+  playtime:
+    description: Spielzeit eines Spielers anzeigen
+    usage: /playtime [spieler]
+    aliases: [spielzeit]
+
+  troll:
+    description: Einen Spieler trollen (OP)
+    usage: /troll <spieler> <aktion>
+    aliases: [spaß]
+
+  kitzone:
+    description: Kreativzone für eigene Kits (Admin)
+    usage: /kitzone <setpos1|setpos2|info>
+    permission: duell.admin
+    aliases: [creativezone, bauzone]
+
 permissions:
   duell.use:
     description: Erlaubt die Nutzung des Duell-Systems
@@ -112,3 +137,12 @@ permissions:
   duell.reporten:
     description: Spieler melden
     default: true
+  duell.spectate:
+    description: Duellen zuschauen
+    default: true
+  duell.playtime:
+    description: Spielzeit anzeigen
+    default: true
+  duell.troll:
+    description: Troll-Befehle nutzen
+    default: op

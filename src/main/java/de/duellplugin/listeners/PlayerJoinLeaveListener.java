@@ -30,6 +30,8 @@ public class PlayerJoinLeaveListener implements Listener {
         // Show rank prefix in the tab player list
         player.setPlayerListName(stats.getRank().getDisplayName() + " §7" + player.getName());
 
+        plugin.getStatsManager().recordLogin(player.getUniqueId());
+
         plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
             if (player.isOnline()) {
                 plugin.getLobbyManager().sendToLobby(player);
@@ -49,6 +51,8 @@ public class PlayerJoinLeaveListener implements Listener {
         plugin.getDuellManager().handleDisconnect(player.getUniqueId());
         plugin.getPartyManager().handleDisconnect(player.getUniqueId());
         plugin.getFfaManager().handleDisconnect(player.getUniqueId());
+        plugin.getStatsManager().recordLogout(player.getUniqueId());
+        plugin.getSpectateManager().handleDisconnect(player.getUniqueId());
 
         if (plugin.getBotManager().isInBotFight(player.getUniqueId())) {
             plugin.getBotManager().handlePlayerDeathInBotFight(player);

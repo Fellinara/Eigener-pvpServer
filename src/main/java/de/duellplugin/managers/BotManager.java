@@ -50,7 +50,12 @@ public class BotManager {
             return;
         }
 
-        Arena arena = plugin.getArenaManager().getAvailableArena();
+        String kitName = plugin.getStatsManager()
+                .getOrCreateStats(player.getUniqueId(), player.getName()).getSelectedKit();
+        Kit kit = plugin.getDuellManager().resolveKit(player.getUniqueId(), kitName);
+        boolean needsCrystal = kit != null && kit.isCrystalOnly();
+
+        Arena arena = plugin.getArenaManager().getAvailableArena(needsCrystal);
         if (arena == null) {
             player.sendMessage("§cKeine Arena verfügbar!");
             return;
@@ -60,10 +65,6 @@ public class BotManager {
         arena.setInUse(true);
         playerArenaMap.put(player.getUniqueId(), arena.getName());
         player.teleport(arena.getSpawn1());
-
-        String kitName = plugin.getStatsManager()
-                .getOrCreateStats(player.getUniqueId(), player.getName()).getSelectedKit();
-        Kit kit = plugin.getDuellManager().resolveKit(player.getUniqueId(), kitName);
 
         plugin.getDuellManager().applyKit(player, kit);
 

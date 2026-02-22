@@ -147,6 +147,22 @@ public class ArenaCommand implements CommandExecutor, TabCompleter {
                 plugin.getArenaManager().takeSnapshot(name);
                 player.sendMessage(prefix + "§aSnapshot für Arena '§6" + name + "§a' aufgenommen!");
             }
+            case "setcrystal", "crystal" -> {
+                if (args.length < 2) {
+                    player.sendMessage(prefix + "§cBenutze: /arena setcrystal <Name>");
+                    return true;
+                }
+                String name = args[1].toLowerCase();
+                if (!plugin.getArenaManager().arenaExists(name)) {
+                    player.sendMessage(prefix + "§cArena '§6" + name + "§c' existiert nicht!");
+                    return true;
+                }
+                var arena = plugin.getArenaManager().getArena(name);
+                boolean newState = (arena == null || !arena.isCrystalArena());
+                plugin.getArenaManager().setCrystalArena(name, newState);
+                player.sendMessage(prefix + "§aArena '§6" + name + "§a' ist jetzt "
+                        + (newState ? "§d§lCrystal-Arena§a!" : "§7keine Crystal-Arena mehr§a."));
+            }
             case "list", "liste" -> {
                 player.sendMessage("§6§l━━━ Arenen ━━━");
                 var arenas = plugin.getArenaManager().getAllArenas();
@@ -157,10 +173,11 @@ public class ArenaCommand implements CommandExecutor, TabCompleter {
                         String status = arena.isReady()
                                 ? (arena.isInUse() ? "§6⚔ Besetzt" : "§a✔ Bereit")
                                 : "§c✘ Unvollständig";
+                        String crystal = arena.isCrystalArena() ? " §d[Crystal]" : "";
                         String region = arena.isRegionDefined() ? "§a✔ Region" : "§c✘ Keine Region";
                         String snap = (arena.getSnapshot() != null && !arena.getSnapshot().isEmpty())
                                 ? " §a✔ Snapshot" : " §c✘ Kein Snapshot";
-                        player.sendMessage("§e" + arena.getName() + " §7- " + status + " §7| " + region + snap);
+                        player.sendMessage("§e" + arena.getName() + crystal + " §7- " + status + " §7| " + region + snap);
                     }
                 }
                 player.sendMessage("§6§l━━━━━━━━━━━━━━━");
@@ -178,6 +195,7 @@ public class ArenaCommand implements CommandExecutor, TabCompleter {
         player.sendMessage("§e/arena setpos1 <Name> §7- Reset-Region Ecke 1 setzen");
         player.sendMessage("§e/arena setpos2 <Name> §7- Reset-Region Ecke 2 setzen");
         player.sendMessage("§e/arena snapshot <Name> §7- Jetzt Snapshot aufnehmen");
+        player.sendMessage("§e/arena setcrystal <Name> §7- Crystal-Arena umschalten");
         player.sendMessage("§e/arena list §7- Alle Arenen anzeigen");
         player.sendMessage("§6§l━━━━━━━━━━━━━━━━━━━━━━━");
     }
@@ -189,7 +207,7 @@ public class ArenaCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filterStartsWith(Arrays.asList("create", "delete", "setspawn", "setpos1", "setpos2", "snapshot", "list"), args[0]);
+            return filterStartsWith(Arrays.asList("create", "delete", "setspawn", "setpos1", "setpos2", "snapshot", "setcrystal", "list"), args[0]);
         }
         if (args.length == 2) {
             List<String> arenaNames = new ArrayList<>();

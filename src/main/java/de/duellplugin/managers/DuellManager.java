@@ -114,7 +114,9 @@ public class DuellManager {
         String kitName = plugin.getStatsManager()
                 .getOrCreateStats(accepter.getUniqueId(), accepter.getName()).getSelectedKit();
 
-        Arena arena = plugin.getArenaManager().getAvailableArena();
+        Kit resolvedKit = resolveKit(accepter.getUniqueId(), kitName);
+        boolean needsCrystal = resolvedKit != null && resolvedKit.isCrystalOnly();
+        Arena arena = plugin.getArenaManager().getAvailableArena(needsCrystal);
         if (arena == null) {
             String prefix = plugin.getPrefix();
             accepter.sendMessage(prefix + "§eKeine Arena frei – du wirst in die Warteschlange eingereiht!");
@@ -285,6 +287,8 @@ public class DuellManager {
             arena.setInUse(false);
             plugin.getArenaManager().resetArena(duel.getArenaName());
         }
+        // Stop any spectators watching this arena
+        plugin.getSpectateManager().onDuelEnd(duel.getArenaName());
 
         // Remove all participants from activeDuels
         for (UUID uid : duel.getAllMembers()) {
