@@ -118,6 +118,14 @@ public class DuellListener implements Listener {
 
     @EventHandler
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
+        // Bot shield-blocking: reduce damage by 75% when the bot is actively blocking
+        if (event.getDamager() instanceof Player
+                && event.getEntity() instanceof Zombie bot
+                && bot.hasMetadata("duell_bot")
+                && plugin.getBotManager().isBlocking(bot.getUniqueId())) {
+            event.setDamage(event.getDamage() * 0.25);
+        }
+
         if (event.getDamager() instanceof Player attacker && event.getEntity() instanceof Player victim) {
             boolean attackerInDuel = plugin.getDuellManager().isInDuel(attacker.getUniqueId());
             boolean victimInDuel = plugin.getDuellManager().isInDuel(victim.getUniqueId());

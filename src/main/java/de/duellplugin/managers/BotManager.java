@@ -9,13 +9,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -27,6 +25,8 @@ import java.util.*;
 public class BotManager {
 
     private static final int COBWEB_INTERVAL_TICKS = 100; // 5 seconds
+    private static final int GAPPLE_ANIMATION_TICKS = 32; // 1.6 s (simulates eating animation)
+    private static final int MACE_COOLDOWN_TICKS = 40;    // 2 s before switching back to primary
 
     private final DuellPlugin plugin;
     private final Map<UUID, UUID> playerBotMap;
@@ -34,6 +34,7 @@ public class BotManager {
     private final Map<UUID, String> playerArenaMap;
     private final Map<UUID, BukkitRunnable> botAiTasks;
     private final Map<UUID, Integer> botLevelMap;
+    private final Set<UUID> blockingBots;
 
     public BotManager(DuellPlugin plugin) {
         this.plugin = plugin;
@@ -42,6 +43,7 @@ public class BotManager {
         this.playerArenaMap = new HashMap<>();
         this.botAiTasks = new HashMap<>();
         this.botLevelMap = new HashMap<>();
+        this.blockingBots = new HashSet<>();
     }
 
     public void startBotFight(Player player) {
@@ -110,74 +112,111 @@ public class BotManager {
     }
 
     private void startBotAi(Zombie bot, Player player, int level, Kit kit) {
-        // Arrow shoot interval: level 1-30 = 60 ticks (3s), 31-60 = 40 ticks, 61-100 = 20 ticks
+        // Arrow shoot interval scales with level
         long shootInterval = level <= 30 ? 60L : (level <= 60 ? 40L : 20L);
-        // Cobweb placement starts at level 20+ every 5 seconds
-        boolean useCobwebs = level >= 20;
-
-        // Detect kit items to decide which AI behaviours to enable
+        boolean useCobwebs = kitContainsMaterial(kit, Material.COBWEB);
         boolean hasGapple = kitContainsMaterial(kit, Material.GOLDEN_APPLE)
                 || kitContainsMaterial(kit, Material.ENCHANTED_GOLDEN_APPLE);
         boolean hasPearls = kitContainsMaterial(kit, Material.ENDER_PEARL);
-        boolean hasStrengthPot = kitContainsMaterial(kit, Material.SPLASH_POTION)
+        boolean hasSplashPot = kitContainsMaterial(kit, Material.SPLASH_POTION)
                 || kitContainsMaterial(kit, Material.LINGERING_POTION);
+        boolean hasBow = kitContainsMaterial(kit, Material.BOW);
+
+        // Identify primary weapon (slot 0) and optional mace for close-combat switching
+        final ItemStack primaryWeapon = (kit != null && kit.getContents().length > 0
+                && kit.getContents()[0] != null)
+                ? kit.getContents()[0].clone() : new ItemStack(Material.DIAMOND_SWORD);
+        ItemStack foundMace = null;
+        if (kit != null) {
+            for (ItemStack item : kit.getContents()) {
+                if (item != null && item.getType() == Material.MACE) {
+                    foundMace = item.clone();
+                    break;
+                }
+            }
+        }
+        final ItemStack maceItem = foundMace;
 
         BukkitRunnable aiTask = new BukkitRunnable() {
             private int ticksSinceLastShot = 0;
             private int ticksSinceLastCobweb = 0;
             private int ticksSinceLastPearl = 0;
             private int ticksSinceLastPot = 0;
+            private int ticksSinceLastGapple = 0;
+            private int ticksSinceLastBlock = 0;
+            private int blockingTicksLeft = 0;
 
             @Override
             public void run() {
                 if (!bot.isValid() || bot.isDead() || !player.isOnline()) {
                     cancel();
+                    blockingBots.remove(bot.getUniqueId());
                     return;
                 }
 
-                ticksSinceLastShot++;
-                ticksSinceLastCobweb++;
-                ticksSinceLastPearl++;
-                ticksSinceLastPot++;
+                // Counters increment by 2 (task runs every 2 ticks)
+                ticksSinceLastShot += 2;
+                ticksSinceLastCobweb += 2;
+                ticksSinceLastPearl += 2;
+                ticksSinceLastPot += 2;
+                ticksSinceLastGapple += 2;
+                ticksSinceLastBlock += 2;
 
+                var eq = bot.getEquipment();
                 double distance = bot.getLocation().distance(player.getLocation());
 
-                // ── Heal: golden apple effect when below 40% health ──────────
-                if (hasGapple) {
-                    var maxHealthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
-                    if (maxHealthAttr != null) {
-                        double healthPercent = bot.getHealth() / maxHealthAttr.getValue();
-                        if (healthPercent < 0.4 && !bot.hasPotionEffect(PotionEffectType.REGENERATION)) {
-                            bot.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1, false, false));
-                            bot.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 2400, 0, false, false));
-                        }
+                // ── Shield blocking simulation ────────────────────────────────
+                if (blockingTicksLeft > 0) {
+                    blockingTicksLeft -= 2;
+                    if (blockingTicksLeft <= 0) {
+                        blockingBots.remove(bot.getUniqueId());
+                        if (eq != null && !bot.isDead()) eq.setItemInMainHand(primaryWeapon.clone());
                     }
-                } else if (level >= 30) {
-                    // Fallback heal for high-level bots without gapples
+                } else if (level >= 30 && ticksSinceLastBlock >= Math.max(60, 120 - level)) {
+                    ticksSinceLastBlock = 0;
+                    blockingTicksLeft = 10 + level / 10; // 11–20 ticks (0.55–1 s)
+                    blockingBots.add(bot.getUniqueId());
+                }
+
+                // ── Golden apple heal with visual animation ───────────────────
+                if (ticksSinceLastGapple >= 120) { // 6-second gapple cooldown
                     var maxHealthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                     if (maxHealthAttr != null) {
                         double healthPercent = bot.getHealth() / maxHealthAttr.getValue();
-                        if (healthPercent < 0.4 && !bot.hasPotionEffect(PotionEffectType.REGENERATION)) {
+                        boolean wantsHeal = (hasGapple && healthPercent < 0.5)
+                                || (!hasGapple && level >= 30 && healthPercent < 0.3);
+                        if (wantsHeal && !bot.hasPotionEffect(PotionEffectType.REGENERATION)) {
+                            ticksSinceLastGapple = 0;
+                            // Visual: briefly show golden apple in main hand
+                            if (hasGapple && eq != null && blockingTicksLeft <= 0) {
+                                eq.setItemInMainHand(new ItemStack(Material.GOLDEN_APPLE));
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        if (bot.isValid() && !bot.isDead() && eq != null)
+                                            eq.setItemInMainHand(primaryWeapon.clone());
+                                    }
+                                }.runTaskLater(plugin, GAPPLE_ANIMATION_TICKS);
+                                bot.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 2400, 0, false, false));
+                            }
                             bot.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1, false, false));
                         }
                     }
                 }
 
-                // ── Simulate potion use (strength/speed) ────────────────────
-                if (hasStrengthPot && ticksSinceLastPot >= 200) { // every 10 s
+                // ── Potion use (strength / speed) ─────────────────────────────
+                if (hasSplashPot && ticksSinceLastPot >= 200) {
                     ticksSinceLastPot = 0;
-                    if (!bot.hasPotionEffect(PotionEffectType.STRENGTH)) {
+                    if (!bot.hasPotionEffect(PotionEffectType.STRENGTH))
                         bot.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 400, 0, false, false));
-                    }
-                    if (!bot.hasPotionEffect(PotionEffectType.SPEED)) {
+                    if (!bot.hasPotionEffect(PotionEffectType.SPEED))
                         bot.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 400, 0, false, false));
-                    }
                 }
 
-                // ── Shoot arrow at player ────────────────────────────────────
-                if (ticksSinceLastShot >= shootInterval) {
+                // ── Shoot arrow (only if kit has bow; min. 4 blocks = outside mace range) ─
+                if (hasBow && blockingTicksLeft <= 0 && ticksSinceLastShot >= shootInterval) {
                     ticksSinceLastShot = 0;
-                    if (distance > 3.0 && distance < 30.0) {
+                    if (distance > 4.0 && distance < 30.0) {
                         Location eyeLoc = bot.getEyeLocation();
                         Location targetEye = player.getEyeLocation();
                         Vector direction = targetEye.toVector().subtract(eyeLoc.toVector());
@@ -190,8 +229,24 @@ public class BotManager {
                     }
                 }
 
-                // ── Simulate ender pearl (teleport behind player) ────────────
-                if (hasPearls && ticksSinceLastPearl >= 120 && distance > 8.0) { // every 6 s
+                // ── Mace close-combat switch ──────────────────────────────────
+                if (maceItem != null && distance < 3.0 && level >= 40 && blockingTicksLeft <= 0
+                        && ticksSinceLastShot >= MACE_COOLDOWN_TICKS) {
+                    if (eq != null) {
+                        eq.setItemInMainHand(maceItem.clone());
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (bot.isValid() && !bot.isDead() && eq != null)
+                                    eq.setItemInMainHand(primaryWeapon.clone());
+                            }
+                        }.runTaskLater(plugin, 20L);
+                        ticksSinceLastShot = 0;
+                    }
+                }
+
+                // ── Ender pearl teleport behind player ────────────────────────
+                if (hasPearls && ticksSinceLastPearl >= 120 && distance > 8.0) {
                     ticksSinceLastPearl = 0;
                     Location playerLoc = player.getLocation();
                     Location teleportTo = playerLoc.clone().add(
@@ -199,30 +254,59 @@ public class BotManager {
                     if (teleportTo.getWorld() != null) bot.teleport(teleportTo);
                 }
 
-                // ── Place cobweb near player ─────────────────────────────────
-                if (useCobwebs && ticksSinceLastCobweb >= COBWEB_INTERVAL_TICKS) {
+                // ── Cobweb placement with hand animation + arena recording ────
+                if (useCobwebs && blockingTicksLeft <= 0
+                        && ticksSinceLastCobweb >= COBWEB_INTERVAL_TICKS && distance < 6.0) {
                     ticksSinceLastCobweb = 0;
-                    if (distance < 6.0) {
-                        Location cobwebLoc = player.getLocation().clone();
-                        if (cobwebLoc.getWorld() != null
-                                && cobwebLoc.getBlock().getType() == Material.AIR) {
-                            cobwebLoc.getBlock().setType(Material.COBWEB);
-                            // Remove cobweb after 3 seconds
+                    Location cobwebLoc = player.getLocation().clone();
+                    if (cobwebLoc.getWorld() != null
+                            && cobwebLoc.getBlock().getType() == Material.AIR) {
+                        // Visual: show cobweb in hand briefly
+                        if (eq != null) {
+                            eq.setItemInMainHand(new ItemStack(Material.COBWEB));
                             new BukkitRunnable() {
                                 @Override
                                 public void run() {
-                                    if (cobwebLoc.getBlock().getType() == Material.COBWEB) {
-                                        cobwebLoc.getBlock().setType(Material.AIR);
-                                    }
+                                    if (bot.isValid() && !bot.isDead() && eq != null)
+                                        eq.setItemInMainHand(primaryWeapon.clone());
                                 }
-                            }.runTaskLater(plugin, 60L);
+                            }.runTaskLater(plugin, 20L);
                         }
+                        // Record for proper arena reset
+                        UUID pUUID = getPlayerForBot(bot.getUniqueId());
+                        if (pUUID != null) {
+                            String arenaName = playerArenaMap.get(pUUID);
+                            if (arenaName != null)
+                                plugin.getArenaManager().addPlacedBlock(arenaName, cobwebLoc);
+                        }
+                        cobwebLoc.getBlock().setType(Material.COBWEB);
+                        Location finalLoc = cobwebLoc;
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (finalLoc.getBlock().getType() == Material.COBWEB)
+                                    finalLoc.getBlock().setType(Material.AIR);
+                            }
+                        }.runTaskLater(plugin, 60L);
                     }
                 }
             }
         };
-        aiTask.runTaskTimer(plugin, 20L, 1L);
+        aiTask.runTaskTimer(plugin, 20L, 2L);
         botAiTasks.put(bot.getUniqueId(), aiTask);
+    }
+
+    /** Returns true if the given bot is currently simulating a shield block. */
+    public boolean isBlocking(UUID botUUID) {
+        return blockingBots.contains(botUUID);
+    }
+
+    /** Returns the player UUID whose bot fight this bot belongs to, or null. */
+    private UUID getPlayerForBot(UUID botUUID) {
+        for (Map.Entry<UUID, UUID> entry : playerBotMap.entrySet()) {
+            if (entry.getValue().equals(botUUID)) return entry.getKey();
+        }
+        return null;
     }
 
     /** Returns true if the kit's main inventory contains at least one item of the given material. */
@@ -292,87 +376,31 @@ public class BotManager {
         bot.setMetadata("duell_bot", new FixedMetadataValue(plugin, true));
         bot.setMetadata("bot_level", new FixedMetadataValue(plugin, level));
 
-        double healthMultiplier = 1.0 + (level - 1) * 0.3;
-        double maxHealth = Math.min(20.0 * healthMultiplier, 200.0);
+        // Always 10 hearts (20 HP) – same as a player; difficulty comes from AI, not inflated stats
         var healthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
         if (healthAttr != null) {
-            healthAttr.setBaseValue(maxHealth);
+            healthAttr.setBaseValue(20.0);
         }
-        bot.setHealth(maxHealth);
+        bot.setHealth(20.0);
 
-        double damageMultiplier = 1.0 + (level - 1) * 0.08;
+        // Scale attack damage with level; 2.0 HP (level 1) → ~8.0 HP (level 100, capped)
+        double damageMultiplier = 1.0 + (level - 1) * 0.03;
         var damageAttr = bot.getAttribute(Attribute.GENERIC_ATTACK_DAMAGE);
         if (damageAttr != null) {
-            damageAttr.setBaseValue(Math.min(3.0 * damageMultiplier, 30.0));
+            damageAttr.setBaseValue(Math.min(2.0 * damageMultiplier, 8.0));
         }
 
-        double speedMultiplier = 1.0 + (level - 1) * 0.005;
+        // Scale movement speed slightly with level; 0.23 (level 1) → ~0.32 (level 50+, capped)
+        double speedMultiplier = 1.0 + (level - 1) * 0.002;
         var speedAttr = bot.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED);
         if (speedAttr != null) {
-            speedAttr.setBaseValue(Math.min(0.23 * speedMultiplier, 0.45));
+            speedAttr.setBaseValue(Math.min(0.23 * speedMultiplier, 0.32));
         }
 
-        var armorAttr = bot.getAttribute(Attribute.GENERIC_ARMOR);
-        if (armorAttr != null) {
-            armorAttr.setBaseValue(Math.min(level * 0.2, 20.0));
-        }
-
-        equipBot(bot, level);
-
-        if (level >= 30) {
-            int amplifier = Math.min((level - 30) / 20, 2);
-            bot.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, amplifier, false, false));
-        }
-        if (level >= 50) {
-            int amplifier = Math.min((level - 50) / 25, 2);
-            bot.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, amplifier, false, false));
-        }
+        // High-level bots get a permanent speed boost
         if (level >= 70) {
-            bot.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 0, false, false));
+            bot.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, false, false));
         }
-        if (level >= 90) {
-            bot.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, Integer.MAX_VALUE, 0, false, false));
-        }
-    }
-
-    private void equipBot(Zombie bot, int level) {
-        if (level < 20) {
-            bot.getEquipment().setHelmet(new ItemStack(Material.LEATHER_HELMET));
-            bot.getEquipment().setChestplate(new ItemStack(Material.LEATHER_CHESTPLATE));
-            bot.getEquipment().setLeggings(new ItemStack(Material.LEATHER_LEGGINGS));
-            bot.getEquipment().setBoots(new ItemStack(Material.LEATHER_BOOTS));
-            bot.getEquipment().setItemInMainHand(new ItemStack(Material.WOODEN_SWORD));
-        } else if (level < 40) {
-            bot.getEquipment().setHelmet(new ItemStack(Material.CHAINMAIL_HELMET));
-            bot.getEquipment().setChestplate(new ItemStack(Material.CHAINMAIL_CHESTPLATE));
-            bot.getEquipment().setLeggings(new ItemStack(Material.CHAINMAIL_LEGGINGS));
-            bot.getEquipment().setBoots(new ItemStack(Material.CHAINMAIL_BOOTS));
-            bot.getEquipment().setItemInMainHand(new ItemStack(Material.IRON_SWORD));
-        } else if (level < 60) {
-            bot.getEquipment().setHelmet(new ItemStack(Material.IRON_HELMET));
-            bot.getEquipment().setChestplate(new ItemStack(Material.IRON_CHESTPLATE));
-            bot.getEquipment().setLeggings(new ItemStack(Material.IRON_LEGGINGS));
-            bot.getEquipment().setBoots(new ItemStack(Material.IRON_BOOTS));
-            bot.getEquipment().setItemInMainHand(enchant(new ItemStack(Material.IRON_SWORD), Enchantment.SHARPNESS, 2));
-        } else if (level < 80) {
-            bot.getEquipment().setHelmet(enchant(new ItemStack(Material.DIAMOND_HELMET), Enchantment.PROTECTION, 2));
-            bot.getEquipment().setChestplate(enchant(new ItemStack(Material.DIAMOND_CHESTPLATE), Enchantment.PROTECTION, 2));
-            bot.getEquipment().setLeggings(enchant(new ItemStack(Material.DIAMOND_LEGGINGS), Enchantment.PROTECTION, 2));
-            bot.getEquipment().setBoots(enchant(new ItemStack(Material.DIAMOND_BOOTS), Enchantment.PROTECTION, 2));
-            bot.getEquipment().setItemInMainHand(enchant(new ItemStack(Material.DIAMOND_SWORD), Enchantment.SHARPNESS, 3));
-        } else {
-            bot.getEquipment().setHelmet(enchant(new ItemStack(Material.NETHERITE_HELMET), Enchantment.PROTECTION, 4));
-            bot.getEquipment().setChestplate(enchant(new ItemStack(Material.NETHERITE_CHESTPLATE), Enchantment.PROTECTION, 4));
-            bot.getEquipment().setLeggings(enchant(new ItemStack(Material.NETHERITE_LEGGINGS), Enchantment.PROTECTION, 4));
-            bot.getEquipment().setBoots(enchant(new ItemStack(Material.NETHERITE_BOOTS), Enchantment.PROTECTION, 4));
-            bot.getEquipment().setItemInMainHand(enchant(new ItemStack(Material.NETHERITE_SWORD), Enchantment.SHARPNESS, 5));
-        }
-
-        bot.getEquipment().setHelmetDropChance(0f);
-        bot.getEquipment().setChestplateDropChance(0f);
-        bot.getEquipment().setLeggingsDropChance(0f);
-        bot.getEquipment().setBootsDropChance(0f);
-        bot.getEquipment().setItemInMainHandDropChance(0f);
     }
 
     private String getBotName(int level) {
@@ -411,6 +439,7 @@ public class BotManager {
     public void handleBotDeath(UUID botUUID) {
         activeBots.remove(botUUID);
         cancelBotAi(botUUID);
+        blockingBots.remove(botUUID);
         int botLevel = botLevelMap.getOrDefault(botUUID, 1);
         botLevelMap.remove(botUUID);
 
@@ -458,6 +487,7 @@ public class BotManager {
         if (botUUID != null) {
             activeBots.remove(botUUID);
             cancelBotAi(botUUID);
+            blockingBots.remove(botUUID);
             botLevelMap.remove(botUUID);
 
             var entity = Bukkit.getEntity(botUUID);
@@ -522,15 +552,7 @@ public class BotManager {
         playerArenaMap.clear();
         botAiTasks.clear();
         botLevelMap.clear();
-    }
-
-    private ItemStack enchant(ItemStack item, Enchantment enchantment, int level) {
-        ItemMeta meta = item.getItemMeta();
-        if (meta != null) {
-            meta.addEnchant(enchantment, level, true);
-            item.setItemMeta(meta);
-        }
-        return item;
+        blockingBots.clear();
     }
 
 }

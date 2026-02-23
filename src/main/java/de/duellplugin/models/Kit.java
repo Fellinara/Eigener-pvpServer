@@ -19,6 +19,8 @@ public class Kit {
     private ItemStack offHandItem;
     /** If true, this kit can only be used in crystal arenas, and crystal arenas only allow this kit. */
     private boolean crystalOnly;
+    /** If true, no item is placed in the offhand slot (not even the default shield). */
+    private boolean noOffHand;
 
     public Kit(String name, String displayName, Material icon, String description,
                ItemStack[] armor, ItemStack[] contents) {
@@ -47,6 +49,17 @@ public class Kit {
     /** Returns true if this kit requires a dedicated crystal arena. */
     public boolean isCrystalOnly() {
         return crystalOnly;
+    }
+
+    /** Marks this kit as having no offhand item (not even the default shield). Returns {@code this} for chaining. */
+    public Kit withNoOffHand() {
+        this.noOffHand = true;
+        return this;
+    }
+
+    /** Returns true if this kit should have nothing in the offhand slot. */
+    public boolean isNoOffHand() {
+        return noOffHand;
     }
 
     /** Returns the kit's offhand item, or {@code null} if the default shield should be used. */
@@ -360,17 +373,35 @@ public class Kit {
                 new ItemStack(Material.NETHERITE_SWORD),
                 Enchantment.SHARPNESS, 5), Enchantment.KNOCKBACK, 1),
                 Enchantment.SWEEPING_EDGE, 3), Enchantment.UNBREAKING, 3);
-        // Slots 1-2: 2×64 End Crystals
-        contents[1] = new ItemStack(Material.END_CRYSTAL, 64);
+        // Slot 1: Netherite Axe Sharp5 Efficiency5 Unbreaking3
+        contents[1] = enchant(enchant(enchant(
+                new ItemStack(Material.NETHERITE_AXE),
+                Enchantment.SHARPNESS, 5), Enchantment.EFFICIENCY, 5), Enchantment.UNBREAKING, 3);
+        // Slots 2-3: 2×64 End Crystals
         contents[2] = new ItemStack(Material.END_CRYSTAL, 64);
-        // Slots 3-20: 18 Totems of Undying in inventory
-        for (int i = 3; i <= 20; i++) {
+        contents[3] = new ItemStack(Material.END_CRYSTAL, 64);
+        // Slots 4-8: 5×16 Ender Pearls
+        for (int i = 4; i <= 8; i++) {
+            contents[i] = new ItemStack(Material.ENDER_PEARL, 16);
+        }
+        // Slot 9: 64 Respawn Anchors
+        contents[9] = new ItemStack(Material.RESPAWN_ANCHOR, 64);
+        // Slot 10: 64 Glowstone
+        contents[10] = new ItemStack(Material.GLOWSTONE, 64);
+        // Slots 11-12: 2×64 Experience Bottles
+        contents[11] = new ItemStack(Material.EXPERIENCE_BOTTLE, 64);
+        contents[12] = new ItemStack(Material.EXPERIENCE_BOTTLE, 64);
+        // Slot 13: Shield Unbreaking3 Mending
+        contents[13] = enchant(enchant(new ItemStack(Material.SHIELD),
+                Enchantment.UNBREAKING, 3), Enchantment.MENDING, 1);
+        // Slots 14-31: 18 Totems of Undying in inventory
+        for (int i = 14; i <= 31; i++) {
             contents[i] = new ItemStack(Material.TOTEM_OF_UNDYING);
         }
 
         // 1 Totem of Undying in offhand → 19 totems total
         return new Kit("crystal", "§d✦ Crystal", Material.END_CRYSTAL,
-                "§7Netherite Prot 4, 2×64 Kristalle & 19 Totems – nur in Crystal-Arenen",
+                "§7Netherite Prot 4, Axt, 2×64 Kristalle, 19 Totems – nur in Crystal-Arenen",
                 armor, contents)
                 .withCrystalOnly()
                 .withOffHand(new ItemStack(Material.TOTEM_OF_UNDYING));
@@ -387,7 +418,8 @@ public class Kit {
         contents[0] = new ItemStack(Material.DIAMOND_SWORD);
 
         return new Kit("onlysword", "§f⚔ OnlySword", Material.DIAMOND_SWORD,
-                "§7Nur ein Diamant-Schwert & volle Diamant-Rüstung", armor, contents);
+                "§7Nur ein Diamant-Schwert & volle Diamant-Rüstung", armor, contents)
+                .withNoOffHand();
     }
 
     /**

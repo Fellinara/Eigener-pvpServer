@@ -407,8 +407,13 @@ public class DuellManager {
             player.getInventory().setStorageContents(contents);
             player.getInventory().setArmorContents(kit.getArmor());
         }
-        ItemStack offHand = (kit != null && kit.getOffHandItem() != null)
-                ? kit.getOffHandItem() : new ItemStack(Material.SHIELD);
+        ItemStack offHand;
+        if (kit != null && kit.isNoOffHand()) {
+            offHand = new ItemStack(Material.AIR);
+        } else {
+            offHand = (kit != null && kit.getOffHandItem() != null)
+                    ? kit.getOffHandItem() : new ItemStack(Material.SHIELD);
+        }
         player.getInventory().setItemInOffHand(offHand);
     }
 
