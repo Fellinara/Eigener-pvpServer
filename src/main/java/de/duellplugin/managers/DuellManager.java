@@ -183,6 +183,9 @@ public class DuellManager {
         }
 
         String prefix = plugin.getPrefix();
+        // In a true team duel (either side has >1 player) everyone uses the shared kit name.
+        // In a 1v1 each player keeps their own personal kit selection.
+        boolean isTeamDuel = team1UUIDs.size() > 1 || team2UUIDs.size() > 1;
 
         // Teleport + kit for team 1
         Location spawn1 = arena.getSpawn1();
@@ -192,9 +195,9 @@ public class DuellManager {
             // Slight offset so players don't overlap
             Location tpLoc = spawn1.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            String pKit = plugin.getStatsManager()
-                    .getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
-            applyKit(p, resolveKit(p.getUniqueId(), pKit));
+            String pKitName = isTeamDuel ? kitName
+                    : plugin.getStatsManager().getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
+            applyKit(p, resolveKit(p.getUniqueId(), pKitName));
         }
 
         // Teleport + kit for team 2
@@ -204,9 +207,9 @@ public class DuellManager {
             if (p == null || !p.isOnline()) continue;
             Location tpLoc = spawn2.clone().add(i * TEAM_SPAWN_OFFSET, 0, 0);
             p.teleport(tpLoc);
-            String pKit = plugin.getStatsManager()
-                    .getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
-            applyKit(p, resolveKit(p.getUniqueId(), pKit));
+            String pKitName = isTeamDuel ? kitName
+                    : plugin.getStatsManager().getOrCreateStats(p.getUniqueId(), p.getName()).getSelectedKit();
+            applyKit(p, resolveKit(p.getUniqueId(), pKitName));
         }
 
         new BukkitRunnable() {

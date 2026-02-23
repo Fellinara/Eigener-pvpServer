@@ -98,9 +98,15 @@ public class StatsManager {
         saveStats();
     }
 
-    public void processBotWin(UUID player, int botLevel) {
+    /**
+     * Records a bot win and awards ELO.  Also auto-assigns a rank when the player
+     * beats a bot of a sufficiently high level (never demotes, never overrides staff ranks).
+     *
+     * @return the newly earned {@link Rank}, or {@code null} if no rank was unlocked
+     */
+    public Rank processBotWin(UUID player, int botLevel) {
         PlayerStats stats = statsMap.get(player);
-        if (stats == null) return;
+        if (stats == null) return null;
 
         stats.addBotWin();
         stats.setHighestBotLevel(botLevel);
@@ -108,7 +114,25 @@ public class StatsManager {
         int eloGain = Math.max(1, botLevel / 5);
         stats.setElo(stats.getElo() + eloGain);
 
+        // Auto-assign rank based on the bot level reached (higher bot = better rank).
+        // Never demote a player and never override a staff rank.
+        Rank earned = null;
+        Rank current = stats.getRank();
+        if (!current.isStaff()) {
+            if (botLevel >= 90 && current.ordinal() < Rank.LEGENDE.ordinal()) {
+                earned = Rank.LEGENDE;
+            } else if (botLevel >= 75 && current.ordinal() < Rank.ELITE.ordinal()) {
+                earned = Rank.ELITE;
+            } else if (botLevel >= 50 && current.ordinal() < Rank.VIP_PLUS.ordinal()) {
+                earned = Rank.VIP_PLUS;
+            } else if (botLevel >= 25 && current.ordinal() < Rank.VIP.ordinal()) {
+                earned = Rank.VIP;
+            }
+            if (earned != null) stats.setRank(earned);
+        }
+
         saveStats();
+        return earned;
     }
 
     public void processBotLoss(UUID player) {

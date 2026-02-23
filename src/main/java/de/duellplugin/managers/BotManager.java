@@ -4,6 +4,7 @@ import de.duellplugin.DuellPlugin;
 import de.duellplugin.models.Arena;
 import de.duellplugin.models.Duel;
 import de.duellplugin.models.Kit;
+import de.duellplugin.models.Rank;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -69,6 +70,7 @@ public class BotManager {
         plugin.getDuellManager().applyKit(player, kit);
 
         final int botLevel = level;
+        final Kit botKit = kit; // pass kit to the delayed task for bot equipment
 
         new BukkitRunnable() {
             @Override
@@ -82,6 +84,8 @@ public class BotManager {
 
                 Zombie bot = (Zombie) spawnLoc.getWorld().spawnEntity(spawnLoc, EntityType.ZOMBIE);
                 configureBot(bot, botLevel);
+                // Override bot's visual equipment with the player's kit items
+                equipBotWithKit(bot, botKit, botLevel);
 
                 UUID botUUID = bot.getUniqueId();
                 activeBots.add(botUUID);
@@ -93,7 +97,7 @@ public class BotManager {
                 duel.setBotLevel(botLevel);
                 duel.setState(Duel.DuelState.ACTIVE);
 
-                startBotAi(bot, player, botLevel);
+                startBotAi(bot, player, botLevel, botKit);
 
                 String prefix = plugin.getPrefix();
                 player.sendMessage(prefix + "§eBot-Kampf gestartet! §cLevel " + botLevel);
@@ -102,17 +106,24 @@ public class BotManager {
         }.runTaskLater(plugin, 40L);
     }
 
-    private void startBotAi(Zombie bot, Player player, int level) {
+    private void startBotAi(Zombie bot, Player player, int level, Kit kit) {
         // Arrow shoot interval: level 1-30 = 60 ticks (3s), 31-60 = 40 ticks, 61-100 = 20 ticks
         long shootInterval = level <= 30 ? 60L : (level <= 60 ? 40L : 20L);
         // Cobweb placement starts at level 20+ every 5 seconds
         boolean useCobwebs = level >= 20;
-        // Golden apple healing: bot "heals" below 40% health at level 30+
-        boolean useGapple = level >= 30;
+
+        // Detect kit items to decide which AI behaviours to enable
+        boolean hasGapple = kitContainsMaterial(kit, Material.GOLDEN_APPLE)
+                || kitContainsMaterial(kit, Material.ENCHANTED_GOLDEN_APPLE);
+        boolean hasPearls = kitContainsMaterial(kit, Material.ENDER_PEARL);
+        boolean hasStrengthPot = kitContainsMaterial(kit, Material.SPLASH_POTION)
+                || kitContainsMaterial(kit, Material.LINGERING_POTION);
 
         BukkitRunnable aiTask = new BukkitRunnable() {
             private int ticksSinceLastShot = 0;
             private int ticksSinceLastCobweb = 0;
+            private int ticksSinceLastPearl = 0;
+            private int ticksSinceLastPot = 0;
 
             @Override
             public void run() {
@@ -123,9 +134,13 @@ public class BotManager {
 
                 ticksSinceLastShot++;
                 ticksSinceLastCobweb++;
+                ticksSinceLastPearl++;
+                ticksSinceLastPot++;
 
-                // Heal with golden apple effect when below 40% health
-                if (useGapple) {
+                double distance = bot.getLocation().distance(player.getLocation());
+
+                // ── Heal: golden apple effect when below 40% health ──────────
+                if (hasGapple) {
                     var maxHealthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
                     if (maxHealthAttr != null) {
                         double healthPercent = bot.getHealth() / maxHealthAttr.getValue();
@@ -134,12 +149,31 @@ public class BotManager {
                             bot.addPotionEffect(new PotionEffect(PotionEffectType.ABSORPTION, 2400, 0, false, false));
                         }
                     }
+                } else if (level >= 30) {
+                    // Fallback heal for high-level bots without gapples
+                    var maxHealthAttr = bot.getAttribute(Attribute.GENERIC_MAX_HEALTH);
+                    if (maxHealthAttr != null) {
+                        double healthPercent = bot.getHealth() / maxHealthAttr.getValue();
+                        if (healthPercent < 0.4 && !bot.hasPotionEffect(PotionEffectType.REGENERATION)) {
+                            bot.addPotionEffect(new PotionEffect(PotionEffectType.REGENERATION, 100, 1, false, false));
+                        }
+                    }
                 }
 
-                // Shoot arrow at player
+                // ── Simulate potion use (strength/speed) ────────────────────
+                if (hasStrengthPot && ticksSinceLastPot >= 200) { // every 10 s
+                    ticksSinceLastPot = 0;
+                    if (!bot.hasPotionEffect(PotionEffectType.STRENGTH)) {
+                        bot.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 400, 0, false, false));
+                    }
+                    if (!bot.hasPotionEffect(PotionEffectType.SPEED)) {
+                        bot.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 400, 0, false, false));
+                    }
+                }
+
+                // ── Shoot arrow at player ────────────────────────────────────
                 if (ticksSinceLastShot >= shootInterval) {
                     ticksSinceLastShot = 0;
-                    double distance = bot.getLocation().distance(player.getLocation());
                     if (distance > 3.0 && distance < 30.0) {
                         Location eyeLoc = bot.getEyeLocation();
                         Location targetEye = player.getEyeLocation();
@@ -153,10 +187,18 @@ public class BotManager {
                     }
                 }
 
-                // Place cobweb near player
+                // ── Simulate ender pearl (teleport behind player) ────────────
+                if (hasPearls && ticksSinceLastPearl >= 120 && distance > 8.0) { // every 6 s
+                    ticksSinceLastPearl = 0;
+                    Location playerLoc = player.getLocation();
+                    Location teleportTo = playerLoc.clone().add(
+                            playerLoc.getDirection().normalize().multiply(-1.5));
+                    if (teleportTo.getWorld() != null) bot.teleport(teleportTo);
+                }
+
+                // ── Place cobweb near player ─────────────────────────────────
                 if (useCobwebs && ticksSinceLastCobweb >= COBWEB_INTERVAL_TICKS) {
                     ticksSinceLastCobweb = 0;
-                    double distance = bot.getLocation().distance(player.getLocation());
                     if (distance < 6.0) {
                         Location cobwebLoc = player.getLocation().clone();
                         if (cobwebLoc.getWorld() != null
@@ -180,11 +222,59 @@ public class BotManager {
         botAiTasks.put(bot.getUniqueId(), aiTask);
     }
 
+    /** Returns true if the kit's main inventory contains at least one item of the given material. */
+    private boolean kitContainsMaterial(Kit kit, Material material) {
+        if (kit == null) return false;
+        for (ItemStack item : kit.getContents()) {
+            if (item != null && item.getType() == material) return true;
+        }
+        return false;
+    }
+
     private void cancelBotAi(UUID botUUID) {
         BukkitRunnable task = botAiTasks.remove(botUUID);
         if (task != null) {
             task.cancel();
         }
+    }
+
+    /**
+     * Visually equips the bot with the same armor and main-hand weapon as the player's kit.
+     * Level-based attributes (health, damage, speed) set by {@link #configureBot} are kept.
+     */
+    private void equipBotWithKit(Zombie bot, Kit kit, int level) {
+        if (kit == null) return;
+        var eq = bot.getEquipment();
+        if (eq == null) return;
+
+        // Armor: kit.getArmor() is [boots, leggings, chestplate, helmet]
+        ItemStack[] armor = kit.getArmor();
+        if (armor[0] != null) eq.setBoots(armor[0]);
+        if (armor[1] != null) eq.setLeggings(armor[1]);
+        if (armor[2] != null) eq.setChestplate(armor[2]);
+        if (armor[3] != null) eq.setHelmet(armor[3]);
+
+        // Main hand: use slot 0 of kit contents (the primary weapon)
+        ItemStack[] contents = kit.getContents();
+        if (contents[0] != null && contents[0].getType() != Material.AIR) {
+            eq.setItemInMainHand(contents[0]);
+        }
+
+        // Offhand: use kit's designated offhand item (totem, shield, etc.)
+        ItemStack offhand = kit.getOffHandItem();
+        if (offhand != null) {
+            eq.setItemInOffHand(offhand);
+        } else {
+            eq.setItemInOffHand(new ItemStack(Material.SHIELD));
+        }
+
+        // Ensure no drops
+        eq.setHelmetDropChance(0f);
+        eq.setChestplateDropChance(0f);
+        eq.setLeggingsDropChance(0f);
+        eq.setBootsDropChance(0f);
+        eq.setItemInMainHandDropChance(0f);
+        eq.setItemInOffHandDropChance(0f);
     }
 
     private void configureBot(Zombie bot, int level) {
@@ -331,13 +421,20 @@ public class BotManager {
 
         if (playerUUID != null) {
             playerBotMap.remove(playerUUID);
-            plugin.getStatsManager().processBotWin(playerUUID, botLevel);
+            Rank earned = plugin.getStatsManager().processBotWin(playerUUID, botLevel);
 
             Player player = Bukkit.getPlayer(playerUUID);
             if (player != null && player.isOnline()) {
                 String prefix = plugin.getPrefix();
                 player.sendMessage(prefix + "§aDu hast den Bot besiegt!");
                 player.sendTitle("§a§lSIEG!", "§eDu hast den Bot besiegt!", 10, 40, 10);
+
+                // Notify about an auto-earned rank
+                if (earned != null) {
+                    player.sendMessage(prefix + "§aGlückwunsch! Du hast den Rang §6"
+                            + earned.getDisplayName() + " §adurch Bot-Siege freigeschaltet!");
+                    player.setPlayerListName(earned.getDisplayName() + " §f" + player.getName());
+                }
 
                 new BukkitRunnable() {
                     @Override
