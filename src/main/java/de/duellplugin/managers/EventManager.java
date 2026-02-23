@@ -71,25 +71,25 @@ public class EventManager {
         public Map<UUID, Integer> getLives()        { return Collections.unmodifiableMap(lives); }
         public Set<String> getAllowedKits()         { return Collections.unmodifiableSet(allowedKits); }
 
-        // Internal mutators used by EventManager
-        void addAllowedKit(String kit)                  { allowedKits.add(kit); }
-        void removeAllowedKit(String kit)               { allowedKits.remove(kit); }
-        void setAllowedKitsInternal(List<String> kits)  { allowedKits.clear(); kits.forEach(k -> allowedKits.add(k.trim().toLowerCase())); }
-        void setState(EventState s)                { this.state = s; }
-        void setFormat(EventFormat f)              { this.format = f; }
-        void setKitName(String k)                  { this.kitName = k; }
-        void setArenaName(String a)                { this.arenaName = a; }
-        void setSpawnLocation(Location l)          { this.spawnLocation = l; }
-        void setMaxPlayers(int n)                  { this.maxPlayers = n; }
-        void setTeamSize(int n)                    { this.teamSize = n; }
-        void setDefaultLives(int n)                { this.defaultLives = n; }
-        void setRound(int n)                       { this.round = n; }
-        void setRemainingSeconds(int s)            { this.remainingSeconds = s; }
-        void setMotd(String m)                     { this.motd = m; }
-        void setJoinMessage(String m)              { this.joinMessage = m; }
-        void setWinMessage(String m)               { this.winMessage = m; }
+        // Internal mutators used by EventManager (public so EventCommand can call them)
+        public void addAllowedKit(String kit)                  { allowedKits.add(kit); }
+        public void removeAllowedKit(String kit)               { allowedKits.remove(kit); }
+        public void setAllowedKitsInternal(List<String> kits)  { allowedKits.clear(); kits.forEach(k -> allowedKits.add(k.trim().toLowerCase())); }
+        public void setState(EventState s)                { this.state = s; }
+        public void setFormat(EventFormat f)              { this.format = f; }
+        public void setKitName(String k)                  { this.kitName = k; }
+        public void setArenaName(String a)                { this.arenaName = a; }
+        public void setSpawnLocation(Location l)          { this.spawnLocation = l; }
+        public void setMaxPlayers(int n)                  { this.maxPlayers = n; }
+        public void setTeamSize(int n)                    { this.teamSize = n; }
+        public void setDefaultLives(int n)                { this.defaultLives = n; }
+        public void setRound(int n)                       { this.round = n; }
+        public void setRemainingSeconds(int s)            { this.remainingSeconds = s; }
+        public void setMotd(String m)                     { this.motd = m; }
+        public void setJoinMessage(String m)              { this.joinMessage = m; }
+        public void setWinMessage(String m)               { this.winMessage = m; }
         void setTimerTask(BukkitTask t)            { this.timerTask = t; }
-        BukkitTask getTimerTask()                   { return timerTask; }
+        BukkitTask getTimerTask()                  { return timerTask; }
     }
 
     // ── Manager fields ───────────────────────────────────────────────────────
