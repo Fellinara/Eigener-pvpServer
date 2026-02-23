@@ -19,6 +19,8 @@ public class PlayerStats {
     private int botWins;
     private int botLosses;
     private int highestBotLevel;
+    /** Adaptive bot difficulty rating (1–100, starts at 50). Increases on win, decreases on loss. */
+    private int botRating;
     private String selectedKit;
     private Rank rank;
     private List<String> kitOrder;
@@ -41,6 +43,7 @@ public class PlayerStats {
         this.botWins = 0;
         this.botLosses = 0;
         this.highestBotLevel = 0;
+        this.botRating = 50;
         this.selectedKit = "nodebuff";
         this.rank = Rank.SPIELER;
         this.kitOrder = new ArrayList<>();
@@ -151,6 +154,10 @@ public class PlayerStats {
             this.highestBotLevel = level;
         }
     }
+
+    public int getBotRating() { return botRating; }
+    public void setBotRating(int rating) { this.botRating = Math.max(1, Math.min(100, rating)); }
+    public void loadBotRating(int rating) { this.botRating = Math.max(1, Math.min(100, rating)); }
 
     public String getSelectedKit() {
         return selectedKit;

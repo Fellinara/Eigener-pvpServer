@@ -29,8 +29,8 @@ commands:
     usage: /setlobby
     permission: duell.admin
   bot:
-    description: Bot-Kampf starten
-    usage: /bot [level]
+    description: Bot-Kampf starten (adaptiv – wird schwerer wenn du gewinnst)
+    usage: /bot [start]
   farmcode:
     description: Farmcode einlösen
     usage: /farmcode <code>

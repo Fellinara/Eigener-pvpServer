@@ -63,7 +63,7 @@ public class StatsGUI {
         inv.setItem(25, createStatItem(Material.ZOMBIE_HEAD, "§c🤖 Bot-Statistiken",
                 "§7Siege: §a" + stats.getBotWins(),
                 "§7Niederlagen: §c" + stats.getBotLosses(),
-                "§7Höchstes Level: §6" + stats.getHighestBotLevel()));
+                "§7Bot-Stärke: §6" + stats.getBotRating() + " §7/ 100"));
 
         List<PlayerStats> topPlayers = plugin.getStatsManager().getTopPlayers(5);
         ItemStack leaderboard = new ItemStack(Material.GOLD_BLOCK);

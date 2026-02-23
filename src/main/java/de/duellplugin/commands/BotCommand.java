@@ -8,7 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class BotCommand implements CommandExecutor, TabCompleter {
@@ -26,42 +25,17 @@ public class BotCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args.length == 0) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("start")) {
+            plugin.getBotManager().startBotFight(player);
+        } else {
             new BotGUI(plugin).open(player);
-            return true;
         }
-
-        int level;
-        try {
-            level = Integer.parseInt(args[0]);
-        } catch (NumberFormatException e) {
-            String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
-            player.sendMessage(prefix + "§cUngültiges Level! Benutze eine Zahl von 1-100.");
-            return true;
-        }
-
-        if (level < 1 || level > 100) {
-            String prefix = plugin.getConfig().getString("messages.prefix", "§8[§6DuellPlugin§8] ");
-            player.sendMessage(prefix + "§cLevel muss zwischen 1 und 100 liegen!");
-            return true;
-        }
-
-        plugin.getBotManager().startBotFight(player, level);
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) {
-            List<String> levels = new ArrayList<>();
-            for (int i = 1; i <= 100; i += 10) {
-                String lvl = String.valueOf(i);
-                if (lvl.startsWith(args[0])) {
-                    levels.add(lvl);
-                }
-            }
-            return levels;
-        }
+        if (args.length == 1) return List.of("start");
         return List.of();
     }
 }

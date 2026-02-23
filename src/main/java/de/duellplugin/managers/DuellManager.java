@@ -314,7 +314,7 @@ public class DuellManager {
         if (!duel.isBotDuel()) {
             plugin.getStatsManager().processWin(winner, loser);
         } else {
-            plugin.getStatsManager().processBotWin(winner, duel.getBotLevel());
+            plugin.getStatsManager().processBotWin(winner);
         }
 
         String prefix = plugin.getPrefix();

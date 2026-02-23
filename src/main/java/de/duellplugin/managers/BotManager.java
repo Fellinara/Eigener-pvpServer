@@ -44,7 +44,7 @@ public class BotManager {
         this.botLevelMap = new HashMap<>();
     }
 
-    public void startBotFight(Player player, int level) {
+    public void startBotFight(Player player) {
         if (plugin.getDuellManager().isInDuel(player.getUniqueId())
                 || isInBotFight(player.getUniqueId())) {
             player.sendMessage("§cDu bist bereits in einem Kampf!");
@@ -62,7 +62,10 @@ public class BotManager {
             return;
         }
 
-        level = Math.max(1, Math.min(100, level));
+        // Read the player's adaptive bot rating as the bot's difficulty level
+        int level = plugin.getStatsManager()
+                .getOrCreateStats(player.getUniqueId(), player.getName()).getBotRating();
+
         arena.setInUse(true);
         playerArenaMap.put(player.getUniqueId(), arena.getName());
         player.teleport(arena.getSpawn1());
@@ -70,7 +73,7 @@ public class BotManager {
         plugin.getDuellManager().applyKit(player, kit);
 
         final int botLevel = level;
-        final Kit botKit = kit; // pass kit to the delayed task for bot equipment
+        final Kit botKit = kit;
 
         new BukkitRunnable() {
             @Override
@@ -100,8 +103,8 @@ public class BotManager {
                 startBotAi(bot, player, botLevel, botKit);
 
                 String prefix = plugin.getPrefix();
-                player.sendMessage(prefix + "§eBot-Kampf gestartet! §cLevel " + botLevel);
-                player.sendTitle("§c⚔ KAMPF!", "§eBot Level " + botLevel, 10, 40, 10);
+                player.sendMessage(prefix + "§eBot-Kampf gestartet! §7(Bot-Stärke: §6" + botLevel + "§7)");
+                player.sendTitle("§c⚔ KAMPF!", "§eBot-Stärke: §6" + botLevel, 10, 40, 10);
             }
         }.runTaskLater(plugin, 40L);
     }
@@ -421,7 +424,7 @@ public class BotManager {
 
         if (playerUUID != null) {
             playerBotMap.remove(playerUUID);
-            Rank earned = plugin.getStatsManager().processBotWin(playerUUID, botLevel);
+            Rank earned = plugin.getStatsManager().processBotWin(playerUUID);
 
             Player player = Bukkit.getPlayer(playerUUID);
             if (player != null && player.isOnline()) {

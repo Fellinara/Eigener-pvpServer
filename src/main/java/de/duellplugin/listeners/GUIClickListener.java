@@ -99,11 +99,10 @@ public class GUIClickListener implements Listener {
     }
 
     private void handleBotClick(Player player, int slot) {
-        int level = BotGUI.getLevelFromSlot(slot);
-        if (level == -1) return;
+        if (!BotGUI.isStartSlot(slot)) return;
 
         player.closeInventory();
-        plugin.getBotManager().startBotFight(player, level);
+        plugin.getBotManager().startBotFight(player);
     }
 
     private void handleKitClick(Player player, ItemStack clicked, org.bukkit.event.inventory.ClickType clickType) {

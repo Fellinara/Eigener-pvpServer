@@ -99,33 +99,37 @@ public class StatsManager {
     }
 
     /**
-     * Records a bot win and awards ELO.  Also auto-assigns a rank when the player
-     * beats a bot of a sufficiently high level (never demotes, never overrides staff ranks).
+     * Records a bot win and adjusts the adaptive bot rating upward (+4, capped at 100).
+     * Also auto-assigns a rank when the rating crosses a threshold
+     * (never demotes, never overrides staff ranks).
      *
      * @return the newly earned {@link Rank}, or {@code null} if no rank was unlocked
      */
-    public Rank processBotWin(UUID player, int botLevel) {
+    public Rank processBotWin(UUID player) {
         PlayerStats stats = statsMap.get(player);
         if (stats == null) return null;
 
         stats.addBotWin();
-        stats.setHighestBotLevel(botLevel);
+        // Increase adaptive rating
+        int newRating = Math.min(100, stats.getBotRating() + 4);
+        stats.setBotRating(newRating);
+        stats.setHighestBotLevel(newRating);
 
-        int eloGain = Math.max(1, botLevel / 5);
+        int eloGain = Math.max(1, newRating / 5);
         stats.setElo(stats.getElo() + eloGain);
 
-        // Auto-assign rank based on the bot level reached (higher bot = better rank).
+        // Auto-assign rank based on achieved bot rating.
         // Never demote a player and never override a staff rank.
         Rank earned = null;
         Rank current = stats.getRank();
         if (!current.isStaff()) {
-            if (botLevel >= 90 && current.ordinal() < Rank.LEGENDE.ordinal()) {
+            if (newRating >= 90 && current.ordinal() < Rank.LEGENDE.ordinal()) {
                 earned = Rank.LEGENDE;
-            } else if (botLevel >= 75 && current.ordinal() < Rank.ELITE.ordinal()) {
+            } else if (newRating >= 75 && current.ordinal() < Rank.ELITE.ordinal()) {
                 earned = Rank.ELITE;
-            } else if (botLevel >= 50 && current.ordinal() < Rank.VIP_PLUS.ordinal()) {
+            } else if (newRating >= 50 && current.ordinal() < Rank.VIP_PLUS.ordinal()) {
                 earned = Rank.VIP_PLUS;
-            } else if (botLevel >= 25 && current.ordinal() < Rank.VIP.ordinal()) {
+            } else if (newRating >= 25 && current.ordinal() < Rank.VIP.ordinal()) {
                 earned = Rank.VIP;
             }
             if (earned != null) stats.setRank(earned);
@@ -140,6 +144,8 @@ public class StatsManager {
         if (stats == null) return;
 
         stats.addBotLoss();
+        // Decrease adaptive rating (bot becomes easier)
+        stats.setBotRating(Math.max(1, stats.getBotRating() - 3));
         saveStats();
     }
 
@@ -182,6 +188,7 @@ public class StatsManager {
                 stats.loadBotWins(ps.getInt("bot-wins", 0));
                 stats.loadBotLosses(ps.getInt("bot-losses", 0));
                 stats.setHighestBotLevel(ps.getInt("highest-bot-level", 0));
+                stats.loadBotRating(ps.getInt("bot-rating", 50));
                 stats.setPlaytimeSeconds(ps.getLong("playtime-seconds", 0));
 
                 String rankName = ps.getString("rank", "SPIELER");
@@ -262,6 +269,7 @@ public class StatsManager {
             statsConfig.set(path + ".bot-wins", stats.getBotWins());
             statsConfig.set(path + ".bot-losses", stats.getBotLosses());
             statsConfig.set(path + ".highest-bot-level", stats.getHighestBotLevel());
+            statsConfig.set(path + ".bot-rating", stats.getBotRating());
             statsConfig.set(path + ".playtime-seconds", stats.getPlaytimeSeconds());
             statsConfig.set(path + ".rank", stats.getRank().name());
             statsConfig.set(path + ".kit-order", stats.getKitOrder());
