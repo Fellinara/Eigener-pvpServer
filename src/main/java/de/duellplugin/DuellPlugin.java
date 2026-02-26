@@ -21,6 +21,7 @@ public class DuellPlugin extends JavaPlugin {
     private SpectateManager spectateManager;
     private CreativeZoneManager creativeZoneManager;
     private EventManager eventManager;
+    private SkyWarsManager skyWarsManager;
 
     @Override
     public void onEnable() {
@@ -40,6 +41,7 @@ public class DuellPlugin extends JavaPlugin {
         spectateManager = new SpectateManager(this);
         creativeZoneManager = new CreativeZoneManager(this);
         eventManager = new EventManager(this);
+        skyWarsManager = new SkyWarsManager(this);
 
         registerCommands();
         registerListeners();
@@ -142,6 +144,10 @@ public class DuellPlugin extends JavaPlugin {
         AdminKitCommand adminKitCmd = new AdminKitCommand(this);
         getCommand("adminkit").setExecutor(adminKitCmd);
         getCommand("adminkit").setTabCompleter(adminKitCmd);
+
+        SkyWarsCommand swCmd = new SkyWarsCommand(this);
+        getCommand("sw").setExecutor(swCmd);
+        getCommand("sw").setTabCompleter(swCmd);
     }
 
     private void registerListeners() {
@@ -153,6 +159,7 @@ public class DuellPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new NpcListener(this), this);
         getServer().getPluginManager().registerEvents(new SpectateListener(this), this);
         getServer().getPluginManager().registerEvents(new CreativeZoneListener(this), this);
+        getServer().getPluginManager().registerEvents(new SkyWarsListener(this), this);
     }
 
     public ArenaManager getArenaManager() { return arenaManager; }
@@ -169,6 +176,7 @@ public class DuellPlugin extends JavaPlugin {
     public SpectateManager getSpectateManager() { return spectateManager; }
     public CreativeZoneManager getCreativeZoneManager() { return creativeZoneManager; }
     public EventManager getEventManager() { return eventManager; }
+    public SkyWarsManager getSkyWarsManager() { return skyWarsManager; }
 
     /** Returns the configured message prefix with color codes translated. */
     public String getPrefix() {

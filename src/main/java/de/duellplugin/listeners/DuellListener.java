@@ -177,8 +177,9 @@ public class DuellListener implements Listener {
         Player player = event.getPlayer();
         boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
         boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
+        boolean inSkyWars = plugin.getSkyWarsManager().isInSkyWars(player.getUniqueId());
 
-        if (!player.hasPermission("duell.admin") && !inDuel && !inBot
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot && !inSkyWars
                 && !plugin.getFfaManager().isInFfa(player.getUniqueId())) {
             event.setCancelled(true);
             return;
@@ -199,8 +200,9 @@ public class DuellListener implements Listener {
         Player player = event.getPlayer();
         boolean inDuel = plugin.getDuellManager().isInDuel(player.getUniqueId());
         boolean inBot = plugin.getBotManager().isInBotFight(player.getUniqueId());
+        boolean inSkyWars = plugin.getSkyWarsManager().isInSkyWars(player.getUniqueId());
 
-        if (!player.hasPermission("duell.admin") && !inDuel && !inBot
+        if (!player.hasPermission("duell.admin") && !inDuel && !inBot && !inSkyWars
                 && !plugin.getFfaManager().isInFfa(player.getUniqueId())) {
             event.setCancelled(true);
             return;

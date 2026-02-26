@@ -10,6 +10,7 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Arrow;
+import org.bukkit.entity.EnderCrystal;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Zombie;
@@ -121,6 +122,9 @@ public class BotManager {
         boolean hasSplashPot = kitContainsMaterial(kit, Material.SPLASH_POTION)
                 || kitContainsMaterial(kit, Material.LINGERING_POTION);
         boolean hasBow = kitContainsMaterial(kit, Material.BOW);
+        boolean hasCrystal = kitContainsMaterial(kit, Material.END_CRYSTAL);
+        boolean hasObsidian = kitContainsMaterial(kit, Material.OBSIDIAN);
+        boolean hasWindCharge = kitContainsMaterial(kit, Material.WIND_CHARGE);
 
         // Identify primary weapon (slot 0) and optional mace for close-combat switching
         final ItemStack primaryWeapon = (kit != null && kit.getContents().length > 0
@@ -145,6 +149,8 @@ public class BotManager {
             private int ticksSinceLastGapple = 0;
             private int ticksSinceLastBlock = 0;
             private int blockingTicksLeft = 0;
+            private int ticksSinceLastCrystal = 0;
+            private int ticksSinceLastWindCharge = 0;
 
             @Override
             public void run() {
@@ -161,6 +167,8 @@ public class BotManager {
                 ticksSinceLastPot += 2;
                 ticksSinceLastGapple += 2;
                 ticksSinceLastBlock += 2;
+                ticksSinceLastCrystal += 2;
+                ticksSinceLastWindCharge += 2;
 
                 var eq = bot.getEquipment();
                 double distance = bot.getLocation().distance(player.getLocation());
@@ -290,6 +298,74 @@ public class BotManager {
                         }.runTaskLater(plugin, 60L);
                     }
                 }
+
+                // ── Crystal PvP attack (crystal kit bots) ────────────────────
+                if (hasCrystal && hasObsidian && blockingTicksLeft <= 0
+                        && ticksSinceLastCrystal >= 80 && distance < 6.0) {
+                    ticksSinceLastCrystal = 0;
+                    // Show axe in hand (crystal bots use axe to detonate)
+                    if (eq != null) {
+                        ItemStack axe = findItemOfType(kit, Material.NETHERITE_AXE, Material.DIAMOND_AXE, Material.IRON_AXE);
+                        if (axe != null) eq.setItemInMainHand(axe);
+                    }
+                    // Place obsidian at player's feet, spawn end crystal on top
+                    Location playerGround = player.getLocation().clone();
+                    if (playerGround.getWorld() != null
+                            && playerGround.getBlock().getType() == Material.AIR) {
+                        playerGround.getBlock().setType(Material.OBSIDIAN);
+                        Location crystalSpawn = playerGround.clone().add(0, 1, 0);
+                        @SuppressWarnings("deprecation")
+                        EnderCrystal crystal = (EnderCrystal) playerGround.getWorld()
+                                .spawnEntity(crystalSpawn, EntityType.ENDER_CRYSTAL);
+                        crystal.setShowingBottom(false);
+                        Location obsiLoc = playerGround.clone();
+                        new BukkitRunnable() {
+                            @Override
+                            public void run() {
+                                if (crystal.isValid()) crystal.setHealth(0);
+                                // Restore obsidian after detonation
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        if (obsiLoc.getBlock().getType() == Material.OBSIDIAN)
+                                            obsiLoc.getBlock().setType(Material.AIR);
+                                    }
+                                }.runTaskLater(plugin, 10L);
+                            }
+                        }.runTaskLater(plugin, 3L);
+                    }
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (bot.isValid() && !bot.isDead() && eq != null)
+                                eq.setItemInMainHand(primaryWeapon.clone());
+                        }
+                    }.runTaskLater(plugin, 25L);
+                }
+
+                // ── Wind charge + mace aerial attack ─────────────────────────
+                if (hasWindCharge && maceItem != null && blockingTicksLeft <= 0
+                        && ticksSinceLastWindCharge >= 100 && distance < 5.0) {
+                    ticksSinceLastWindCharge = 0;
+                    // Show wind charge in hand briefly, then launch bot upward and attack with mace
+                    if (eq != null) eq.setItemInMainHand(new ItemStack(Material.WIND_CHARGE));
+                    bot.setVelocity(bot.getVelocity().clone().setY(2.5));
+                    new BukkitRunnable() {
+                        @Override
+                        public void run() {
+                            if (bot.isValid() && !bot.isDead() && eq != null) {
+                                eq.setItemInMainHand(maceItem.clone());
+                                new BukkitRunnable() {
+                                    @Override
+                                    public void run() {
+                                        if (bot.isValid() && !bot.isDead() && eq != null)
+                                            eq.setItemInMainHand(primaryWeapon.clone());
+                                    }
+                                }.runTaskLater(plugin, 20L);
+                            }
+                        }
+                    }.runTaskLater(plugin, 15L);
+                }
             }
         };
         aiTask.runTaskTimer(plugin, 20L, 2L);
@@ -316,6 +392,19 @@ public class BotManager {
             if (item != null && item.getType() == material) return true;
         }
         return false;
+    }
+
+    /**
+     * Returns a clone of the first inventory item matching any of the given materials, or null.
+     */
+    private ItemStack findItemOfType(Kit kit, Material... materials) {
+        if (kit == null) return null;
+        for (Material mat : materials) {
+            for (ItemStack item : kit.getContents()) {
+                if (item != null && item.getType() == mat) return item.clone();
+            }
+        }
+        return null;
     }
 
     private void cancelBotAi(UUID botUUID) {

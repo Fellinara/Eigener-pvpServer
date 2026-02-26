@@ -398,6 +398,12 @@ public class Kit {
         for (int i = 14; i <= 31; i++) {
             contents[i] = new ItemStack(Material.TOTEM_OF_UNDYING);
         }
+        // Slots 32-33: 2×64 Obsidian
+        contents[32] = new ItemStack(Material.OBSIDIAN, 64);
+        contents[33] = new ItemStack(Material.OBSIDIAN, 64);
+        // Slots 34-35: 2×64 Golden Apples
+        contents[34] = new ItemStack(Material.GOLDEN_APPLE, 64);
+        contents[35] = new ItemStack(Material.GOLDEN_APPLE, 64);
 
         // 1 Totem of Undying in offhand → 19 totems total
         return new Kit("crystal", "§d✦ Crystal", Material.END_CRYSTAL,

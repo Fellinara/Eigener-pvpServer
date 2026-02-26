@@ -105,6 +105,11 @@ commands:
     permission: duell.admin
     aliases: [serverkit]
 
+  sw:
+    description: SkyWars-System (Inseln, Kisten, Bot-Modus)
+    usage: /sw <join|leave|list|info|create|delete|addspawn|addchest|setminplayers|start|startbot> [args...]
+    aliases: [skywars]
+
 permissions:
   duell.use:
     description: Erlaubt die Nutzung des Duell-Systems
@@ -163,3 +168,6 @@ permissions:
   duell.event.admin:
     description: Events erstellen und verwalten
     default: op
+  duell.skywars:
+    description: SkyWars spielen
+    default: true

@@ -15,11 +15,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.SkullMeta;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class GUIClickListener implements Listener {
 
     private final DuellPlugin plugin;
+    /** Bedrock/Geyser fix: tracks last kit-select click time per player to debounce double events. */
+    private final Map<UUID, Long> lastKitClickTime = new HashMap<>();
+    /** Minimum milliseconds between two kit-select clicks from the same player. */
+    private static final long KIT_CLICK_DEBOUNCE_MS = 400;
 
     public GUIClickListener(DuellPlugin plugin) {
         this.plugin = plugin;
@@ -109,6 +116,12 @@ public class GUIClickListener implements Listener {
         if (!clicked.hasItemMeta()) return;
         ItemMeta meta = clicked.getItemMeta();
         if (meta == null || !meta.hasDisplayName()) return;
+
+        // Bedrock/Geyser debounce: ignore rapid duplicate clicks within 400 ms
+        long now = System.currentTimeMillis();
+        Long last = lastKitClickTime.get(player.getUniqueId());
+        if (last != null && (now - last) < KIT_CLICK_DEBOUNCE_MS) return;
+        lastKitClickTime.put(player.getUniqueId(), now);
 
         String displayName = meta.getDisplayName();
         for (Kit kit : plugin.getKitManager().getAllKits()) {
