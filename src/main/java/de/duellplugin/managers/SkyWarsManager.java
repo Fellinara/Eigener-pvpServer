@@ -716,8 +716,10 @@ public class SkyWarsManager {
             double x = ((Number) map.get("x")).doubleValue();
             double y = ((Number) map.get("y")).doubleValue();
             double z = ((Number) map.get("z")).doubleValue();
-            float yaw = ((Number) map.getOrDefault("yaw", 0.0)).floatValue();
-            float pitch = ((Number) map.getOrDefault("pitch", 0.0)).floatValue();
+            Number yawNum = (Number) map.get("yaw");
+            float yaw = yawNum != null ? yawNum.floatValue() : 0f;
+            Number pitchNum = (Number) map.get("pitch");
+            float pitch = pitchNum != null ? pitchNum.floatValue() : 0f;
             return new Location(world, x, y, z, yaw, pitch);
         } catch (Exception e) {
             return null;

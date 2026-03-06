@@ -314,15 +314,18 @@ public class BotManager {
                             && playerGround.getBlock().getType() == Material.AIR) {
                         playerGround.getBlock().setType(Material.OBSIDIAN);
                         Location crystalSpawn = playerGround.clone().add(0, 1, 0);
-                        @SuppressWarnings("deprecation")
                         EnderCrystal crystal = (EnderCrystal) playerGround.getWorld()
-                                .spawnEntity(crystalSpawn, EntityType.ENDER_CRYSTAL);
+                                .spawnEntity(crystalSpawn, EntityType.END_CRYSTAL);
                         crystal.setShowingBottom(false);
                         Location obsiLoc = playerGround.clone();
                         new BukkitRunnable() {
                             @Override
                             public void run() {
-                                if (crystal.isValid()) crystal.setHealth(0);
+                                if (crystal.isValid()) {
+                                    crystal.getWorld().createExplosion(
+                                            crystal.getLocation(), 6.0f, true, true);
+                                    crystal.remove();
+                                }
                                 // Restore obsidian after detonation
                                 new BukkitRunnable() {
                                     @Override
