@@ -1,0 +1,173 @@
+name: DuellPlugin
+version: ${project.version}
+main: de.duellplugin.DuellPlugin
+api-version: '1.21'
+description: Das ultimative PvP-Duell-Plugin
+author: BestesPvPDuo
+
+commands:
+  duell:
+    description: Duell-System Befehle
+    usage: /duell <fordern|annehmen|ablehnen|info>
+    aliases: [duel, pvp]
+  arena:
+    description: Arena-Verwaltung
+    usage: /arena <create|delete|setspawn|setpos1|setpos2|snapshot|setcrystal|list>
+    permission: duell.admin
+  kit:
+    description: Kit-Auswahl und Layout
+    usage: /kit [name | savelayout <kit> | resetlayout <kit>]
+  stats:
+    description: Statistiken anzeigen
+    usage: /stats [spieler]
+  lobby:
+    description: Zur Lobby teleportieren
+    usage: /lobby
+    aliases: [hub, spawn]
+  setlobby:
+    description: Lobby-Spawn setzen
+    usage: /setlobby
+    permission: duell.admin
+  bot:
+    description: Bot-Kampf starten (adaptiv – wird schwerer wenn du gewinnst)
+    usage: /bot [start]
+  farmcode:
+    description: Farmcode einlösen
+    usage: /farmcode <code>
+    aliases: [code, redeem]
+  rang:
+    description: Rang-System (Kauf von Rängen mit ELO)
+    usage: /rang [info | kaufen <rang> | setrang <spieler> <rang>]
+    aliases: [rank]
+
+  freund:
+    description: Freundschafts-System
+    usage: /freund <add|remove|annehmen|ablehnen|liste|anfragen>
+    aliases: [friend, f]
+  party:
+    description: Party-System (Gruppen & Team-Duelle)
+    usage: /party <create|invite|accept|decline|leave|kick|disband|list|duel>
+    aliases: [gruppe]
+  npc:
+    description: NPC-Verwaltung
+    usage: /npc <create|remove|list>
+    permission: duell.admin
+  ffa:
+    description: FFA-Arena beitreten oder verlassen
+    usage: /ffa [join | leave | info | setspawn]
+    aliases: [freierkampf]
+  mykit:
+    description: Eigene Kits erstellen und verwalten (VIP+)
+    usage: /mykit <create|delete|list> [name]
+    aliases: [eigeneskit, customkit]
+  reporten:
+    description: Einen Spieler bei den Admins melden
+    usage: /reporten <spieler> [grund]
+    aliases: [report, melden]
+  elo:
+    description: ELO eines Spielers ändern (Admin)
+    usage: /elo <give|remove|set> <spieler> <menge>
+    permission: duell.admin
+
+  spectate:
+    description: Einem Duell zuschauen
+    usage: /spectate <spieler>
+    aliases: [zuschauen, spec]
+  unspectate:
+    description: Zuschauen beenden
+    usage: /unspectate
+    aliases: [unspec, zuschauenbeenden]
+
+  playtime:
+    description: Spielzeit eines Spielers anzeigen
+    usage: /playtime [spieler]
+    aliases: [spielzeit]
+
+  troll:
+    description: Einen Spieler trollen (OP)
+    usage: /troll <spieler> <aktion>
+    aliases: [spaß]
+
+  kitzone:
+    description: Kreativzone für eigene Kits (Admin)
+    usage: /kitzone <setpos1|setpos2|info>
+    permission: duell.admin
+    aliases: [creativezone, bauzone]
+
+  event:
+    description: Event-System (Turniere & Custom PvP Events)
+    usage: /event <subcommand> [args...]
+    aliases: [evenement, turnier]
+
+  adminkit:
+    description: Admin-Kits erstellen und verwalten (OP)
+    usage: /adminkit <create|delete|list|reload> [args...]
+    permission: duell.admin
+    aliases: [serverkit]
+
+  sw:
+    description: SkyWars-System (Inseln, Kisten, Bot-Modus)
+    usage: /sw <join|leave|list|info|create|delete|addspawn|addchest|setminplayers|start|startbot> [args...]
+    aliases: [skywars]
+
+permissions:
+  duell.use:
+    description: Erlaubt die Nutzung des Duell-Systems
+    default: true
+  duell.admin:
+    description: Admin-Befehle fuer das Duell-Plugin
+    default: op
+  duell.stats:
+    description: Statistiken anzeigen
+    default: true
+  duell.kit:
+    description: Kits verwenden
+    default: true
+  duell.bot:
+    description: Bot-Kaempfe starten
+    default: true
+  duell.farmcode:
+    description: Farmcodes einloesen
+    default: true
+  duell.rang:
+    description: Ränge kaufen
+    default: true
+  duell.setrang:
+    description: Ränge an Spieler vergeben (Staff-Ränge)
+    default: op
+  duell.friend:
+    description: Freundschafts-System nutzen
+    default: true
+  duell.party:
+    description: Party-System nutzen
+    default: true
+  duell.npc:
+    description: NPC-Verwaltung (Admin)
+    default: op
+  duell.ffa:
+    description: FFA-Arena nutzen
+    default: true
+  duell.mykit:
+    description: Eigene Kits erstellen (VIP+)
+    default: true
+  duell.reporten:
+    description: Spieler melden
+    default: true
+  duell.spectate:
+    description: Duellen zuschauen
+    default: true
+  duell.playtime:
+    description: Spielzeit anzeigen
+    default: true
+  duell.troll:
+    description: Troll-Befehle nutzen
+    default: op
+  duell.event:
+    description: Events beitreten
+    default: true
+  duell.event.admin:
+    description: Events erstellen und verwalten
+    default: op
+  duell.skywars:
+    description: SkyWars spielen
+    default: true

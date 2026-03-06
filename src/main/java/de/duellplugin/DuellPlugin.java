@@ -1,0 +1,190 @@
+package de.duellplugin;
+
+import de.duellplugin.commands.*;
+import de.duellplugin.listeners.*;
+import de.duellplugin.managers.*;
+import org.bukkit.plugin.java.JavaPlugin;
+
+public class DuellPlugin extends JavaPlugin {
+
+    private ArenaManager arenaManager;
+    private KitManager kitManager;
+    private StatsManager statsManager;
+    private DuellManager duellManager;
+    private BotManager botManager;
+    private LobbyManager lobbyManager;
+    private FarmCodeManager farmCodeManager;
+    private FriendManager friendManager;
+    private PartyManager partyManager;
+    private NpcManager npcManager;
+    private FfaManager ffaManager;
+    private SpectateManager spectateManager;
+    private CreativeZoneManager creativeZoneManager;
+    private EventManager eventManager;
+    private SkyWarsManager skyWarsManager;
+
+    @Override
+    public void onEnable() {
+        saveDefaultConfig();
+
+        arenaManager = new ArenaManager(this);
+        kitManager = new KitManager(this);
+        statsManager = new StatsManager(this);
+        duellManager = new DuellManager(this);
+        botManager = new BotManager(this);
+        lobbyManager = new LobbyManager(this);
+        farmCodeManager = new FarmCodeManager(this);
+        friendManager = new FriendManager(this);
+        partyManager = new PartyManager(this);
+        npcManager = new NpcManager(this);
+        ffaManager = new FfaManager(this);
+        spectateManager = new SpectateManager(this);
+        creativeZoneManager = new CreativeZoneManager(this);
+        eventManager = new EventManager(this);
+        skyWarsManager = new SkyWarsManager(this);
+
+        registerCommands();
+        registerListeners();
+
+        getLogger().info("DuellPlugin v" + getDescription().getVersion() + " aktiviert!");
+        getLogger().info("Das ultimative PvP-Erlebnis ist bereit!");
+    }
+
+    @Override
+    public void onDisable() {
+        if (statsManager != null) statsManager.saveStats();
+        if (arenaManager != null) arenaManager.saveArenas();
+        if (botManager != null) botManager.cleanupBots();
+        if (friendManager != null) friendManager.saveFriends();
+        if (npcManager != null) npcManager.saveNpcs();
+        if (creativeZoneManager != null) creativeZoneManager.shutdown();
+        getLogger().info("DuellPlugin deaktiviert. Daten gespeichert.");
+    }
+
+    private void registerCommands() {
+        getCommand("duell").setExecutor(new DuellCommand(this));
+        getCommand("duell").setTabCompleter(new DuellCommand(this));
+
+        ArenaCommand arenaCmd = new ArenaCommand(this);
+        getCommand("arena").setExecutor(arenaCmd);
+        getCommand("arena").setTabCompleter(arenaCmd);
+
+        KitCommand kitCmd = new KitCommand(this);
+        getCommand("kit").setExecutor(kitCmd);
+        getCommand("kit").setTabCompleter(kitCmd);
+
+        StatsCommand statsCmd = new StatsCommand(this);
+        getCommand("stats").setExecutor(statsCmd);
+        getCommand("stats").setTabCompleter(statsCmd);
+
+        getCommand("lobby").setExecutor(new LobbyCommand(this));
+        getCommand("setlobby").setExecutor(new SetLobbyCommand(this));
+
+        BotCommand botCmd = new BotCommand(this);
+        getCommand("bot").setExecutor(botCmd);
+        getCommand("bot").setTabCompleter(botCmd);
+
+        FarmCodeCommand farmCodeCmd = new FarmCodeCommand(this);
+        getCommand("farmcode").setExecutor(farmCodeCmd);
+        getCommand("farmcode").setTabCompleter(farmCodeCmd);
+
+        RankCommand rankCmd = new RankCommand(this);
+        getCommand("rang").setExecutor(rankCmd);
+        getCommand("rang").setTabCompleter(rankCmd);
+
+        FriendCommand friendCmd = new FriendCommand(this);
+        getCommand("freund").setExecutor(friendCmd);
+        getCommand("freund").setTabCompleter(friendCmd);
+
+        PartyCommand partyCmd = new PartyCommand(this);
+        getCommand("party").setExecutor(partyCmd);
+        getCommand("party").setTabCompleter(partyCmd);
+
+        NpcCommand npcCmd = new NpcCommand(this);
+        getCommand("npc").setExecutor(npcCmd);
+        getCommand("npc").setTabCompleter(npcCmd);
+
+        FfaCommand ffaCmd = new FfaCommand(this);
+        getCommand("ffa").setExecutor(ffaCmd);
+        getCommand("ffa").setTabCompleter(ffaCmd);
+
+        MyKitCommand myKitCmd = new MyKitCommand(this);
+        getCommand("mykit").setExecutor(myKitCmd);
+        getCommand("mykit").setTabCompleter(myKitCmd);
+
+        ReportCommand reportCmd = new ReportCommand(this);
+        getCommand("reporten").setExecutor(reportCmd);
+        getCommand("reporten").setTabCompleter(reportCmd);
+
+        EloCommand eloCmd = new EloCommand(this);
+        getCommand("elo").setExecutor(eloCmd);
+        getCommand("elo").setTabCompleter(eloCmd);
+
+        SpectateCommand spectateCmd = new SpectateCommand(this);
+        getCommand("spectate").setExecutor(spectateCmd);
+        getCommand("spectate").setTabCompleter(spectateCmd);
+        getCommand("unspectate").setExecutor(spectateCmd);
+
+        PlaytimeCommand playtimeCmd = new PlaytimeCommand(this);
+        getCommand("playtime").setExecutor(playtimeCmd);
+        getCommand("playtime").setTabCompleter(playtimeCmd);
+
+        TrollCommand trollCmd = new TrollCommand(this);
+        getCommand("troll").setExecutor(trollCmd);
+        getCommand("troll").setTabCompleter(trollCmd);
+
+        CreativeZoneCommand creativeZoneCmd = new CreativeZoneCommand(this);
+        getCommand("kitzone").setExecutor(creativeZoneCmd);
+        getCommand("kitzone").setTabCompleter(creativeZoneCmd);
+
+        EventCommand eventCmd = new EventCommand(this);
+        getCommand("event").setExecutor(eventCmd);
+        getCommand("event").setTabCompleter(eventCmd);
+
+        AdminKitCommand adminKitCmd = new AdminKitCommand(this);
+        getCommand("adminkit").setExecutor(adminKitCmd);
+        getCommand("adminkit").setTabCompleter(adminKitCmd);
+
+        SkyWarsCommand swCmd = new SkyWarsCommand(this);
+        getCommand("sw").setExecutor(swCmd);
+        getCommand("sw").setTabCompleter(swCmd);
+    }
+
+    private void registerListeners() {
+        getServer().getPluginManager().registerEvents(new PlayerJoinLeaveListener(this), this);
+        getServer().getPluginManager().registerEvents(new LobbyItemListener(this), this);
+        getServer().getPluginManager().registerEvents(new GUIClickListener(this), this);
+        getServer().getPluginManager().registerEvents(new DuellListener(this), this);
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getServer().getPluginManager().registerEvents(new NpcListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpectateListener(this), this);
+        getServer().getPluginManager().registerEvents(new CreativeZoneListener(this), this);
+        getServer().getPluginManager().registerEvents(new SkyWarsListener(this), this);
+    }
+
+    public ArenaManager getArenaManager() { return arenaManager; }
+    public KitManager getKitManager() { return kitManager; }
+    public StatsManager getStatsManager() { return statsManager; }
+    public DuellManager getDuellManager() { return duellManager; }
+    public BotManager getBotManager() { return botManager; }
+    public LobbyManager getLobbyManager() { return lobbyManager; }
+    public FarmCodeManager getFarmCodeManager() { return farmCodeManager; }
+    public FriendManager getFriendManager() { return friendManager; }
+    public PartyManager getPartyManager() { return partyManager; }
+    public NpcManager getNpcManager() { return npcManager; }
+    public FfaManager getFfaManager() { return ffaManager; }
+    public SpectateManager getSpectateManager() { return spectateManager; }
+    public CreativeZoneManager getCreativeZoneManager() { return creativeZoneManager; }
+    public EventManager getEventManager() { return eventManager; }
+    public SkyWarsManager getSkyWarsManager() { return skyWarsManager; }
+
+    /** Returns the configured message prefix with color codes translated. */
+    public String getPrefix() {
+        return ChatUtils.color(getConfig().getString("messages.prefix", "&8[&6DuellPlugin&8] "));
+    }
+
+    /** Returns a configured message string with color codes translated. */
+    public String getMsg(String key, String def) {
+        return ChatUtils.color(getConfig().getString("messages." + key, def));
+    }
+}
