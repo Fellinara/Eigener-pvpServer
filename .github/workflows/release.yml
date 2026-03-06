@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Java 17 einrichten
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Mit Maven bauen
+        run: mvn --batch-mode package
+
+      - name: GitHub Release erstellen und JAR hochladen
+        uses: softprops/action-gh-release@v2
+        with:
+          files: target/WhitelistMessage-*.jar
+          generate_release_notes: true
