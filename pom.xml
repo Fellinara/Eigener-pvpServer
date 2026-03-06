@@ -13,7 +13,7 @@
     <description>Zeigt eine benutzerdefinierte Nachricht, wenn ein Spieler nicht auf der Whitelist ist.</description>
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>21</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
