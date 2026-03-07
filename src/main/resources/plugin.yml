@@ -1,0 +1,6 @@
+name: WhitelistMessage
+version: '${project.version}'
+main: com.fellinara.pvpserver.WhitelistMessagePlugin
+api-version: '1.21'
+description: Zeigt eine benutzerdefinierte Nachricht, wenn ein Spieler nicht auf der Whitelist ist.
+authors: [ Fellinara ]

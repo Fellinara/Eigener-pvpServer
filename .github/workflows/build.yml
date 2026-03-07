@@ -1,0 +1,34 @@
+name: Build
+
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+
+      - name: Java 21 einrichten
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Mit Maven bauen
+        run: mvn --batch-mode package
+
+      - name: JAR hochladen
+        uses: actions/upload-artifact@v4
+        with:
+          name: WhitelistMessage
+          path: target/WhitelistMessage-*.jar
+          if-no-files-found: error
