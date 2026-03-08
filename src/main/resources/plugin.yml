@@ -1,0 +1,20 @@
+name: Risiko
+version: ${project.version}
+main: de.fellinara.risiko.RisikoPlugin
+api-version: '1.21'
+author: Fellinara
+description: Risiko PvP Finale Plugin - Fichten vs. Dschungel Königreich
+
+commands:
+  risiko:
+    description: Risiko Hauptbefehl
+    permission: risiko.admin
+    usage: /risiko <subbefehl>
+
+permissions:
+  risiko.admin:
+    description: Zugriff auf alle Risiko-Befehle
+    default: op
+  risiko.play:
+    description: Spieler-Berechtigung für Risiko
+    default: true

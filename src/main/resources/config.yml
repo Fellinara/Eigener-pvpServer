@@ -1,0 +1,42 @@
+# Risiko Plugin Konfiguration
+
+# Standard-Herzen für reguläre Spieler
+default-hearts: 3
+
+# Zusätzliche Herzen für Könige (König hat default-hearts + king-extra-hearts)
+king-extra-hearts: 2
+
+# Kampf-Tag Dauer in Sekunden
+combat-tag-seconds: 30
+
+# Wie lange das Kampf-Logout-Dummy stehen bleibt (Sekunden)
+combat-logout-stand-seconds: 15
+
+# Weltgrenze: Startgröße für das Finale (Durchmesser in Blöcken)
+border-start-size: 500.0
+
+# Weltgrenze: Endgröße für das Finale
+border-end-size: 50.0
+
+# Dauer des Grenzschrumpfens in Sekunden
+border-shrink-time: 600
+
+# Spawn-Positionen für das Finale
+spawn-fichten:
+  world: world
+  x: 0.5
+  y: 64.0
+  z: 200.5
+
+spawn-dschungel:
+  world: world
+  x: 0.5
+  y: 64.0
+  z: -200.5
+
+# Nachrichten (können angepasst werden)
+messages:
+  kingdom-fichten: "Fichten Königreich"
+  kingdom-dschungel: "Dschungel Königreich"
+  no-hearts-left: "Du hast alle deine Herzen verloren! Du wirst gebannt."
+  ban-reason: "Du hast alle deine Herzen verloren!"
