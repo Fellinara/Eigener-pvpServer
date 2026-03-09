@@ -86,7 +86,6 @@ public class HeartManager {
         // Herzen anzeigen: volle Herzen in orange, leere in grau
         // König-Herzen: extra Herzen in Gold
         int defaultMax = plugin.getConfig().getInt("default-hearts", 3);
-        int kingExtra = plugin.getConfig().getInt("king-extra-hearts", 2);
 
         for (int i = 0; i < maxHearts; i++) {
             boolean isFull = i < currentHearts;

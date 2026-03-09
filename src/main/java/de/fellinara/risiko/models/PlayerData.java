@@ -91,13 +91,6 @@ public class PlayerData {
         return hearts <= 0;
     }
 
-    /**
-     * Fügt Herzen hinzu.
-     */
-    public void addHearts(int amount) {
-        this.hearts += amount;
-    }
-
     @Override
     public String toString() {
         return "PlayerData{uuid=" + uuid + ", name=" + name + ", kingdom=" + kingdom

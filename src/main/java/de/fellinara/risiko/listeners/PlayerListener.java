@@ -44,9 +44,9 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         PlayerData data = plugin.getDataManager().getOrCreate(player.getUniqueId(), player.getName());
 
-        // Herzen auf Standard setzen falls 0 und nicht gebannt
+        // Herzen auf Maximum setzen falls 0 und nicht gebannt (berücksichtigt König-Status)
         if (data.getHearts() <= 0 && !data.isBanned()) {
-            data.setHearts(plugin.getConfig().getInt("default-hearts", 3));
+            plugin.getHeartManager().resetHearts(data);
             plugin.getDataManager().save(player.getUniqueId());
         }
 
@@ -170,13 +170,28 @@ public class PlayerListener implements Listener {
 
         if (victimData == null) return;
 
+        // Herzen vor der Entfernung merken, um zu prüfen ob tatsächlich ein Herz entfernt wurde
+        int heartsBefore = victimData.getHearts();
+
         // Herz entfernen
         boolean outOfHearts = plugin.getHeartManager().removeHeartOnKill(victimData, killerData);
+        boolean heartRemoved = victimData.getHearts() < heartsBefore;
+
+        // König-Schutz: Herz wurde NICHT entfernt (letztes König-Herz durch Nicht-König)
+        if (!heartRemoved) {
+            killer.sendMessage(Component.text("⚔ Du hast " + victim.getName() + " getötet, aber das letzte Königs-Herz ist geschützt! Nur ein anderer König kann es nehmen.")
+                    .color(NamedTextColor.YELLOW));
+            return;
+        }
+
         plugin.getDataManager().save(victim.getUniqueId());
 
         // Kill-Nachricht senden
         Component killMessage = buildKillMessage(victim, killer, victimData, killerData);
         Bukkit.broadcast(killMessage);
+
+        // Killer-Action-Bar immer aktualisieren
+        plugin.getHeartManager().updateActionBar(killer);
 
         if (outOfHearts) {
             // Spieler eliminiert - auf nächsten Tick verschieben um Event-Handler zu vermeiden
@@ -184,9 +199,6 @@ public class PlayerListener implements Listener {
             final UUID victimUuid = victim.getUniqueId();
             Bukkit.getScheduler().runTask(plugin, () ->
                     plugin.getGameManager().handlePlayerEliminated(victimUuid, victimName));
-        } else {
-            // Action Bar beim Killer aktualisieren
-            plugin.getHeartManager().updateActionBar(killer);
         }
     }
 

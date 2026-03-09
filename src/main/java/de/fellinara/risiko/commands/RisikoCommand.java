@@ -263,7 +263,8 @@ public class RisikoCommand implements CommandExecutor, TabCompleter {
             if (data.getName().equalsIgnoreCase(playerName)) {
                 data.setBanned(false);
                 if (data.getHearts() <= 0) {
-                    data.setHearts(plugin.getConfig().getInt("default-hearts", 3));
+                    // Maximale Herzen wiederherstellen (berücksichtigt König-Status)
+                    plugin.getHeartManager().resetHearts(data);
                 }
                 plugin.getDataManager().save(data.getUuid());
                 break;
@@ -432,6 +433,7 @@ public class RisikoCommand implements CommandExecutor, TabCompleter {
     private void handleReload(CommandSender sender) {
         plugin.reloadConfig();
         plugin.getGameManager().loadSpawns();
+        plugin.getTeamManager().loadKingsFromData();
         sender.sendMessage(Component.text("✔ Konfiguration neu geladen!").color(SUCCESS_COLOR));
     }
 
