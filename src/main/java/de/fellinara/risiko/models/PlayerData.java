@@ -20,7 +20,7 @@ public class PlayerData {
         this.name = name;
         this.kingdom = null;
         this.king = false;
-        this.hearts = 3; // Standardwert, wird durch Config überschrieben
+        this.hearts = 1; // Standardwert, wird durch Config überschrieben
         this.inGame = false;
         this.banned = false;
     }

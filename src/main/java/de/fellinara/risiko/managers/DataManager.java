@@ -65,7 +65,7 @@ public class DataManager {
                     data.setKingdom(Kingdom.fromString(kingdomStr));
                 }
                 data.setKing(dataConfig.getBoolean(path + ".king", false));
-                data.setHearts(dataConfig.getInt(path + ".hearts", plugin.getConfig().getInt("default-hearts", 3)));
+                data.setHearts(dataConfig.getInt(path + ".hearts", plugin.getConfig().getInt("default-hearts", 1)));
                 data.setInGame(dataConfig.getBoolean(path + ".inGame", false));
                 data.setBanned(dataConfig.getBoolean(path + ".banned", false));
 
@@ -109,7 +109,7 @@ public class DataManager {
         PlayerData data = playerCache.get(uuid);
         if (data == null) {
             data = new PlayerData(uuid, name);
-            data.setHearts(plugin.getConfig().getInt("default-hearts", 3));
+            data.setHearts(plugin.getConfig().getInt("default-hearts", 1));
             playerCache.put(uuid, data);
         } else {
             data.setName(name);

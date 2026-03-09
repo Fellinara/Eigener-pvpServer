@@ -58,8 +58,8 @@ public class TeamManager {
             PlayerData oldKing = plugin.getDataManager().get(oldKingUuid);
             if (oldKing != null) {
                 oldKing.setKing(false);
-                // Herzen auf maximal non-König-Wert kappen (behält verlorene Herzen bei)
-                int defaultMax = plugin.getConfig().getInt("default-hearts", 3);
+                // Herzen auf maximal non-König-Wert kappen (default-hearts = 1)
+                int defaultMax = plugin.getConfig().getInt("default-hearts", 1);
                 oldKing.setHearts(Math.min(oldKing.getHearts(), defaultMax));
                 plugin.getDataManager().save(oldKingUuid);
             }
@@ -88,8 +88,8 @@ public class TeamManager {
             PlayerData oldKing = plugin.getDataManager().get(oldKingUuid);
             if (oldKing != null) {
                 oldKing.setKing(false);
-                // Herzen auf maximal non-König-Wert kappen
-                int defaultMax = plugin.getConfig().getInt("default-hearts", 3);
+                // Herzen auf maximal non-König-Wert kappen (default-hearts = 1)
+                int defaultMax = plugin.getConfig().getInt("default-hearts", 1);
                 oldKing.setHearts(Math.min(oldKing.getHearts(), defaultMax));
                 plugin.getDataManager().save(oldKingUuid);
             }

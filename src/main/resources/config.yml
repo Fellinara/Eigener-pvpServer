@@ -1,10 +1,10 @@
 # Risiko Plugin Konfiguration
 
 # Standard-Herzen für reguläre Spieler
-default-hearts: 3
+default-hearts: 1
 
-# Zusätzliche Herzen für Könige (König hat default-hearts + king-extra-hearts)
-king-extra-hearts: 2
+# Herzen für Könige (König hat NUR diese Herzen, NICHT default-hearts + king-hearts)
+king-hearts: 2
 
 # Kampf-Tag Dauer in Sekunden
 combat-tag-seconds: 30

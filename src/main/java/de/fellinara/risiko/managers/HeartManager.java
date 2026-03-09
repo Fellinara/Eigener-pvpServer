@@ -65,7 +65,8 @@ public class HeartManager {
 
     /**
      * Erstellt die Action-Bar-Komponente für einen Spieler.
-     * Format: [♔ ]❤❤❤♡♡ [Königreich-Name]
+     * Format: [♔ ]❤❤ [Königreich-Name]
+     * Normal: 1 oranges Herz; König: 2 goldene Herzen.
      */
     public Component buildActionBarComponent(PlayerData data) {
         int currentHearts = data.getHearts();
@@ -83,21 +84,14 @@ public class HeartManager {
             );
         }
 
-        // Herzen anzeigen: volle Herzen in orange, leere in grau
-        // König-Herzen: extra Herzen in Gold
-        int defaultMax = plugin.getConfig().getInt("default-hearts", 3);
+        // Herzen anzeigen: volle Herzen in der jeweiligen Farbe, leere in grau
+        // König-Herzen sind immer gold, normale Herzen sind orange
+        TextColor fullColor = data.isKing() ? KING_HEART_COLOR : HEART_COLOR_FULL;
 
         for (int i = 0; i < maxHearts; i++) {
             boolean isFull = i < currentHearts;
-            boolean isKingHeart = data.isKing() && i >= defaultMax;
 
-            TextColor color;
-            if (isFull) {
-                color = isKingHeart ? KING_HEART_COLOR : HEART_COLOR_FULL;
-            } else {
-                color = HEART_COLOR_EMPTY;
-            }
-
+            TextColor color = isFull ? fullColor : HEART_COLOR_EMPTY;
             String symbol = isFull ? FULL_HEART : EMPTY_HEART;
             component = component.append(Component.text(symbol).color(color));
 
@@ -121,13 +115,13 @@ public class HeartManager {
 
     /**
      * Gibt die maximale Herzanzahl für einen Spieler zurück.
+     * Normal: default-hearts (1). König: king-hearts (2) — ersetzt default, nicht addiert.
      */
     public int getMaxHearts(PlayerData data) {
-        int base = plugin.getConfig().getInt("default-hearts", 3);
         if (data.isKing()) {
-            base += plugin.getConfig().getInt("king-extra-hearts", 2);
+            return plugin.getConfig().getInt("king-hearts", 2);
         }
-        return base;
+        return plugin.getConfig().getInt("default-hearts", 1);
     }
 
     /**
