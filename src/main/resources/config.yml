@@ -13,13 +13,13 @@ combat-tag-seconds: 30
 combat-logout-stand-seconds: 15
 
 # Weltgrenze: Startgröße für das Finale (Durchmesser in Blöcken)
-border-start-size: 500.0
+border-start-size: 2000.0
 
 # Weltgrenze: Endgröße für das Finale
-border-end-size: 50.0
+border-end-size: 100.0
 
-# Dauer des Grenzschrumpfens in Sekunden
-border-shrink-time: 600
+# Dauer des Grenzschrumpfens in Sekunden (3600 = 1 Stunde)
+border-shrink-time: 3600
 
 # Spawn-Positionen für das Finale
 spawn-fichten:
