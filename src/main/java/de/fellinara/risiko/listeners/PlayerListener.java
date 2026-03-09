@@ -44,9 +44,18 @@ public class PlayerListener implements Listener {
         Player player = event.getPlayer();
         PlayerData data = plugin.getDataManager().getOrCreate(player.getUniqueId(), player.getName());
 
-        // Herzen auf Maximum setzen falls 0 und nicht gebannt (berücksichtigt König-Status)
+        // Herzen anpassen: auf Maximum setzen falls 0, oder auf Maximum kappen falls zu hoch
+        // (letzteres behebt gespeicherte Altdaten aus der Zeit als default-hearts noch 3 war)
+        int maxHearts = plugin.getHeartManager().getMaxHearts(data);
+        boolean heartsChanged = false;
         if (data.getHearts() <= 0 && !data.isBanned()) {
-            plugin.getHeartManager().resetHearts(data);
+            data.setHearts(maxHearts);
+            heartsChanged = true;
+        } else if (data.getHearts() > maxHearts) {
+            data.setHearts(maxHearts);
+            heartsChanged = true;
+        }
+        if (heartsChanged) {
             plugin.getDataManager().save(player.getUniqueId());
         }
 
