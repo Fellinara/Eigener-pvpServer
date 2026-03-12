@@ -46,6 +46,7 @@ public class LobbyCommand implements CommandExecutor {
         }
 
         plugin.getCooldownManager().setCooldown(player.getUniqueId());
+        plugin.getBackManager().setLastLocation(player.getUniqueId(), player.getLocation());
         player.teleport(lobbyManager.getLobby());
         player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("lobby-teleported")));
         return true;

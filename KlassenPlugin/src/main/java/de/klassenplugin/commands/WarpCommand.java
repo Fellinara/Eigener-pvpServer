@@ -58,6 +58,7 @@ public class WarpCommand implements CommandExecutor {
         }
 
         plugin.getCooldownManager().setCooldown(player.getUniqueId());
+        plugin.getBackManager().setLastLocation(player.getUniqueId(), player.getLocation());
         player.teleport(loc);
         String msg = plugin.getMessage("warp-teleported").replace("{name}", warpName);
         player.sendMessage(KlassenPlugin.colorizeComponent(msg));

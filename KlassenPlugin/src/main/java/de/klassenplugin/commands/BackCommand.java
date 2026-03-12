@@ -1,18 +1,23 @@
 package de.klassenplugin.commands;
 
 import de.klassenplugin.KlassenPlugin;
-import de.klassenplugin.managers.LobbyManager;
+import org.bukkit.Location;
 import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabExecutor;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 
-public class SpawnCommand implements CommandExecutor {
+import java.util.List;
+
+/**
+ * /back — Teleports the player to their last location (before a teleport or after death).
+ */
+public class BackCommand implements TabExecutor {
 
     private final KlassenPlugin plugin;
 
-    public SpawnCommand(KlassenPlugin plugin) {
+    public BackCommand(KlassenPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -29,15 +34,13 @@ public class SpawnCommand implements CommandExecutor {
             return true;
         }
 
-        if (!player.hasPermission("klassenplugin.spawn")) {
+        if (!player.hasPermission("klassenplugin.back")) {
             player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("no-permission")));
             return true;
         }
 
-        LobbyManager lobbyManager = plugin.getLobbyManager();
-
-        if (!lobbyManager.hasSpawn()) {
-            player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("spawn-not-set")));
+        if (!plugin.getBackManager().hasLastLocation(player.getUniqueId())) {
+            player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("back-no-location")));
             return true;
         }
 
@@ -50,10 +53,19 @@ public class SpawnCommand implements CommandExecutor {
             return true;
         }
 
+        Location backLoc = plugin.getBackManager().getLastLocation(player.getUniqueId());
+        Location currentLoc = player.getLocation();
+        // Swap: set current as new "last" so the player can /back again to come back
+        plugin.getBackManager().setLastLocation(player.getUniqueId(), currentLoc);
         plugin.getCooldownManager().setCooldown(player.getUniqueId());
-        plugin.getBackManager().setLastLocation(player.getUniqueId(), player.getLocation());
-        player.teleport(lobbyManager.getSpawn());
-        player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("spawn-teleported")));
+        player.teleport(backLoc);
+        player.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("back-teleported")));
         return true;
+    }
+
+    @Override
+    public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
+                                      @NotNull String label, @NotNull String[] args) {
+        return List.of();
     }
 }

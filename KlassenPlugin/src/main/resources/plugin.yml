@@ -2,7 +2,7 @@ name: KlassenPlugin
 version: '${project.version}'
 main: de.klassenplugin.KlassenPlugin
 api-version: '1.21'
-description: Paper 1.21 Plugin mit Lobby, Homes, Warps und mehr
+description: Paper 1.21 Plugin mit Lobby, Homes, Warps, Kits und mehr
 authors: [Fellinara]
 
 commands:
@@ -36,6 +36,11 @@ commands:
     usage: /homes
     permission: klassenplugin.home
 
+  back:
+    description: Teleportiert dich zur letzten Position (nach Tod oder Teleport)
+    usage: /back
+    permission: klassenplugin.back
+
   setwarp:
     description: Erstellt einen Warp an deiner aktuellen Position
     usage: /setwarp <name>
@@ -55,6 +60,75 @@ commands:
     description: Zeigt alle verfügbaren Warps an
     usage: /warps
     permission: klassenplugin.warp
+
+  tpa:
+    description: Sendet eine Teleportanfrage an einen Spieler
+    usage: /tpa <Spieler>
+    permission: klassenplugin.tpa
+
+  tpaccept:
+    description: Akzeptiert eine ausstehende Teleportanfrage
+    usage: /tpaccept
+    permission: klassenplugin.tpa
+    aliases: [tpyes]
+
+  tpdeny:
+    description: Lehnt eine ausstehende Teleportanfrage ab
+    usage: /tpdeny
+    permission: klassenplugin.tpa
+    aliases: [tpno]
+
+  tpcancel:
+    description: Bricht die eigene gesendete Teleportanfrage ab
+    usage: /tpcancel
+    permission: klassenplugin.tpa
+
+  kit:
+    description: Gibt dir ein Kit
+    usage: /kit <Name>
+    permission: klassenplugin.kit
+
+  kits:
+    description: Zeigt alle verfügbaren Kits an
+    usage: /kits
+    permission: klassenplugin.kit
+
+  createkit:
+    description: Erstellt ein Kit aus deinem aktuellen Inventar
+    usage: /createkit <Name>
+    permission: klassenplugin.createkit
+
+  delkit:
+    description: Löscht ein Kit
+    usage: /delkit <Name>
+    permission: klassenplugin.createkit
+
+  heal:
+    description: Heilt einen Spieler vollständig
+    usage: /heal [Spieler]
+    permission: klassenplugin.heal
+
+  feed:
+    description: Sättigt einen Spieler vollständig
+    usage: /feed [Spieler]
+    permission: klassenplugin.feed
+
+  fly:
+    description: Schaltet den Flugmodus für einen Spieler um
+    usage: /fly [Spieler]
+    permission: klassenplugin.fly
+
+  msg:
+    description: Sendet eine private Nachricht an einen Spieler
+    usage: /msg <Spieler> <Nachricht>
+    permission: klassenplugin.msg
+    aliases: [tell, pm, w]
+
+  r:
+    description: Antwortet auf die letzte private Nachricht
+    usage: /r <Nachricht>
+    permission: klassenplugin.msg
+    aliases: [reply]
 
   plugintoggle:
     description: Aktiviert oder deaktiviert das Plugin
@@ -82,6 +156,9 @@ permissions:
   klassenplugin.home:
     description: Erlaubt die Nutzung des Home-Systems
     default: true
+  klassenplugin.back:
+    description: Erlaubt die Nutzung von /back
+    default: true
   klassenplugin.warp:
     description: Erlaubt die Nutzung von /warp und /warps
     default: true
@@ -91,6 +168,27 @@ permissions:
   klassenplugin.delwarp:
     description: Erlaubt das Löschen von Warps
     default: op
+  klassenplugin.tpa:
+    description: Erlaubt die Nutzung des TPA-Systems
+    default: true
+  klassenplugin.kit:
+    description: Erlaubt die Nutzung von /kit und /kits
+    default: true
+  klassenplugin.createkit:
+    description: Erlaubt das Erstellen und Löschen von Kits
+    default: op
+  klassenplugin.heal:
+    description: Erlaubt die Nutzung von /heal
+    default: op
+  klassenplugin.feed:
+    description: Erlaubt die Nutzung von /feed
+    default: op
+  klassenplugin.fly:
+    description: Erlaubt die Nutzung von /fly
+    default: op
+  klassenplugin.msg:
+    description: Erlaubt private Nachrichten (/msg, /r)
+    default: true
   klassenplugin.spawn:
     description: Erlaubt die Nutzung von /spawn
     default: true

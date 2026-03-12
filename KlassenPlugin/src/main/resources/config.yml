@@ -14,6 +14,16 @@ join-message:
 # Teleport-Cooldown in Sekunden (0 = kein Cooldown)
 teleport-cooldown: 3
 
+# /back Einstellungen
+back:
+  # Position bei Tod speichern
+  on-death: true
+
+# /tpa Einstellungen
+tpa:
+  # Sekunden bis eine Anfrage abläuft
+  expire-seconds: 60
+
 # Nachrichten (Farben mit & möglich)
 messages:
   prefix: "&8[&bKlassenPlugin&8] "
@@ -27,6 +37,8 @@ messages:
   home-limit: "&cDu hast die maximale Anzahl an Homes erreicht ({max})!"
   homes-list: "&aHomes: &e{homes}"
   homes-empty: "&cDu hast noch keine Homes gesetzt!"
+  back-teleported: "&aDu wurdest zu deiner letzten Position zurückteleportiert!"
+  back-no-location: "&cEs gibt keine gespeicherte Position für /back!"
   warp-set: "&aWarp &e{name} &awurde erstellt!"
   warp-teleported: "&aDu wurdest zum Warp &e{name} &ateleportiert!"
   warp-deleted: "&aWarp &e{name} &awurde gelöscht!"
@@ -37,9 +49,41 @@ messages:
   spawn-set: "&aSpawn wurde gesetzt!"
   spawn-not-set: "&cDer Spawn wurde noch nicht gesetzt! Benutze /setspawn"
   teleport-cooldown: "&cBitte warte noch &e{seconds} &cSekunden!"
+  tpa-request-sent: "&aDu hast eine Teleportanfrage an &e{player} &ageschickt."
+  tpa-request-received: "&e{player} &amöchte zu dir teleportieren! Benutze &e/tpaccept &aoder &c/tpdeny&a."
+  tpa-accepted: "&aDu hast die Anfrage von &e{player} &aakzeptiert."
+  tpa-teleported: "&aDeine Anfrage wurde akzeptiert. Du wurdest zu &e{player} &ateleportiert!"
+  tpa-denied-sender: "&cDu hast die Anfrage von &e{player} &cabgelehnt."
+  tpa-denied-receiver: "&cDeine Anfrage wurde von &e{player} &cabgelehnt."
+  tpa-no-request: "&cDu hast keine ausstehende Teleportanfrage."
+  tpa-no-outgoing: "&cDu hast keine aktive ausgehende Anfrage."
+  tpa-requester-offline: "&cDer Spieler ist offline gegangen."
+  tpa-cancelled-sender: "&cDeine Teleportanfrage wurde abgebrochen."
+  tpa-cancelled-receiver: "&c{player} hat die Teleportanfrage zurückgezogen."
+  tpa-self: "&cDu kannst dir selbst keine Anfrage schicken!"
+  kit-received: "&aDu hast das Kit &e{name} &aerhalten!"
+  kit-not-found: "&cKit &e{name} &cwurde nicht gefunden!"
+  kit-created: "&aKit &e{name} &awurde erstellt!"
+  kit-deleted: "&aKit &e{name} &awurde gelöscht!"
+  kits-list: "&aKits: &e{kits}"
+  kits-empty: "&cEs gibt noch keine Kits!"
+  heal-healed: "&aDu wurdest vollständig geheilt!"
+  heal-healed-other: "&aDu hast &e{player} &agelheilt!"
+  feed-fed: "&aDu bist jetzt satt!"
+  feed-fed-other: "&aDu hast &e{player} &asattgemacht!"
+  fly-enabled: "&aDer Flugmodus wurde aktiviert!"
+  fly-disabled: "&cDer Flugmodus wurde deaktiviert!"
+  fly-enabled-other: "&aDer Flugmodus für &e{player} &awurde aktiviert!"
+  fly-disabled-other: "&cDer Flugmodus für &e{player} &cwurde deaktiviert!"
+  msg-sent: "&8[&bDu &8→ &b{target}&8] &f{message}"
+  msg-received: "&8[&b{sender} &8→ &bDu&8] &f{message}"
+  msg-self: "&cDu kannst dir selbst keine Nachricht schicken!"
+  reply-no-one: "&cDu hast noch keine Nachricht erhalten oder geschickt."
+  reply-offline: "&cDer Spieler ist nicht mehr online."
+  player-not-found: "&cSpieler &e{player} &cwurde nicht gefunden!"
   plugin-enabled: "&aDas Plugin wurde aktiviert!"
   plugin-disabled: "&cDas Plugin wurde deaktiviert!"
   plugin-already-enabled: "&cDas Plugin ist bereits aktiviert!"
   plugin-already-disabled: "&cDas Plugin ist bereits deaktiviert!"
-  no-permission: "&cDu hast keine Berechtigung fuer diesen Befehl!"
-  player-only: "&cDieser Befehl kann nur von Spielern ausgefuehrt werden!"
+  no-permission: "&cDu hast keine Berechtigung für diesen Befehl!"
+  player-only: "&cDieser Befehl kann nur von Spielern ausgeführt werden!"

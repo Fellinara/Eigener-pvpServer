@@ -55,6 +55,7 @@ public class HomeCommand implements CommandExecutor {
         }
 
         plugin.getCooldownManager().setCooldown(player.getUniqueId());
+        plugin.getBackManager().setLastLocation(player.getUniqueId(), player.getLocation());
         player.teleport(loc);
         String msg = plugin.getMessage("home-teleported").replace("{name}", homeName);
         player.sendMessage(KlassenPlugin.colorizeComponent(msg));
