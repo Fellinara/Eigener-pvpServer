@@ -54,6 +54,10 @@ public class KlassenPluginCommand implements TabExecutor {
             sender.sendMessage(KlassenPlugin.colorizeComponent("&cSpieler ist nicht online!"));
             return;
         }
+        if (target.getAddress() == null) {
+            sender.sendMessage(KlassenPlugin.colorizeComponent("&cIP-Adresse des Spielers konnte nicht ermittelt werden!"));
+            return;
+        }
         String ip = target.getAddress().getAddress().getHostAddress();
         String reason = "Gebannt von " + sender.getName();
 

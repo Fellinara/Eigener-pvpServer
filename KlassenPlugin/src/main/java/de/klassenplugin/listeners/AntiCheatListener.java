@@ -69,7 +69,7 @@ public class AntiCheatListener implements Listener {
                 Long lastTime = manager.getLastMoveTime(uuid);
                 if (lastTime != null) {
                     long elapsed = System.currentTimeMillis() - lastTime;
-                    if (elapsed >= 10) {
+                    if (elapsed >= 50) {
                         double distance = from.distance(to);
                         double speed = distance * 1000.0 / elapsed;
                         double maxSpeed = plugin.getConfig().getDouble("anticheat.speed.max-blocks-per-second", 12.0);

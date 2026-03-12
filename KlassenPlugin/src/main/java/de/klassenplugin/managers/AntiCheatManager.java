@@ -36,7 +36,7 @@ public class AntiCheatManager {
         int threshold = plugin.getConfig().getInt("anticheat.violations-before-action", 10);
 
         if (plugin.getConfig().getBoolean("anticheat.alert-admins", true)) {
-            String alert = "&c[AntiCheat] &e" + getPlayerName(playerId) + " &cverstoß gegen &e" + checkName
+            String alert = "&c[AntiCheat] &e" + getPlayerName(playerId) + " &chat einen Verstoß gegen &e" + checkName
                     + " &c(Verstoß #" + count + ")";
             for (Player online : Bukkit.getOnlinePlayers()) {
                 if (online.hasPermission("klassenplugin.anticheat.alert")) {
