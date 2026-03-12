@@ -1,0 +1,102 @@
+name: KlassenPlugin
+version: '${project.version}'
+main: de.klassenplugin.KlassenPlugin
+api-version: '1.21'
+description: Paper 1.21 Plugin mit Lobby, Homes, Warps und mehr
+authors: [Fellinara]
+
+commands:
+  lobby:
+    description: Teleportiert dich zur Lobby
+    usage: /lobby
+    permission: klassenplugin.lobby
+
+  setlobby:
+    description: Setzt die Lobby an deiner aktuellen Position
+    usage: /setlobby
+    permission: klassenplugin.setlobby
+
+  sethome:
+    description: Setzt ein Home an deiner aktuellen Position
+    usage: /sethome [name]
+    permission: klassenplugin.home
+
+  home:
+    description: Teleportiert dich zu einem Home
+    usage: /home [name]
+    permission: klassenplugin.home
+
+  delhome:
+    description: Löscht ein Home
+    usage: /delhome <name>
+    permission: klassenplugin.home
+
+  homes:
+    description: Zeigt alle deine Homes an
+    usage: /homes
+    permission: klassenplugin.home
+
+  setwarp:
+    description: Erstellt einen Warp an deiner aktuellen Position
+    usage: /setwarp <name>
+    permission: klassenplugin.setwarp
+
+  warp:
+    description: Teleportiert dich zu einem Warp
+    usage: /warp <name>
+    permission: klassenplugin.warp
+
+  delwarp:
+    description: Löscht einen Warp
+    usage: /delwarp <name>
+    permission: klassenplugin.delwarp
+
+  warps:
+    description: Zeigt alle verfügbaren Warps an
+    usage: /warps
+    permission: klassenplugin.warp
+
+  plugintoggle:
+    description: Aktiviert oder deaktiviert das Plugin
+    usage: /plugintoggle <enable|disable>
+    permission: klassenplugin.admin
+    aliases: [ptoggle]
+
+  spawn:
+    description: Teleportiert dich zum Spawn
+    usage: /spawn
+    permission: klassenplugin.spawn
+
+  setspawn:
+    description: Setzt den Spawn an deiner aktuellen Position
+    usage: /setspawn
+    permission: klassenplugin.setspawn
+
+permissions:
+  klassenplugin.lobby:
+    description: Erlaubt die Nutzung von /lobby
+    default: true
+  klassenplugin.setlobby:
+    description: Erlaubt das Setzen der Lobby
+    default: op
+  klassenplugin.home:
+    description: Erlaubt die Nutzung des Home-Systems
+    default: true
+  klassenplugin.warp:
+    description: Erlaubt die Nutzung von /warp und /warps
+    default: true
+  klassenplugin.setwarp:
+    description: Erlaubt das Erstellen von Warps
+    default: op
+  klassenplugin.delwarp:
+    description: Erlaubt das Löschen von Warps
+    default: op
+  klassenplugin.spawn:
+    description: Erlaubt die Nutzung von /spawn
+    default: true
+  klassenplugin.setspawn:
+    description: Erlaubt das Setzen des Spawns
+    default: op
+  klassenplugin.admin:
+    description: Admin-Berechtigungen für das Plugin
+    default: op

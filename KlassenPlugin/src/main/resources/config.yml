@@ -1,0 +1,45 @@
+# KlassenPlugin Konfiguration
+
+# Plugin aktiviert/deaktiviert
+plugin-enabled: true
+
+# Maximale Anzahl an Homes pro Spieler (0 = unbegrenzt)
+max-homes: 5
+
+# Willkommensnachricht beim Betreten des Servers
+join-message:
+  enabled: true
+  message: "&aWillkommen auf dem Server, &e{player}&a!"
+
+# Teleport-Cooldown in Sekunden (0 = kein Cooldown)
+teleport-cooldown: 3
+
+# Nachrichten (Farben mit & möglich)
+messages:
+  prefix: "&8[&bKlassenPlugin&8] "
+  lobby-teleported: "&aDu wurdest zur Lobby teleportiert!"
+  lobby-set: "&aLobby wurde gesetzt!"
+  lobby-not-set: "&cDie Lobby wurde noch nicht gesetzt! Benutze /setlobby"
+  home-set: "&aHome &e{name} &awurde gesetzt!"
+  home-teleported: "&aDu wurdest zu Home &e{name} &ateleportiert!"
+  home-deleted: "&aHome &e{name} &awurde gelöscht!"
+  home-not-found: "&cHome &e{name} &cwurde nicht gefunden!"
+  home-limit: "&cDu hast die maximale Anzahl an Homes erreicht ({max})!"
+  homes-list: "&aHomes: &e{homes}"
+  homes-empty: "&cDu hast noch keine Homes gesetzt!"
+  warp-set: "&aWarp &e{name} &awurde erstellt!"
+  warp-teleported: "&aDu wurdest zum Warp &e{name} &ateleportiert!"
+  warp-deleted: "&aWarp &e{name} &awurde gelöscht!"
+  warp-not-found: "&cWarp &e{name} &cwurde nicht gefunden!"
+  warps-list: "&aWarps: &e{warps}"
+  warps-empty: "&cEs gibt noch keine Warps!"
+  spawn-teleported: "&aDu wurdest zum Spawn teleportiert!"
+  spawn-set: "&aSpawn wurde gesetzt!"
+  spawn-not-set: "&cDer Spawn wurde noch nicht gesetzt! Benutze /setspawn"
+  teleport-cooldown: "&cBitte warte noch &e{seconds} &cSekunden!"
+  plugin-enabled: "&aDas Plugin wurde aktiviert!"
+  plugin-disabled: "&cDas Plugin wurde deaktiviert!"
+  plugin-already-enabled: "&cDas Plugin ist bereits aktiviert!"
+  plugin-already-disabled: "&cDas Plugin ist bereits deaktiviert!"
+  no-permission: "&cDu hast keine Berechtigung fuer diesen Befehl!"
+  player-only: "&cDieser Befehl kann nur von Spielern ausgefuehrt werden!"
