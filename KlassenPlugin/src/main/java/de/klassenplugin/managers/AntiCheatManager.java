@@ -51,6 +51,7 @@ public class AntiCheatManager {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public void takeAction(UUID playerId, String checkName) {
         Player player = Bukkit.getPlayer(playerId);
         if (player == null) return;
