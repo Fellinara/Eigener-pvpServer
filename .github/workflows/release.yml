@@ -1,0 +1,52 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"   # Triggered by tags like v1.0.0, v1.2.3, etc.
+
+permissions:
+  contents: write   # Required to create a GitHub Release
+
+jobs:
+  release:
+    name: Build & Release JAR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: temurin
+          cache: maven
+
+      - name: Build with Maven
+        run: mvn -B package --file KlassenPlugin/pom.xml
+
+      - name: Rename JAR to include version tag
+        run: |
+          VERSION="${GITHUB_REF_NAME}"
+          mv KlassenPlugin/target/KlassenPlugin-*.jar \
+             KlassenPlugin/target/KlassenPlugin-${VERSION}.jar
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "KlassenPlugin ${{ github.ref_name }}"
+          body: |
+            ## KlassenPlugin ${{ github.ref_name }}
+
+            ### Installation
+            1. Lade `KlassenPlugin-${{ github.ref_name }}.jar` herunter
+            2. Kopiere die JAR-Datei in den `plugins/`-Ordner deines Paper-Servers
+            3. Starte (oder lade) den Server neu
+
+            ### Voraussetzungen
+            - Paper 1.21.4 (oder neuer)
+            - Java 21
+          files: KlassenPlugin/target/KlassenPlugin-${{ github.ref_name }}.jar
+          fail_on_unmatched_files: true
