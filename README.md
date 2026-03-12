@@ -42,6 +42,62 @@ und lade die neueste `KlassenPlugin-vX.X.X.jar` herunter.
 | Admin | `/heal [Spieler]`, `/feed [Spieler]`, `/fly [Spieler]` |
 | Nachrichten | `/msg <Spieler> <Text>`, `/r <Text>` |
 | Plugin | `/plugintoggle <enable|disable>` |
+| **Anti-Cheat** | `/anticheat status|enable|disable|check|violations|reset` |
+| **Ränge** | `/rank create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player` |
+| **Bans** | `/klassenplugin ban <Spieler>` (IP-Ban), `/klassenplugin unban <IP>` |
+
+---
+
+## 🛡️ Anti-Cheat System
+
+Das eingebaute Anti-Cheat System erkennt folgende Verstöße:
+
+| Check | Beschreibung | Konfiguration |
+|-------|-------------|---------------|
+| **XRay** | Zu viele wertvolle Erze in zu kurzer Zeit | `anticheat.xray.*` |
+| **Speed** | Bewegung schneller als erlaubt | `anticheat.speed.max-blocks-per-second` |
+| **Fly** | Fliegen ohne Flugmodus | `anticheat.fly.max-air-ticks` |
+| **Reach** | Angriffe aus zu großer Entfernung | `anticheat.reach.max-reach` |
+| **KillAura** | Zu viele Treffer pro Sekunde | `anticheat.killaura.max-hits-per-second` |
+
+**Aktionen bei Verstößen** (konfigurierbar): `warn` / `kick` / `ban`
+
+Admins mit der Berechtigung `klassenplugin.anticheat.alert` werden bei jedem Verstoß benachrichtigt.
+Ops mit `klassenplugin.anticheat.bypass` werden nicht überprüft.
+
+---
+
+## 👑 Rang-System
+
+Erstelle eigene Ränge und weise Spielern Berechtigungen zu:
+
+```
+/rank create admin
+/rank setprefix admin &4[Admin] 
+/rank addperm admin klassenplugin.admin
+/rank addperm admin klassenplugin.heal
+/rank addperm admin minecraft.command.gamemode
+/rank assign Spielername admin
+```
+
+Ränge werden in `plugins/KlassenPlugin/ranks.yml` gespeichert und beim Einloggen automatisch angewendet.
+
+---
+
+## 🔨 IP-Ban
+
+Ein Spieler der online ist, kann per IP sofort gebannt werden:
+
+```
+/klassenplugin ban Spielername
+# oder Alias:
+/kp ban Spielername
+```
+
+IP-Ban aufheben:
+```
+/klassenplugin unban 192.168.1.1
+```
 
 ---
 
