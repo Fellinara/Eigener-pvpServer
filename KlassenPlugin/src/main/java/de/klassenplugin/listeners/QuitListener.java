@@ -20,5 +20,6 @@ public class QuitListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         plugin.getTpaManager().removePlayer(event.getPlayer().getUniqueId());
         plugin.getMsgManager().removePlayer(event.getPlayer().getUniqueId());
+        plugin.getRankManager().removeRankFromPlayer(event.getPlayer());
     }
 }

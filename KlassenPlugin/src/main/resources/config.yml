@@ -87,3 +87,54 @@ messages:
   plugin-already-disabled: "&cDas Plugin ist bereits deaktiviert!"
   no-permission: "&cDu hast keine Berechtigung für diesen Befehl!"
   player-only: "&cDieser Befehl kann nur von Spielern ausgeführt werden!"
+
+# Anti-Cheat Einstellungen
+anticheat:
+  enabled: true
+  # Benachrichtige Admins bei Verstößen (klassenplugin.anticheat.alert Berechtigung)
+  alert-admins: true
+  # Aktion bei zu vielen Verstößen: warn, kick, ban
+  action: warn
+  # Anzahl Verstöße bevor eine Aktion ausgeführt wird
+  violations-before-action: 10
+
+  xray:
+    enabled: true
+    # Anzahl überwachter Erze die in 'time-window' Sekunden abgebaut werden dürfen
+    ore-threshold: 10
+    # Zeitfenster in Sekunden
+    time-window: 60
+    # Überwachte Erze (Material-Namen)
+    monitored-ores:
+      - DIAMOND_ORE
+      - DEEPSLATE_DIAMOND_ORE
+      - EMERALD_ORE
+      - DEEPSLATE_EMERALD_ORE
+      - ANCIENT_DEBRIS
+      - GOLD_ORE
+      - DEEPSLATE_GOLD_ORE
+
+  speed:
+    enabled: true
+    # Maximale Blöcke pro Sekunde (Standard Laufen ~5.6, Sprinten ~7.1)
+    max-blocks-per-second: 12.0
+
+  fly:
+    enabled: true
+    # Maximale aufeinanderfolgende Move-Events in der Luft bevor ein Verstoß
+    max-air-ticks: 80
+
+  reach:
+    enabled: true
+    # Maximale Angriffsreichweite in Blöcken (normal: 3.0, mit Hitbox: ~4.0)
+    max-reach: 5.0
+
+  killaura:
+    enabled: true
+    # Maximale Treffer pro Sekunde
+    max-hits-per-second: 15
+
+# Rang-System
+ranks:
+  # Standardrang für neue Spieler (leer = kein Standardrang)
+  default-rank: ""

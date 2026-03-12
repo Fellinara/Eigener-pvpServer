@@ -28,5 +28,7 @@ public class JoinListener implements Listener {
 
         Component component = KlassenPlugin.colorizeComponent(message);
         event.getPlayer().sendMessage(component);
+
+        plugin.getRankManager().applyRankToPlayer(event.getPlayer());
     }
 }

@@ -146,6 +146,22 @@ commands:
     usage: /setspawn
     permission: klassenplugin.setspawn
 
+  anticheat:
+    description: Verwaltet das Anti-Cheat System
+    usage: /anticheat <status|enable|disable|check|violations|reset>
+    permission: klassenplugin.anticheat.admin
+
+  rank:
+    description: Verwaltet das Rang-System
+    usage: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player>
+    permission: klassenplugin.rank.admin
+
+  klassenplugin:
+    description: Haupt-Befehl für das KlassenPlugin
+    usage: /klassenplugin <ban|unban|version>
+    permission: klassenplugin.admin
+    aliases: [kp]
+
 permissions:
   klassenplugin.lobby:
     description: Erlaubt die Nutzung von /lobby
@@ -197,4 +213,19 @@ permissions:
     default: op
   klassenplugin.admin:
     description: Admin-Berechtigungen für das Plugin
+    default: op
+  klassenplugin.anticheat.admin:
+    description: Verwaltet das Anti-Cheat System
+    default: op
+  klassenplugin.anticheat.bypass:
+    description: Umgeht das Anti-Cheat System
+    default: op
+  klassenplugin.anticheat.alert:
+    description: Empfängt Anti-Cheat Warnungen
+    default: op
+  klassenplugin.rank.admin:
+    description: Verwaltet das Rang-System
+    default: op
+  klassenplugin.ban:
+    description: Erlaubt IP-Bans über /klassenplugin ban
     default: op

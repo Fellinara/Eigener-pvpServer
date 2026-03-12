@@ -1,6 +1,7 @@
 package de.klassenplugin;
 
 import de.klassenplugin.commands.*;
+import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.DeathListener;
 import de.klassenplugin.listeners.JoinListener;
 import de.klassenplugin.listeners.QuitListener;
@@ -21,6 +22,8 @@ public class KlassenPlugin extends JavaPlugin {
     private TpaManager tpaManager;
     private KitManager kitManager;
     private MsgManager msgManager;
+    private AntiCheatManager antiCheatManager;
+    private RankManager rankManager;
 
     @Override
     public void onEnable() {
@@ -38,6 +41,8 @@ public class KlassenPlugin extends JavaPlugin {
         tpaManager = new TpaManager(getConfig().getInt("tpa.expire-seconds", 60));
         kitManager = new KitManager(this);
         msgManager = new MsgManager();
+        antiCheatManager = new AntiCheatManager(this);
+        rankManager = new RankManager(this);
 
         registerCommands();
         registerListeners();
@@ -116,12 +121,28 @@ public class KlassenPlugin extends JavaPlugin {
 
         // Plugin toggle
         getCommand("plugintoggle").setExecutor(new PluginToggleCommand(this));
+
+        // AntiCheat
+        AntiCheatCommand acCmd = new AntiCheatCommand(this);
+        getCommand("anticheat").setExecutor(acCmd);
+        getCommand("anticheat").setTabCompleter(acCmd);
+
+        // Rank
+        RankCommand rankCmd = new RankCommand(this);
+        getCommand("rank").setExecutor(rankCmd);
+        getCommand("rank").setTabCompleter(rankCmd);
+
+        // KlassenPlugin main command
+        KlassenPluginCommand kpCmd = new KlassenPluginCommand(this);
+        getCommand("klassenplugin").setExecutor(kpCmd);
+        getCommand("klassenplugin").setTabCompleter(kpCmd);
     }
 
     private void registerListeners() {
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
         getServer().getPluginManager().registerEvents(new DeathListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
     }
 
     public static KlassenPlugin getInstance() {
@@ -146,6 +167,8 @@ public class KlassenPlugin extends JavaPlugin {
     public TpaManager getTpaManager() { return tpaManager; }
     public KitManager getKitManager() { return kitManager; }
     public MsgManager getMsgManager() { return msgManager; }
+    public AntiCheatManager getAntiCheatManager() { return antiCheatManager; }
+    public RankManager getRankManager() { return rankManager; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,
