@@ -13,8 +13,6 @@ import java.util.List;
 
 /**
  * /sell [menge] — verkauft das Item in der Hand zum aktuellen Shop-Preis.
- *
- * Zeigt den Changelog-Boost an, wenn ein Wochenboost aktiv ist.
  */
 public class SellCommand implements CommandExecutor {
 
@@ -94,16 +92,9 @@ public class SellCommand implements CommandExecutor {
         eco.deposit(p.getUniqueId(), earned);
         eco.save();
 
-        // Show boost info if active
-        double boost = plugin.getWeeklyChangelogManager() != null
-                ? plugin.getWeeklyChangelogManager().getBoostMultiplier(matName) : 1.0;
-        String boostHint = boost > 1.0
-                ? " &e(★ +" + String.format("%.0f%%", (boost - 1.0) * 100) + " Changelog-Bonus!)"
-                : "";
-
         p.sendMessage(KlassenPlugin.colorizeComponent(
                 "&aVerkauft: &e" + amount + "x " + matName
-                + " &afür &6" + eco.format(earned) + boostHint));
+                + " &afür &6" + eco.format(earned)));
         return true;
     }
 }

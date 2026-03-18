@@ -38,21 +38,16 @@ public class ShopCommand implements TabExecutor {
     }
 
     private void handleList(Player p, ShopManager shop, String[] args) {
-        int pageSize = 10, page = 1;
-        if (args.length > 1) try { page = Integer.parseInt(args[1]); } catch (NumberFormatException ignored) {}
         List<String> itemList = new ArrayList<>(shop.getItemNames());
-        int totalPages = Math.max(1, (int) Math.ceil((double) itemList.size() / pageSize));
-        page = Math.max(1, Math.min(page, totalPages));
-        int start = (page - 1) * pageSize, end = Math.min(start + pageSize, itemList.size());
         double infl = plugin.getEconomyManager().getInflationMultiplier();
         String inflStr = (infl > 1.1 ? "&c" : infl < 0.9 ? "&a" : "&e") + String.format("%.0f%%", infl * 100);
-        p.sendMessage(KlassenPlugin.colorizeComponent("&8[&6Shop&8] &eArtikel (S." + page + "/" + totalPages + ") Inflation: " + inflStr));
-        for (int i = start; i < end; i++) {
-            String name = itemList.get(i);
+        p.sendMessage(KlassenPlugin.colorizeComponent("&8[&6Shop&8] &eAlle Artikel &7(Inflation: " + inflStr + ")"));
+        p.sendMessage(KlassenPlugin.colorizeComponent("  &8Item                          &7Kauf       Verkauf"));
+        for (String name : itemList) {
             double buy = shop.getBuyPrice(name), sell = shop.getSellPrice(name);
-            double boost = plugin.getWeeklyChangelogManager().getBoostMultiplier(name);
-            String boostStr = boost > 1.0 ? " &e★x" + String.format("%.1f", boost) : "";
-            p.sendMessage(KlassenPlugin.colorizeComponent("  &b" + name + boostStr + " &7Kauf: &6" + (buy >= 0 ? String.format("%.1f", buy) : "n/a") + " &7Verk: &a" + (sell >= 0 ? String.format("%.1f", sell) : "n/a")));
+            String buyStr = buy >= 0 ? "&6" + String.format("%.1f", buy) : "&cnicht kaufbar";
+            String sellStr = sell >= 0 ? "&a" + String.format("%.1f", sell) : "&7n/a";
+            p.sendMessage(KlassenPlugin.colorizeComponent("  &b" + name + " &7| Kauf: " + buyStr + " &7| Verk: " + sellStr));
         }
     }
 
@@ -121,11 +116,10 @@ public class ShopCommand implements TabExecutor {
         String name = args[1].toUpperCase();
         if (!shop.hasItem(name)) { p.sendMessage(KlassenPlugin.colorizeComponent("&cNicht gefunden: &e" + name)); return; }
         double buy = shop.getBuyPrice(name), sell = shop.getSellPrice(name);
-        double boost = plugin.getWeeklyChangelogManager().getBoostMultiplier(name);
         double infl = plugin.getEconomyManager().getInflationMultiplier();
         p.sendMessage(KlassenPlugin.colorizeComponent("&8[&6Shop&8] &b" + name));
-        p.sendMessage(KlassenPlugin.colorizeComponent("  &7Kauf: &6" + (buy >= 0 ? String.format("%.2f", buy) : "n/a") + " &7| Verkauf: &a" + (sell >= 0 ? String.format("%.2f", sell) : "n/a")));
-        p.sendMessage(KlassenPlugin.colorizeComponent("  &7Inflation: &e" + String.format("%.0f%%", infl * 100) + (boost > 1.0 ? " &7| Boost: &e★x" + String.format("%.1f", boost) : "")));
+        p.sendMessage(KlassenPlugin.colorizeComponent("  &7Kauf: &6" + (buy >= 0 ? String.format("%.2f", buy) : "nicht kaufbar") + " &7| Verkauf: &a" + (sell >= 0 ? String.format("%.2f", sell) : "n/a")));
+        p.sendMessage(KlassenPlugin.colorizeComponent("  &7Inflation: &e" + String.format("%.0f%%", infl * 100)));
     }
 
     private void handleAdmin(Player p, ShopManager shop, String[] args) {

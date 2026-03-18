@@ -63,7 +63,8 @@ public class ShopManager {
     public double getBuyPrice(String mat) {
         double[] p = items.get(mat.toUpperCase());
         if (p == null || p[0] < 0) return -1;
-        return p[0] * plugin.getEconomyManager().getInflationMultiplier();
+        double boost = plugin.getWeeklyChangelogManager() != null ? plugin.getWeeklyChangelogManager().getBoostMultiplier(mat.toUpperCase()) : 1.0;
+        return p[0] * plugin.getEconomyManager().getInflationMultiplier() * boost;
     }
 
     public double getSellPrice(String mat) {
@@ -74,7 +75,7 @@ public class ShopManager {
         double sellPrice = p[1] * inflation * boost;
         // Verkaufspreis darf niemals >= Kaufpreis sein (kein risikofreier Arbitrage-Gewinn)
         if (p[0] > 0) {
-            double maxSell = p[0] * inflation * 0.9;
+            double maxSell = p[0] * inflation * boost * 0.9;
             sellPrice = Math.min(sellPrice, maxSell);
         }
         return sellPrice;
