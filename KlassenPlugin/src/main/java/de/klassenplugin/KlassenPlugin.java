@@ -170,6 +170,14 @@ public class KlassenPlugin extends JavaPlugin {
         getCommand("ah").setExecutor(ahCmd);
         getCommand("ah").setTabCompleter(ahCmd);
 
+        // Order system
+        OrderCommand orderCmd = new OrderCommand(this);
+        getCommand("order").setExecutor(orderCmd);
+        getCommand("order").setTabCompleter(orderCmd);
+
+        // Quick sell
+        getCommand("sell").setExecutor(new SellCommand(this));
+
         // Changelog
         ChangelogCommand clCmd = new ChangelogCommand(this);
         getCommand("changelog").setExecutor(clCmd);

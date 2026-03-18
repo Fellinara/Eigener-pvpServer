@@ -184,6 +184,17 @@ commands:
     permission: klassenplugin.auction
     aliases: [auction, auktion]
 
+  order:
+    description: Auftragssystem - stelle Kaufanfragen und erfülle sie
+    usage: /order [list|fulfill|cancel] [args...]
+    permission: klassenplugin.order
+    aliases: [auftrag]
+
+  sell:
+    description: Verkauft das Item in der Hand zum aktuellen Shop-Preis
+    usage: /sell [menge]
+    permission: klassenplugin.shop
+
   changelog:
     description: Zeigt den wöchentlichen Preischangelog
     usage: /changelog
@@ -277,6 +288,12 @@ permissions:
     default: true
   klassenplugin.shop.admin:
     description: Admin-Zugriff auf den Shop
+    default: op
+  klassenplugin.order:
+    description: Erlaubt die Nutzung des Auftragssystems (/order)
+    default: true
+  klassenplugin.order.admin:
+    description: Admin-Zugriff auf das Auftragssystem
     default: op
   klassenplugin.auction:
     description: Erlaubt die Nutzung des Auktionshauses

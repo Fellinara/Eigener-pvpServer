@@ -25,12 +25,15 @@ public class ShopManager {
     private void createDefaultShop() {
         try { plugin.getDataFolder().mkdirs(); shopFile.createNewFile(); } catch (IOException e) { plugin.getLogger().severe("shop.yml error: " + e.getMessage()); return; }
         FileConfiguration cfg = YamlConfiguration.loadConfiguration(shopFile);
+        // buy=-1 → nicht kaufbar (nur verkaufbar / farmbar)
         Object[][] defaults = {
             {"DIAMOND",150.0,80.0},{"GOLD_INGOT",20.0,10.0},{"IRON_INGOT",8.0,4.0},
             {"COAL",3.0,1.5},{"OAK_LOG",2.0,1.0},{"WHEAT",1.0,0.5},{"BREAD",3.0,1.5},
-            {"APPLE",2.0,1.0},{"COBBLESTONE",0.5,0.2},{"SAND",1.0,0.5},{"GRAVEL",1.0,0.5},
-            {"EMERALD",100.0,50.0},{"NETHERITE_INGOT",500.0,250.0},{"ANCIENT_DEBRIS",400.0,200.0},
-            {"COOKED_BEEF",5.0,2.5},{"ARROW",0.5,0.2},{"STRING",1.0,0.5},{"FEATHER",1.0,0.5},{"BONE",0.5,0.2}
+            {"APPLE",2.0,1.0},{"EMERALD",100.0,50.0},{"NETHERITE_INGOT",500.0,250.0},
+            {"ANCIENT_DEBRIS",400.0,200.0},{"COOKED_BEEF",5.0,2.5},
+            // sell-only (farmbare Items – buy=-1)
+            {"COBBLESTONE",-1.0,0.2},{"SAND",-1.0,0.5},{"GRAVEL",-1.0,0.5},
+            {"ARROW",-1.0,0.2},{"STRING",-1.0,0.5},{"FEATHER",-1.0,0.5},{"BONE",-1.0,0.2}
         };
         for (Object[] d : defaults) { cfg.set("items." + d[0] + ".buy", d[1]); cfg.set("items." + d[0] + ".sell", d[2]); }
         try { cfg.save(shopFile); } catch (IOException e) { plugin.getLogger().severe("shop.yml save error: " + e.getMessage()); }
@@ -67,7 +70,14 @@ public class ShopManager {
         double[] p = items.get(mat.toUpperCase());
         if (p == null || p[1] < 0) return -1;
         double boost = plugin.getWeeklyChangelogManager() != null ? plugin.getWeeklyChangelogManager().getBoostMultiplier(mat.toUpperCase()) : 1.0;
-        return p[1] * plugin.getEconomyManager().getInflationMultiplier() * boost;
+        double inflation = plugin.getEconomyManager().getInflationMultiplier();
+        double sellPrice = p[1] * inflation * boost;
+        // Verkaufspreis darf niemals >= Kaufpreis sein (kein risikofreier Arbitrage-Gewinn)
+        if (p[0] > 0) {
+            double maxSell = p[0] * inflation * 0.9;
+            sellPrice = Math.min(sellPrice, maxSell);
+        }
+        return sellPrice;
     }
 
     public double getBaseBuyPrice(String mat) { double[] p = items.get(mat.toUpperCase()); return p == null ? -1 : p[0]; }
