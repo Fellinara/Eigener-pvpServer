@@ -64,10 +64,8 @@ public class AntiCheatManager {
         switch (action.toLowerCase()) {
             case "kick" -> player.kick(KlassenPlugin.colorizeComponent("&cDu wurdest vom Anti-Cheat gekickt!\n&e" + reason));
             case "ban" -> {
-                // Use the name-based ban list (non-deprecated approach) via Bukkit BanList
                 @SuppressWarnings("deprecation")
-                org.bukkit.BanList<String> banList = Bukkit.getBanList(org.bukkit.BanList.Type.NAME);
-                banList.addBan(player.getName(), reason, (java.util.Date) null, "AntiCheat");
+                org.bukkit.BanEntry<?> entry = player.ban(reason, (java.util.Date) null, "AntiCheat");
                 player.kick(KlassenPlugin.colorizeComponent("&cDu wurdest gebannt!\n&e" + reason));
             }
             default -> player.sendMessage(KlassenPlugin.colorizeComponent(
