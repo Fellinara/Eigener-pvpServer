@@ -27,7 +27,14 @@ public class WeeklyChangelogManager {
     }
 
     public void load() {
-        if (!dataFile.exists()) { try { plugin.getDataFolder().mkdirs(); dataFile.createNewFile(); } catch (IOException e) { plugin.getLogger().severe("changelog.yml: " + e.getMessage()); } }
+        if (!dataFile.exists()) {
+            try {
+                plugin.getDataFolder().mkdirs();
+                dataFile.createNewFile();
+            } catch (IOException e) {
+                plugin.getLogger().severe("Fehler beim Erstellen von changelog.yml: " + e.getMessage());
+            }
+        }
         dataConfig = YamlConfiguration.loadConfiguration(dataFile);
         currentWeekStart = dataConfig.getLong("current-week-start", 0L);
         weekNumber = dataConfig.getInt("week-number", 0);
