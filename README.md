@@ -45,6 +45,11 @@ und lade die neueste `KlassenPlugin-vX.X.X.jar` herunter.
 | **Anti-Cheat** | `/anticheat status|enable|disable|check|violations|reset` |
 | **Ränge** | `/rank create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player` |
 | **Bans** | `/klassenplugin ban <Spieler>` (IP-Ban), `/klassenplugin unban <IP>` |
+| **Economy** | `/balance [Spieler]`, `/pay <Spieler> <Betrag>` |
+| **Shop** | `/shop list|buy|sell|info|admin` |
+| **Auktionshaus** | `/ah sell|list|buy|request|fulfill|cancel|search|meine` |
+| **Changelog** | `/changelog` — wöchentliche Preisboosts |
+| **Bündnis** | `/ally invite|accept|deny|info|leave` |
 
 ---
 
@@ -59,6 +64,8 @@ Das eingebaute Anti-Cheat System erkennt folgende Verstöße:
 | **Fly** | Fliegen ohne Flugmodus | `anticheat.fly.max-air-ticks` |
 | **Reach** | Angriffe aus zu großer Entfernung | `anticheat.reach.max-reach` |
 | **KillAura** | Zu viele Treffer pro Sekunde | `anticheat.killaura.max-hits-per-second` |
+| **Scaffold** | Zu schnelles Blockplatzieren | `anticheat.scaffold.max-blocks-per-second` |
+| **NoFall** | Fallschaden-Umgehung | `anticheat.nofall.*` |
 
 **Aktionen bei Verstößen** (konfigurierbar): `warn` / `kick` / `ban`
 
@@ -98,6 +105,85 @@ IP-Ban aufheben:
 ```
 /klassenplugin unban 192.168.1.1
 ```
+
+---
+
+## 💰 Economy & Shop
+
+### Ingame-Währung
+Jeder Spieler startet mit 500 Coins. Geld wird durch den Shop und das Auktionshaus verdient.
+
+```
+/balance           # Eigenen Kontostand ansehen
+/balance Steve     # Kontostand eines anderen Spielers (Admin)
+/pay Steve 100     # 100 Coins an Steve überweisen
+```
+
+### Dynamische Inflation
+Das Wirtschaftssystem passt Preise automatisch an:
+- **Inflation > 100%** → Preise steigen (zu viel Geld im Umlauf)
+- **Inflation < 100%** → Preise fallen (wenig Geld im Umlauf)
+- Zielwert: 1000 Coins pro Spieler (konfigurierbar)
+
+### Shop
+```
+/shop list          # Alle Artikel anzeigen (mit Inflation-Anzeige)
+/shop buy DIAMOND 5 # 5 Diamanten kaufen
+/shop sell IRON_INGOT 32  # 32 Eisenbarren verkaufen
+/shop sell hand     # Item in der Hand verkaufen
+/shop info DIAMOND  # Preisinformationen
+```
+
+---
+
+## 🏪 Auktionshaus (`/ah`)
+
+Spieler können Items anbieten und anfordern:
+
+```
+# Item aus der Hand verkaufen
+/ah sell 100        # Item in der Hand für 100 Coins anbieten
+
+# Angebote kaufen
+/ah list            # Alle Angebote anzeigen
+/ah buy 5           # Angebot #5 kaufen
+
+# Items anfordern
+/ah request DIAMOND 3 150   # 3 Diamanten für 150 Coins suchen
+/ah fulfill 7               # Anfrage #7 erfüllen (Items abliefern)
+
+# Verwaltung
+/ah cancel 5        # Eigenes Angebot #5 abbrechen
+/ah search DIAMOND  # Nach Diamanten suchen
+/ah meine           # Eigene Angebote anzeigen
+```
+
+---
+
+## 📋 Wöchentlicher Changelog
+
+Jede Woche werden zufällige Items mit einem Verkaufsbonus belegt. Die Boosts der Vorwoche werden zurückgesetzt.
+
+```
+/changelog          # Aktuelle Boosts und Wirtschaftsinfo anzeigen
+/changelog forceroll  # (Admin) Neue Woche manuell starten
+```
+
+---
+
+## 🤝 Bündnis-System
+
+Jeder Spieler kann mit genau **einer** anderen Person ein Bündnis eingehen.
+
+```
+/ally invite Steve  # Steve zu einem Bündnis einladen
+/ally accept        # Bündnisanfrage annehmen
+/ally deny          # Bündnisanfrage ablehnen
+/ally info          # Aktuellen Verbündeten anzeigen
+/ally leave         # Bündnis auflösen
+```
+
+**Bündnis-Schutz**: Verbündete können sich nicht gegenseitig angreifen (konfigurierbar).
 
 ---
 
