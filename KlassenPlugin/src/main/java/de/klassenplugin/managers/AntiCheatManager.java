@@ -18,6 +18,9 @@ public class AntiCheatManager {
     private final Map<UUID, Location> lastPosition = new HashMap<>();
     private final Map<UUID, Long> lastMoveTime = new HashMap<>();
     private final Map<UUID, Integer> airTickCount = new HashMap<>();
+    private final Map<UUID, List<Long>> blockPlaceTimes = new HashMap<>();
+    private final Map<UUID, Long> lastFallDamageTime = new HashMap<>();
+    private final Map<UUID, Long> lastViolationTime = new HashMap<>();
 
     public AntiCheatManager(KlassenPlugin plugin) {
         this.plugin = plugin;
@@ -147,6 +150,38 @@ public class AntiCheatManager {
         violations.put(playerId, 0);
     }
 
+    public boolean canAddViolation(UUID playerId) {
+        long now = System.currentTimeMillis();
+        Long last = lastViolationTime.get(playerId);
+        if (last != null && now - last < 1000L) return false;
+        lastViolationTime.put(playerId, now);
+        return true;
+    }
+
+    public void recordBlockPlace(UUID playerId) {
+        long now = System.currentTimeMillis();
+        List<Long> times = blockPlaceTimes.computeIfAbsent(playerId, k -> new ArrayList<>());
+        times.add(now);
+        times.removeIf(t -> now - t > 1000L);
+    }
+
+    public int getBlockPlacesInLastSecond(UUID playerId) {
+        List<Long> times = blockPlaceTimes.get(playerId);
+        if (times == null) return 0;
+        long now = System.currentTimeMillis();
+        return (int) times.stream().filter(t -> now - t <= 1000L).count();
+    }
+
+    public void recordFallDamage(UUID playerId) {
+        lastFallDamageTime.put(playerId, System.currentTimeMillis());
+    }
+
+    public boolean hadRecentFallDamage(UUID playerId) {
+        Long t = lastFallDamageTime.get(playerId);
+        if (t == null) return false;
+        return System.currentTimeMillis() - t < 3000L;
+    }
+
     public void removePlayer(UUID playerId) {
         oreMineTimes.remove(playerId);
         violations.remove(playerId);
@@ -154,6 +189,9 @@ public class AntiCheatManager {
         lastPosition.remove(playerId);
         lastMoveTime.remove(playerId);
         airTickCount.remove(playerId);
+        blockPlaceTimes.remove(playerId);
+        lastFallDamageTime.remove(playerId);
+        lastViolationTime.remove(playerId);
     }
 
     public Map<UUID, Integer> getViolationMap() {

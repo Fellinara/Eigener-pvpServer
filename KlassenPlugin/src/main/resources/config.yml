@@ -134,7 +134,36 @@ anticheat:
     # Maximale Treffer pro Sekunde
     max-hits-per-second: 15
 
+  scaffold:
+    enabled: true
+    max-blocks-per-second: 8
+
+  nofall:
+    enabled: true
+
 # Rang-System
 ranks:
   # Standardrang für neue Spieler (leer = kein Standardrang)
   default-rank: ""
+
+# Wirtschaft (Economy)
+economy:
+  currency-name: "Coins"
+  starting-balance: 500.0
+  inflation:
+    target-balance-per-player: 1000.0
+
+# Auktionshaus
+auction:
+  max-listings-per-player: 10
+
+# Wöchentlicher Changelog
+changelog:
+  week-duration-hours: 168
+  boosts-per-week: 4
+  min-boost: 1.3
+  max-boost: 2.5
+
+# Bündnis-System
+alliance:
+  protect-pvp: true

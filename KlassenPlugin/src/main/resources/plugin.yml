@@ -162,6 +162,40 @@ commands:
     permission: klassenplugin.admin
     aliases: [kp]
 
+  balance:
+    description: Zeigt deinen Kontostand
+    usage: /balance [Spieler]
+    permission: klassenplugin.economy
+    aliases: [bal, money, geld]
+
+  pay:
+    description: Überweist Geld an einen Spieler
+    usage: /pay <Spieler> <Betrag>
+    permission: klassenplugin.economy.pay
+
+  shop:
+    description: Kauft und verkauft Artikel im Shop
+    usage: /shop <list|buy|sell|info>
+    permission: klassenplugin.shop
+
+  ah:
+    description: Auktionshaus - kaufe und verkaufe Artikel
+    usage: /ah <sell|list|buy|request|fulfill|cancel|search|meine>
+    permission: klassenplugin.auction
+    aliases: [auction, auktion]
+
+  changelog:
+    description: Zeigt den wöchentlichen Preischangelog
+    usage: /changelog
+    permission: klassenplugin.changelog
+    aliases: [cl]
+
+  ally:
+    description: Bündnis-System (1 Verbündeter)
+    usage: /ally <invite|accept|deny|info|leave>
+    permission: klassenplugin.ally
+    aliases: [alliance, bündnis]
+
 permissions:
   klassenplugin.lobby:
     description: Erlaubt die Nutzung von /lobby
@@ -229,3 +263,33 @@ permissions:
   klassenplugin.ban:
     description: Erlaubt IP-Bans über /klassenplugin ban
     default: op
+  klassenplugin.economy:
+    description: Zugriff auf Economy-Befehle (/balance)
+    default: true
+  klassenplugin.economy.pay:
+    description: Erlaubt Geldtransfers (/pay)
+    default: true
+  klassenplugin.economy.admin:
+    description: Admin-Zugriff auf Economy-Daten
+    default: op
+  klassenplugin.shop:
+    description: Erlaubt die Nutzung des Shops
+    default: true
+  klassenplugin.shop.admin:
+    description: Admin-Zugriff auf den Shop
+    default: op
+  klassenplugin.auction:
+    description: Erlaubt die Nutzung des Auktionshauses
+    default: true
+  klassenplugin.auction.admin:
+    description: Admin-Zugriff auf das Auktionshaus
+    default: op
+  klassenplugin.changelog:
+    description: Zeigt den Changelog
+    default: true
+  klassenplugin.changelog.admin:
+    description: Admin-Zugriff auf den Changelog
+    default: op
+  klassenplugin.ally:
+    description: Erlaubt die Nutzung des Bündnis-Systems
+    default: true

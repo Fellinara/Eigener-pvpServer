@@ -1,6 +1,7 @@
 package de.klassenplugin;
 
 import de.klassenplugin.commands.*;
+import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.DeathListener;
 import de.klassenplugin.listeners.JoinListener;
@@ -24,6 +25,11 @@ public class KlassenPlugin extends JavaPlugin {
     private MsgManager msgManager;
     private AntiCheatManager antiCheatManager;
     private RankManager rankManager;
+    private EconomyManager economyManager;
+    private ShopManager shopManager;
+    private WeeklyChangelogManager weeklyChangelogManager;
+    private AuctionManager auctionManager;
+    private AllianceManager allianceManager;
 
     @Override
     public void onEnable() {
@@ -43,6 +49,11 @@ public class KlassenPlugin extends JavaPlugin {
         msgManager = new MsgManager();
         antiCheatManager = new AntiCheatManager(this);
         rankManager = new RankManager(this);
+        economyManager = new EconomyManager(this);
+        shopManager = new ShopManager(this);
+        weeklyChangelogManager = new WeeklyChangelogManager(this);
+        auctionManager = new AuctionManager(this);
+        allianceManager = new AllianceManager(this);
 
         registerCommands();
         registerListeners();
@@ -58,6 +69,10 @@ public class KlassenPlugin extends JavaPlugin {
         if (warpManager != null) warpManager.saveWarps();
         if (lobbyManager != null) lobbyManager.saveLobby();
         if (kitManager != null) kitManager.saveKits();
+        if (economyManager != null) economyManager.save();
+        if (auctionManager != null) auctionManager.save();
+        if (allianceManager != null) allianceManager.save();
+        if (weeklyChangelogManager != null) weeklyChangelogManager.save();
         getLogger().info("KlassenPlugin wurde deaktiviert!");
     }
 
@@ -136,6 +151,34 @@ public class KlassenPlugin extends JavaPlugin {
         KlassenPluginCommand kpCmd = new KlassenPluginCommand(this);
         getCommand("klassenplugin").setExecutor(kpCmd);
         getCommand("klassenplugin").setTabCompleter(kpCmd);
+
+        // Economy
+        BalanceCommand balCmd = new BalanceCommand(this);
+        getCommand("balance").setExecutor(balCmd);
+        getCommand("balance").setTabCompleter(balCmd);
+        PayCommand payCmd = new PayCommand(this);
+        getCommand("pay").setExecutor(payCmd);
+        getCommand("pay").setTabCompleter(payCmd);
+
+        // Shop
+        ShopCommand shopCmd = new ShopCommand(this);
+        getCommand("shop").setExecutor(shopCmd);
+        getCommand("shop").setTabCompleter(shopCmd);
+
+        // Auction House
+        AuctionCommand ahCmd = new AuctionCommand(this);
+        getCommand("ah").setExecutor(ahCmd);
+        getCommand("ah").setTabCompleter(ahCmd);
+
+        // Changelog
+        ChangelogCommand clCmd = new ChangelogCommand(this);
+        getCommand("changelog").setExecutor(clCmd);
+        getCommand("changelog").setTabCompleter(clCmd);
+
+        // Alliance
+        AllianceCommand allyCmd = new AllianceCommand(this);
+        getCommand("ally").setExecutor(allyCmd);
+        getCommand("ally").setTabCompleter(allyCmd);
     }
 
     private void registerListeners() {
@@ -143,6 +186,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new DeathListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
         getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
+        getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
     }
 
     public static KlassenPlugin getInstance() {
@@ -169,6 +213,11 @@ public class KlassenPlugin extends JavaPlugin {
     public MsgManager getMsgManager() { return msgManager; }
     public AntiCheatManager getAntiCheatManager() { return antiCheatManager; }
     public RankManager getRankManager() { return rankManager; }
+    public EconomyManager getEconomyManager() { return economyManager; }
+    public ShopManager getShopManager() { return shopManager; }
+    public WeeklyChangelogManager getWeeklyChangelogManager() { return weeklyChangelogManager; }
+    public AuctionManager getAuctionManager() { return auctionManager; }
+    public AllianceManager getAllianceManager() { return allianceManager; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,

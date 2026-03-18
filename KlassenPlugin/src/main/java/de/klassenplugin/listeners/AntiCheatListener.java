@@ -9,7 +9,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -115,7 +117,7 @@ public class AntiCheatListener implements Listener {
         if (manager.isCheckEnabled("reach")) {
             double distance = damager.getLocation().distance(victim.getLocation());
             double maxReach = plugin.getConfig().getDouble("anticheat.reach.max-reach", 5.0);
-            if (distance > maxReach) {
+            if (distance > maxReach && manager.canAddViolation(uuid)) {
                 manager.addViolation(uuid, "Reach");
             }
         }
@@ -124,9 +126,31 @@ public class AntiCheatListener implements Listener {
         if (manager.isCheckEnabled("killaura")) {
             manager.recordHit(uuid);
             int maxHits = plugin.getConfig().getInt("anticheat.killaura.max-hits-per-second", 15);
-            if (manager.getHitsInLastSecond(uuid) > maxHits) {
+            if (manager.getHitsInLastSecond(uuid) > maxHits && manager.canAddViolation(uuid)) {
                 manager.addViolation(uuid, "KillAura");
             }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        if (!manager.isEnabled() || !manager.isCheckEnabled("scaffold")) return;
+        Player player = event.getPlayer();
+        if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        UUID uuid = player.getUniqueId();
+        manager.recordBlockPlace(uuid);
+        int maxBlocks = plugin.getConfig().getInt("anticheat.scaffold.max-blocks-per-second", 8);
+        if (manager.getBlockPlacesInLastSecond(uuid) > maxBlocks && manager.canAddViolation(uuid)) {
+            manager.addViolation(uuid, "Scaffold");
+        }
+    }
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onFallDamage(EntityDamageEvent event) {
+        if (!manager.isEnabled()) return;
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (event.getCause() == EntityDamageEvent.DamageCause.FALL) {
+            manager.recordFallDamage(player.getUniqueId());
         }
     }
 

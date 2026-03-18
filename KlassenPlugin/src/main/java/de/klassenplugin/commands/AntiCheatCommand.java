@@ -16,7 +16,7 @@ import java.util.UUID;
 
 public class AntiCheatCommand implements TabExecutor {
 
-    private static final List<String> CHECKS = Arrays.asList("xray", "speed", "fly", "reach", "killaura");
+    private static final List<String> CHECKS = Arrays.asList("xray", "speed", "fly", "reach", "killaura", "scaffold", "nofall");
     private static final List<String> SUBCOMMANDS = Arrays.asList("status", "enable", "disable", "check", "violations", "reset");
 
     private final KlassenPlugin plugin;
