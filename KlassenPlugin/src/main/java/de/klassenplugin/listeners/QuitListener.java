@@ -21,5 +21,6 @@ public class QuitListener implements Listener {
         plugin.getTpaManager().removePlayer(event.getPlayer().getUniqueId());
         plugin.getMsgManager().removePlayer(event.getPlayer().getUniqueId());
         plugin.getRankManager().removeRankFromPlayer(event.getPlayer());
+        plugin.getScoreboardManager().remove(event.getPlayer());
     }
 }

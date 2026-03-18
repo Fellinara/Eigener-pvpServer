@@ -1,6 +1,7 @@
 package de.klassenplugin.managers;
 
 import de.klassenplugin.KlassenPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -84,16 +85,20 @@ public class AuctionManager {
 
     public Listing createSellListing(UUID seller, String sellerName, ItemStack item, double price) {
         Listing l = new Listing(nextId++, seller, sellerName, item.clone(), price, System.currentTimeMillis(), ListingType.SELL);
-        listings.put(l.id, l); save(); return l;
+        listings.put(l.id, l);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+        return l;
     }
 
     public Listing createRequestListing(UUID requester, String name, ItemStack item, double price) {
         Listing l = new Listing(nextId++, requester, name, item.clone(), price, System.currentTimeMillis(), ListingType.REQUEST);
-        listings.put(l.id, l); save(); return l;
+        listings.put(l.id, l);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+        return l;
     }
 
     public Listing getListing(int id) { return listings.get(id); }
-    public void removeListing(int id) { listings.remove(id); save(); }
+    public void removeListing(int id) { listings.remove(id); Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save); }
     public List<Listing> getAllListings() { return new ArrayList<>(listings.values()); }
     public List<Listing> getSellListings() { List<Listing> r = new ArrayList<>(); for (Listing l : listings.values()) if (l.type == ListingType.SELL) r.add(l); return r; }
     public List<Listing> getRequestListings() { List<Listing> r = new ArrayList<>(); for (Listing l : listings.values()) if (l.type == ListingType.REQUEST) r.add(l); return r; }

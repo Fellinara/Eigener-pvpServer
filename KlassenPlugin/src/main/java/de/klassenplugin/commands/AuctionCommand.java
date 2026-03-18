@@ -20,12 +20,16 @@ public class AuctionCommand implements TabExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("klassenplugin.auction")) { sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("no-permission"))); return true; }
         if (!(sender instanceof Player p)) { sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("player-only"))); return true; }
-        if (args.length == 0) { handleList(p, new String[]{"list"}); return true; }
+        if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
+            // Open the inventory GUI instead of printing text
+            plugin.getAuctionGui().open(p, args.length > 1 ? parseIntOrZero(args[1]) : 0);
+            return true;
+        }
         AuctionManager ah = plugin.getAuctionManager();
         EconomyManager eco = plugin.getEconomyManager();
         switch (args[0].toLowerCase()) {
             case "sell" -> handleSell(p, ah, eco, args);
-            case "list" -> handleList(p, args);
+            case "list" -> plugin.getAuctionGui().open(p, args.length > 1 ? parseIntOrZero(args[1]) : 0);
             case "buy" -> handleBuy(p, ah, eco, args);
             case "request" -> handleRequest(p, ah, eco, args);
             case "fulfill" -> handleFulfill(p, ah, eco, args);
@@ -78,11 +82,12 @@ public class AuctionCommand implements TabExecutor {
         if (l.seller.equals(p.getUniqueId())) { p.sendMessage(KlassenPlugin.colorizeComponent("&cEigenes Angebot!")); return; }
         if (!eco.has(p.getUniqueId(), l.price)) { p.sendMessage(KlassenPlugin.colorizeComponent("&cNicht genug Geld! Preis: &6" + eco.format(l.price))); return; }
         if (p.getInventory().firstEmpty() == -1) { p.sendMessage(KlassenPlugin.colorizeComponent("&cInventar voll!")); return; }
-        eco.withdraw(p.getUniqueId(), l.price); eco.deposit(l.seller, l.price); eco.save();
+        eco.withdraw(p.getUniqueId(), l.price); eco.deposit(l.seller, l.price); eco.saveAsync();
         p.getInventory().addItem(l.item.clone()); ah.removeListing(id);
         p.sendMessage(KlassenPlugin.colorizeComponent("&aGekauft: &e" + l.item.getAmount() + "x " + l.item.getType().name() + " &afür &6" + eco.format(l.price)));
         Player seller = Bukkit.getPlayer(l.seller);
         if (seller != null) seller.sendMessage(KlassenPlugin.colorizeComponent("&a[AH] &e" + p.getName() + " &ahat dein Angebot #" + id + " für &6" + eco.format(l.price) + " &agekauft!"));
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleRequest(Player p, AuctionManager ah, EconomyManager eco, String[] args) {
@@ -94,10 +99,11 @@ public class AuctionCommand implements TabExecutor {
         double price; try { price = Double.parseDouble(args[3]); } catch (NumberFormatException e) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUngültiger Preis!")); return; }
         if (price <= 0) { p.sendMessage(KlassenPlugin.colorizeComponent("&cPreis > 0!")); return; }
         if (!eco.has(p.getUniqueId(), price)) { p.sendMessage(KlassenPlugin.colorizeComponent("&cNicht genug Geld! Preis: &6" + eco.format(price))); return; }
-        eco.withdraw(p.getUniqueId(), price); eco.save();
+        eco.withdraw(p.getUniqueId(), price); eco.saveAsync();
         AuctionManager.Listing l = ah.createRequestListing(p.getUniqueId(), p.getName(), new ItemStack(mat, amount), price);
         p.sendMessage(KlassenPlugin.colorizeComponent("&a[AH] Anfrage für &e" + amount + "x " + mat.name() + " &abei &6" + eco.format(price) + " &a(ID: #" + l.id + ")"));
         for (Player op : Bukkit.getOnlinePlayers()) op.sendMessage(KlassenPlugin.colorizeComponent("&8[&6AH&8] &e" + p.getName() + " &asucht &e" + amount + "x " + mat.name() + " → &6" + eco.format(price) + " &a(#" + l.id + ")"));
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleFulfill(Player p, AuctionManager ah, EconomyManager eco, String[] args) {
@@ -117,11 +123,12 @@ public class AuctionCommand implements TabExecutor {
                 else { is.setAmount(is.getAmount() - rem); rem = 0; }
             }
         }
-        eco.deposit(p.getUniqueId(), l.price); eco.save();
+        eco.deposit(p.getUniqueId(), l.price); eco.saveAsync();
         Player req = Bukkit.getPlayer(l.seller);
         if (req != null) { req.getInventory().addItem(l.item.clone()); req.sendMessage(KlassenPlugin.colorizeComponent("&a[AH] Anfrage #" + id + " erfüllt von &e" + p.getName())); }
         ah.removeListing(id);
         p.sendMessage(KlassenPlugin.colorizeComponent("&aAnfrage #" + id + " erfüllt → &6" + eco.format(l.price) + " &aerhalten!"));
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleCancel(Player p, AuctionManager ah, EconomyManager eco, String[] args) {
@@ -134,10 +141,11 @@ public class AuctionCommand implements TabExecutor {
             if (p.getInventory().firstEmpty() != -1) p.getInventory().addItem(l.item.clone()); else p.getWorld().dropItemNaturally(p.getLocation(), l.item.clone());
             p.sendMessage(KlassenPlugin.colorizeComponent("&aAngebot #" + id + " abgebrochen. Artikel zurück!"));
         } else {
-            eco.deposit(l.seller, l.price); eco.save();
+            eco.deposit(l.seller, l.price); eco.saveAsync();
             p.sendMessage(KlassenPlugin.colorizeComponent("&aAnfrage #" + id + " abgebrochen. &6" + eco.format(l.price) + " &azurückerstattet!"));
         }
         ah.removeListing(id);
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleSearch(Player p, AuctionManager ah, String[] args) {
@@ -169,6 +177,10 @@ public class AuctionCommand implements TabExecutor {
         if (!sender.hasPermission("klassenplugin.auction")) return List.of();
         if (args.length == 1) return filter(SUBS, args[0]);
         return List.of();
+    }
+
+    private static int parseIntOrZero(String s) {
+        try { return Math.max(0, Integer.parseInt(s) - 1); } catch (NumberFormatException e) { return 0; }
     }
 
     private List<String> filter(List<String> l, String pref) { List<String> r = new ArrayList<>(); for (String s : l) if (s.toLowerCase().startsWith(pref.toLowerCase())) r.add(s); return r; }

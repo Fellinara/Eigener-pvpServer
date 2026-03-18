@@ -66,9 +66,10 @@ public class ShopCommand implements TabExecutor {
         if (mat == null) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUnbekanntes Material!")); return; }
         if (p.getInventory().firstEmpty() == -1) { p.sendMessage(KlassenPlugin.colorizeComponent("&cInventar voll!")); return; }
         eco.withdraw(p.getUniqueId(), total);
-        eco.save();
+        eco.saveAsync();
         p.getInventory().addItem(new ItemStack(mat, amount));
         p.sendMessage(KlassenPlugin.colorizeComponent("&aGekauft: &e" + amount + "x " + matName + " &afür &6" + eco.format(total)));
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleSell(Player p, ShopManager shop, EconomyManager eco, String[] args) {
@@ -107,8 +108,9 @@ public class ShopCommand implements TabExecutor {
         }
         double earned = price * amount;
         eco.deposit(p.getUniqueId(), earned);
-        eco.save();
+        eco.saveAsync();
         p.sendMessage(KlassenPlugin.colorizeComponent("&aVerkauft: &e" + amount + "x " + matName + " &afür &6" + eco.format(earned)));
+        plugin.getScoreboardManager().update(p);
     }
 
     private void handleInfo(Player p, ShopManager shop, String[] args) {

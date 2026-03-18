@@ -1,9 +1,11 @@
 package de.klassenplugin;
 
 import de.klassenplugin.commands.*;
+import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.DeathListener;
+import de.klassenplugin.listeners.GuiListener;
 import de.klassenplugin.listeners.JoinListener;
 import de.klassenplugin.listeners.QuitListener;
 import de.klassenplugin.managers.*;
@@ -30,6 +32,8 @@ public class KlassenPlugin extends JavaPlugin {
     private WeeklyChangelogManager weeklyChangelogManager;
     private AuctionManager auctionManager;
     private AllianceManager allianceManager;
+    private ScoreboardManager scoreboardManager;
+    private AuctionGui auctionGui;
 
     @Override
     public void onEnable() {
@@ -54,9 +58,18 @@ public class KlassenPlugin extends JavaPlugin {
         weeklyChangelogManager = new WeeklyChangelogManager(this);
         auctionManager = new AuctionManager(this);
         allianceManager = new AllianceManager(this);
+        scoreboardManager = new ScoreboardManager(this);
+        auctionGui = new AuctionGui(this);
 
         registerCommands();
         registerListeners();
+
+        // Periodic auto-save every 5 minutes (async) to reduce data-loss risk.
+        long fiveMin = 20L * 60L * 5L;
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            economyManager.save();
+            auctionManager.save();
+        }, fiveMin, fiveMin);
 
         getLogger().info("KlassenPlugin wurde erfolgreich gestartet!");
     }
@@ -195,6 +208,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
         getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
         getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
+        getServer().getPluginManager().registerEvents(new GuiListener(this), this);
     }
 
     public static KlassenPlugin getInstance() {
@@ -226,6 +240,8 @@ public class KlassenPlugin extends JavaPlugin {
     public WeeklyChangelogManager getWeeklyChangelogManager() { return weeklyChangelogManager; }
     public AuctionManager getAuctionManager() { return auctionManager; }
     public AllianceManager getAllianceManager() { return allianceManager; }
+    public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
+    public AuctionGui getAuctionGui() { return auctionGui; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,

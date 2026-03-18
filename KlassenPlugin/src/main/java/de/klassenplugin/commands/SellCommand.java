@@ -90,11 +90,12 @@ public class SellCommand implements CommandExecutor {
 
         double earned = unitPrice * amount;
         eco.deposit(p.getUniqueId(), earned);
-        eco.save();
+        eco.saveAsync();
 
         p.sendMessage(KlassenPlugin.colorizeComponent(
                 "&aVerkauft: &e" + amount + "x " + matName
                 + " &afür &6" + eco.format(earned)));
+        plugin.getScoreboardManager().update(p);
         return true;
     }
 }

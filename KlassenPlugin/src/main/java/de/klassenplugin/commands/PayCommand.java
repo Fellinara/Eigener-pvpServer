@@ -28,9 +28,11 @@ public class PayCommand implements TabExecutor {
             p.sendMessage(KlassenPlugin.colorizeComponent("&cNicht genug Geld! Kontostand: &6" + eco.format(eco.getBalance(p.getUniqueId())))); return true;
         }
         eco.deposit(target.getUniqueId(), amount);
-        eco.save();
+        eco.saveAsync();
         p.sendMessage(KlassenPlugin.colorizeComponent("&aDu hast &6" + eco.format(amount) + " &aan &b" + target.getName() + " &aüberwiesen!"));
         target.sendMessage(KlassenPlugin.colorizeComponent("&aDu hast &6" + eco.format(amount) + " &avon &b" + p.getName() + " &aerhalten!"));
+        plugin.getScoreboardManager().update(p);
+        plugin.getScoreboardManager().update(target);
         return true;
     }
 

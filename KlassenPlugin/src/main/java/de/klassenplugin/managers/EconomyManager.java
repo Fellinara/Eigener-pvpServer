@@ -1,6 +1,7 @@
 package de.klassenplugin.managers;
 
 import de.klassenplugin.KlassenPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -78,6 +79,11 @@ public class EconomyManager {
     }
 
     public boolean has(UUID id, double amount) { return getBalance(id) >= amount; }
+
+    /** Save to disk asynchronously. */
+    public void saveAsync() {
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
 
     public double getInflationMultiplier() {
         if (registeredPlayers <= 0) return 1.0;

@@ -1,6 +1,7 @@
 package de.klassenplugin.managers;
 
 import de.klassenplugin.KlassenPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -85,6 +86,12 @@ public class ShopManager {
     public double getBaseSellPrice(String mat) { double[] p = items.get(mat.toUpperCase()); return p == null ? -1 : p[1]; }
     public boolean hasItem(String mat) { return items.containsKey(mat.toUpperCase()); }
     public Set<String> getItemNames() { return Collections.unmodifiableSet(items.keySet()); }
-    public void setItem(String mat, double buy, double sell) { items.put(mat.toUpperCase(), new double[]{buy, sell}); save(); }
-    public void removeItem(String mat) { items.remove(mat.toUpperCase()); save(); }
+    public void setItem(String mat, double buy, double sell) {
+        items.put(mat.toUpperCase(), new double[]{buy, sell});
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+    public void removeItem(String mat) {
+        items.remove(mat.toUpperCase());
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
 }
