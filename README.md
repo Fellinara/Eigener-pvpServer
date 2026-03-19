@@ -8,10 +8,13 @@ Minecraft Plugin
 Dieses Repository enthält ein Minecraft Ressourcen Pack mit einem coolen **Void Sword** (Leere-Schwert), das das Diamond-Schwert ersetzt.
 
 ### ✨ Features
-- **Void Sword Textur** – Ein magisches, lila/blau leuchtendes Schwert mit weißem Energiekern
-- Goldene Parierstange mit rotem Edelstein
-- Dunkler Holzgriff mit Reflexions-Highlight
+- **Void Sword Textur** – Dunkle Obsidianklinge mit leuchtend violetten Kristallen entlang der Klinge
+- Breite leuchtende Parierstange mit violettem Edelstein
+- Gerippter dunkler Griff (Wicklung)
+- Leuchtender violetter Knauf-Edelstein am Griffende
 - Kompatibel mit **Minecraft Java Edition 1.20 / 1.20.4** (`pack_format: 15`)
+
+![Void Sword Preview](https://github.com/user-attachments/assets/2453cd64-4f92-46a0-ba18-9ea197c75894)
 
 ### 📦 Installation
 
@@ -38,12 +41,12 @@ ResourcePack/
 ```
 
 ### 🎨 Farb-Palette des Void Swords
-| Bereich        | Farbe                  |
-|----------------|------------------------|
-| Klinge – Kern  | `#F0DCFF` Weißlich-lila |
-| Klinge – Mitte | `#8214DC` Lila          |
-| Klinge – Rand  | `#8228DC` Mittellila    |
-| Leuchten       | `#C882FF` Helles Lila   |
-| Parierstange   | `#FFC832` Gold          |
-| Edelstein      | `#FF3250` Rot           |
-| Griff          | `#643C28` Dunkelbraun   |
+| Bereich              | Hex       | Farbe                        |
+|----------------------|-----------|------------------------------|
+| Klinge – heißer Kern | `#F0C8FF` | Weißlich-Lila (Leuchtkern)   |
+| Klinge – Kristall    | `#C83CFF` | Helles Violett               |
+| Klinge – Leuchten    | `#960AC8` | Tiefes Lila                  |
+| Klinge – Obsidian    | `#160A2E` | Fast Schwarz                 |
+| Parierstange         | `#960AC8` | Violetter Kristall           |
+| Griff                | `#12070E` | Sehr Dunkel                  |
+| Knauf-Edelstein      | `#F0C8FF` | Weißlich-Lila Edelstein      |
