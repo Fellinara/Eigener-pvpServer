@@ -2,8 +2,10 @@ name: Build & Release ResourcePack
 
 on:
   push:
+    branches:
+      - main          # auto-release whenever main is updated
     tags:
-      - 'v*'          # runs on any tag like v1.0, v1.0.0, etc.
+      - 'v*'          # also runs on any tag like v1.0, v1.0.0, etc.
   workflow_dispatch:  # allow manual trigger from GitHub UI
 
 jobs:
@@ -24,10 +26,20 @@ jobs:
           zip -r ../VoidSword-ResourcePack.zip .
           echo "ZIP size: $(du -sh ../VoidSword-ResourcePack.zip | cut -f1)"
 
+      - name: Determine tag name
+        id: tag
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=latest" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Create GitHub Release and upload ZIP
         uses: softprops/action-gh-release@v2
         with:
-          name: Void Sword Resource Pack ${{ github.ref_name }}
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: Void Sword Resource Pack ${{ steps.tag.outputs.name }}
           body: |
             ## ⚔️ Void Sword – Resource Pack ${{ github.ref_name }}
 
