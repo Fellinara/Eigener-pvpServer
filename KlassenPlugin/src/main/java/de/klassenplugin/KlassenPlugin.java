@@ -2,6 +2,7 @@ package de.klassenplugin;
 
 import de.klassenplugin.commands.*;
 import de.klassenplugin.gui.AuctionGui;
+import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.DeathListener;
@@ -34,6 +35,7 @@ public class KlassenPlugin extends JavaPlugin {
     private AllianceManager allianceManager;
     private ScoreboardManager scoreboardManager;
     private AuctionGui auctionGui;
+    private OrderGui orderGui;
 
     @Override
     public void onEnable() {
@@ -60,6 +62,7 @@ public class KlassenPlugin extends JavaPlugin {
         allianceManager = new AllianceManager(this);
         scoreboardManager = new ScoreboardManager(this);
         auctionGui = new AuctionGui(this);
+        orderGui = new OrderGui(this);
 
         registerCommands();
         registerListeners();
@@ -242,6 +245,7 @@ public class KlassenPlugin extends JavaPlugin {
     public AllianceManager getAllianceManager() { return allianceManager; }
     public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
     public AuctionGui getAuctionGui() { return auctionGui; }
+    public OrderGui getOrderGui() { return orderGui; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,

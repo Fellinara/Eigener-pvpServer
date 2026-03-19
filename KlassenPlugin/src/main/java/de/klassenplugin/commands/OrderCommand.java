@@ -1,6 +1,7 @@
 package de.klassenplugin.commands;
 
 import de.klassenplugin.KlassenPlugin;
+import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.managers.AuctionManager;
 import de.klassenplugin.managers.EconomyManager;
 import org.bukkit.Bukkit;
@@ -23,7 +24,7 @@ import java.util.*;
  */
 public class OrderCommand implements TabExecutor {
 
-    private static final List<String> SUBS = Arrays.asList("list", "fulfill", "cancel");
+    private static final List<String> SUBS = Arrays.asList("list", "meine", "fulfill", "cancel");
     private final KlassenPlugin plugin;
 
     public OrderCommand(KlassenPlugin plugin) {
@@ -42,12 +43,14 @@ public class OrderCommand implements TabExecutor {
             return true;
         }
         if (args.length == 0 || args[0].equalsIgnoreCase("list")) {
-            handleList(p, args);
+            // Open GUI
+            plugin.getOrderGui().openAll(p);
             return true;
         }
         AuctionManager ah = plugin.getAuctionManager();
         EconomyManager eco = plugin.getEconomyManager();
         switch (args[0].toLowerCase()) {
+            case "meine"   -> plugin.getOrderGui().openMine(p);
             case "fulfill" -> handleFulfill(p, ah, eco, args);
             case "cancel"  -> handleCancel(p, ah, eco, args);
             default        -> handleCreate(p, ah, eco, args);
@@ -95,8 +98,8 @@ public class OrderCommand implements TabExecutor {
         int amount;
         try { amount = Integer.parseInt(args[1]); }
         catch (NumberFormatException e) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUngültige Menge!")); return; }
-        if (amount <= 0 || amount > 64) {
-            p.sendMessage(KlassenPlugin.colorizeComponent("&cMenge muss zwischen 1 und 64 liegen!"));
+        if (amount <= 0 || amount > 10000) {
+            p.sendMessage(KlassenPlugin.colorizeComponent("&cMenge muss zwischen 1 und 10000 liegen!"));
             return;
         }
         double price;
@@ -116,7 +119,7 @@ public class OrderCommand implements TabExecutor {
             return;
         }
         eco.withdraw(p.getUniqueId(), price);
-        eco.save();
+        eco.saveAsync();
         AuctionManager.Listing l = ah.createRequestListing(
                 p.getUniqueId(), p.getName(), new ItemStack(mat, amount), price);
         p.sendMessage(KlassenPlugin.colorizeComponent(
@@ -168,16 +171,17 @@ public class OrderCommand implements TabExecutor {
             }
         }
         eco.deposit(p.getUniqueId(), l.price);
-        eco.save();
+        eco.saveAsync();
         Player requester = Bukkit.getPlayer(l.seller);
         if (requester != null) {
-            requester.getInventory().addItem(l.item.clone());
+            AuctionGui.giveItemsSplit(requester, mat, needed);
             requester.sendMessage(KlassenPlugin.colorizeComponent(
                     "&a[Auftrag] Dein Auftrag #" + id + " wurde von &e" + p.getName() + " &aerfüllt!"));
         }
         ah.removeListing(id);
         p.sendMessage(KlassenPlugin.colorizeComponent(
                 "&aAuftrag #" + id + " erfüllt → &6" + eco.format(l.price) + " &aerhalten!"));
+        plugin.getScoreboardManager().update(p);
     }
 
     // /order cancel <id>
@@ -203,7 +207,7 @@ public class OrderCommand implements TabExecutor {
             return;
         }
         eco.deposit(l.seller, l.price);
-        eco.save();
+        eco.saveAsync();
         ah.removeListing(id);
         p.sendMessage(KlassenPlugin.colorizeComponent(
                 "&aAuftrag #" + id + " abgebrochen. &6" + eco.format(l.price) + " &azurückerstattet!"));

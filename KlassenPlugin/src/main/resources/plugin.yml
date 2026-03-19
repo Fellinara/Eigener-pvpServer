@@ -186,7 +186,7 @@ commands:
 
   order:
     description: Auftragssystem - stelle Kaufanfragen und erfülle sie
-    usage: /order [list|fulfill|cancel] [args...]
+    usage: /order [list|meine|fulfill|cancel] [args...]
     permission: klassenplugin.order
     aliases: [auftrag]
 

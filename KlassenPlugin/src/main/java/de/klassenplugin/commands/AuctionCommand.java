@@ -35,7 +35,7 @@ public class AuctionCommand implements TabExecutor {
             case "fulfill" -> handleFulfill(p, ah, eco, args);
             case "cancel" -> handleCancel(p, ah, eco, args);
             case "search" -> handleSearch(p, ah, args);
-            case "meine" -> handleMeine(p, ah);
+            case "meine" -> plugin.getAuctionGui().openMeine(p, 0);
             default -> p.sendMessage(KlassenPlugin.colorizeComponent("&c/ah <sell|list|buy|request|fulfill|cancel|search|meine>"));
         }
         return true;
