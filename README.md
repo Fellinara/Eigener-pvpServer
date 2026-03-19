@@ -18,9 +18,22 @@ Dieses Repository enthält ein Minecraft Ressourcen Pack mit einem coolen **Void
 
 ### 📥 Download
 
+**Methode 1 – Direkt aus dem Repository (empfohlen):**
+
 **👉 [VoidSword-ResourcePack.zip herunterladen](https://github.com/Fellinara/Eigener-pvpServer/raw/main/VoidSword-ResourcePack.zip)**
 
 > Dieser Link lädt die ZIP-Datei direkt aus dem Repository herunter – kein GitHub-Account nötig.
+
+---
+
+**Methode 2 – Als GitHub Actions Artifact:**
+
+1. Gehe zu **[Actions](https://github.com/Fellinara/Eigener-pvpServer/actions)** in diesem Repository
+2. Klicke auf den neuesten **"Build & Release ResourcePack"** Workflow-Run
+3. Scrolle nach unten zum Abschnitt **"Artifacts"**
+4. Klicke auf **`VoidSword-ResourcePack`** → die ZIP wird heruntergeladen
+
+> Für Artifacts wird ein GitHub-Account benötigt.
 
 ### 📦 Installation
 

@@ -26,6 +26,13 @@ jobs:
           zip -r ../VoidSword-ResourcePack.zip .
           echo "ZIP size: $(du -sh ../VoidSword-ResourcePack.zip | cut -f1)"
 
+      - name: Upload ZIP as workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoidSword-ResourcePack
+          path: VoidSword-ResourcePack.zip
+          retention-days: 90
+
       - name: Determine tag name
         id: tag
         run: |
