@@ -16,10 +16,18 @@ Dieses Repository enthält ein Minecraft Ressourcen Pack mit einem coolen **Void
 
 ![Void Sword Preview](https://github.com/user-attachments/assets/2453cd64-4f92-46a0-ba18-9ea197c75894)
 
+### 📥 Download
+
+[![Download ZIP](https://img.shields.io/github/v/release/Fellinara/Eigener-pvpServer?label=Download%20ZIP&logo=minecraft&color=7c00d4)](https://github.com/Fellinara/Eigener-pvpServer/releases/latest/download/VoidSword-ResourcePack.zip)
+
+> **Direktlink:** [`VoidSword-ResourcePack.zip`](https://github.com/Fellinara/Eigener-pvpServer/releases/latest/download/VoidSword-ResourcePack.zip)
+>
+> Du kannst auch auf die [Releases-Seite](https://github.com/Fellinara/Eigener-pvpServer/releases) gehen und die ZIP-Datei dort herunterladen.
+
 ### 📦 Installation
 
-1. Lade den Ordner `ResourcePack/` herunter (oder als ZIP zippen)
-2. Kopiere die ZIP-Datei nach:
+1. Lade **[VoidSword-ResourcePack.zip](https://github.com/Fellinara/Eigener-pvpServer/releases/latest/download/VoidSword-ResourcePack.zip)** herunter
+2. Kopiere die ZIP-Datei **unentpackt** in deinen Minecraft-Ressourcenpakete-Ordner:
    - **Windows:** `%AppData%\.minecraft\resourcepacks\`
    - **macOS:** `~/Library/Application Support/minecraft/resourcepacks/`
    - **Linux:** `~/.minecraft/resourcepacks/`
