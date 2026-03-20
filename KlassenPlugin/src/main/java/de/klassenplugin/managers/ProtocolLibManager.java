@@ -3,6 +3,7 @@ package de.klassenplugin.managers;
 import com.comphenix.protocol.ProtocolLibrary;
 import com.comphenix.protocol.ProtocolManager;
 import de.klassenplugin.KlassenPlugin;
+import de.klassenplugin.listeners.HackClientDetector;
 import de.klassenplugin.listeners.PacketAntiCheatListener;
 
 /**
@@ -17,6 +18,7 @@ public class ProtocolLibManager {
     private final KlassenPlugin plugin;
     private final ProtocolManager protocolManager;
     private PacketAntiCheatListener packetListener;
+    private HackClientDetector hackClientDetector;
 
     public ProtocolLibManager(KlassenPlugin plugin) {
         this.plugin = plugin;
@@ -26,7 +28,13 @@ public class ProtocolLibManager {
     /** Registers all packet listeners. Called from {@code KlassenPlugin.onEnable()}. */
     public void enable() {
         packetListener = new PacketAntiCheatListener(plugin, protocolManager);
+
+        // Hack-client detector: ProtocolLib packet listener + Bukkit event listener.
+        hackClientDetector = new HackClientDetector(plugin, protocolManager);
+        plugin.getServer().getPluginManager().registerEvents(hackClientDetector, plugin);
+
         plugin.getLogger().info("[ProtocolLib] Paket-basiertes Anti-Cheat aktiviert.");
+        plugin.getLogger().info("[ProtocolLib] Hack-Client-Erkennung aktiviert.");
     }
 
     /**
@@ -39,10 +47,15 @@ public class ProtocolLibManager {
             protocolManager.removePacketListeners(plugin);
             packetListener = null;
         }
+        hackClientDetector = null;
         plugin.getLogger().info("[ProtocolLib] Paket-basiertes Anti-Cheat deaktiviert.");
     }
 
     public PacketAntiCheatListener getPacketListener() {
         return packetListener;
+    }
+
+    public HackClientDetector getHackClientDetector() {
+        return hackClientDetector;
     }
 }

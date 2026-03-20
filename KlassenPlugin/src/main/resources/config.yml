@@ -213,6 +213,44 @@ anticheat:
       # Maximale Reichweite in Blöcken
       max-reach: 7.0
 
+  # Hack-Client-Erkennung via Client-Brand und Plugin-Kanal-Registrierung
+  # (Erfordert ProtocolLib – wird automatisch aktiviert wenn ProtocolLib verfügbar ist)
+  hack-client:
+    enabled: true
+    # Aktion bei Erkennung: "kick" oder "ban"
+    action: kick
+    # Kick-Nachricht (& Farbcodes; {client} wird durch den erkannten Client ersetzt)
+    kick-message: "&c&lHack-Client erkannt!\n\n&7Dein Client ist auf diesem Server nicht erlaubt.\n&eDu verwendest: &c{client}"
+    # Client-Brands, die geblockt werden (Kleinschreibung; Teilstring-Suche)
+    blocked-brands:
+      - "wurst"
+      - "meteor-client"
+      - "meteor"
+      - "impact"
+      - "aristois"
+      - "sigma"
+      - "liquidbounce"
+      - "rise"
+      - "hacked"
+      - "future"
+      - "inertia"
+      - "rusherhack"
+      - "novoline"
+      - "wolfram"
+      - "zeroday"
+      - "xray"
+      - "killaura"
+    # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
+    blocked-channels:
+      - "wurst:"
+      - "meteor-client:"
+      - "impact:"
+      - "aristois:"
+      - "sigma:"
+      - "liquidbounce:"
+      - "inertia:"
+      - "rusherhack:"
+
 # Rang-System
 ranks:
   # Standardrang für neue Spieler (leer = kein Standardrang)

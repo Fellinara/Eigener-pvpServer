@@ -66,6 +66,12 @@ Das eingebaute Anti-Cheat System erkennt folgende Verstöße:
 | **KillAura** | Zu viele Treffer pro Sekunde | `anticheat.killaura.max-hits-per-second` |
 | **Scaffold** | Zu schnelles Blockplatzieren | `anticheat.scaffold.max-blocks-per-second` |
 | **NoFall** | Fallschaden-Umgehung | `anticheat.nofall.*` |
+| **PacketMove** | Unmögliche Bewegungsdistanz in einem Paket *(ProtocolLib)* | `anticheat.packet.packetmove.*` |
+| **PacketReach** | Entitäts-Interaktion aus zu großer Entfernung *(ProtocolLib)* | `anticheat.packet.packetreach.*` |
+| **PacketDig** | Block-Abbau aus zu großer Entfernung *(ProtocolLib)* | `anticheat.packet.packetdig.*` |
+| **PacketFlood** | Zu viele Pakete pro Sekunde *(ProtocolLib)* | `anticheat.packet.packetflood.*` |
+| **FreeCam** | Spieler sendet keine Bewegungspakete, ist aber aktiv *(ProtocolLib)* | `anticheat.packet.freecam.*` |
+| **Hack-Client** | Wurst, Meteor, Impact u.a. via Client-Brand/Kanal-Erkennung *(ProtocolLib)* | `anticheat.hack-client.*` |
 
 **Aktionen bei Verstößen** (konfigurierbar): `warn` / `kick` / `ban`
 
