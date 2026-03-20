@@ -58,11 +58,7 @@ public class SellCommand implements CommandExecutor {
         ShopManager shop = plugin.getShopManager();
         EconomyManager eco = plugin.getEconomyManager();
 
-        if (!shop.hasItem(matName)) {
-            p.sendMessage(KlassenPlugin.colorizeComponent("&c" + matName + " &cwird vom Shop nicht angekauft!"));
-            return true;
-        }
-        double unitPrice = shop.getSellPrice(matName);
+        double unitPrice = shop.getEffectiveSellPrice(matName);
         if (unitPrice < 0) {
             p.sendMessage(KlassenPlugin.colorizeComponent("&c" + matName + " &ckann nicht verkauft werden!"));
             return true;

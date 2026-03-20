@@ -213,7 +213,7 @@ public class ShopGui {
 
     private void sellAllOfItem(Player player, ShopManager shop, EconomyManager eco,
                                String matName) {
-        double price = shop.getSellPrice(matName);
+        double price = shop.getEffectiveSellPrice(matName);
         if (price < 0) {
             player.sendMessage(KlassenPlugin.colorizeComponent("&cDieser Artikel kann nicht verkauft werden!"));
             return;

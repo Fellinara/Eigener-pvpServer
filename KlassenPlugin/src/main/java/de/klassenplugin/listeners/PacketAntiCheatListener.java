@@ -65,10 +65,71 @@ public class PacketAntiCheatListener {
     /** Timestamp of the most-recent non-movement packet. Used for FreeCam. */
     private final ConcurrentHashMap<UUID, Long> lastActivityPkt = new ConcurrentHashMap<>();
 
+    /**
+     * Tracks how many consecutive seconds a player's server-side
+     * position has remained the same while they are still active.
+     * Used by the Bukkit-side FreeCam stall check.
+     */
+    private final ConcurrentHashMap<UUID, double[]> lastKnownPos = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Integer>  posStallTicks = new ConcurrentHashMap<>();
+
     public PacketAntiCheatListener(KlassenPlugin plugin, ProtocolManager protocolManager) {
         this.plugin  = plugin;
         this.manager = plugin.getAntiCheatManager();
         register(protocolManager);
+        schedulePosStallCheck();
+    }
+
+    /**
+     * Every 20 ticks (≈1 second) checks each online player's server-side
+     * position.  If the position has not changed for
+     * {@code anticheat.packet.freecam.stall-seconds} seconds while packets
+     * are still being received, a FreeCam violation is recorded.
+     *
+     * <p>This complements the packet-based FreeCam check and catches clients
+     * that freeze their server-side location while flying the camera freely
+     * without suppressing all activity packets.
+     */
+    private void schedulePosStallCheck() {
+        org.bukkit.Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            if (!manager.isEnabled()) return;
+            if (!manager.isCheckEnabled("freecam")) return;
+            int stallThresholdSec = plugin.getConfig()
+                    .getInt("anticheat.packet.freecam.stall-seconds", 5);
+
+            for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+                if (player.hasPermission("klassenplugin.anticheat.bypass")) continue;
+                if (player.getAllowFlight() || player.isFlying() || player.isInsideVehicle()) continue;
+                // Skip Bedrock players (position stall can occur normally).
+                UUID uuid = player.getUniqueId();
+                if (uuid.getMostSignificantBits() == 0L || player.getName().startsWith(".")) continue;
+
+                double px = player.getLocation().getX();
+                double py = player.getLocation().getY();
+                double pz = player.getLocation().getZ();
+
+                double[] knownPos = lastKnownPos.get(uuid);
+                if (knownPos != null
+                        && Math.abs(knownPos[0] - px) < 0.01
+                        && Math.abs(knownPos[1] - py) < 0.01
+                        && Math.abs(knownPos[2] - pz) < 0.01) {
+                    // Position has not changed since last tick.
+                    int stall = posStallTicks.merge(uuid, 1, Integer::sum);
+                    // Check that there was recent packet activity (not just AFK).
+                    Long lastAct = lastActivityPkt.get(uuid);
+                    boolean recentActivity = lastAct != null
+                            && System.currentTimeMillis() - lastAct < 3000L;
+                    if (stall >= stallThresholdSec && recentActivity
+                            && manager.canAddViolation(uuid)) {
+                        manager.addViolation(uuid, "FreeCam");
+                        posStallTicks.put(uuid, 0);
+                    }
+                } else {
+                    lastKnownPos.put(uuid, new double[]{px, py, pz});
+                    posStallTicks.put(uuid, 0);
+                }
+            }
+        }, 20L, 20L);
     }
 
     // ── Registration ─────────────────────────────────────────────────────────
@@ -340,5 +401,7 @@ public class PacketAntiCheatListener {
         lastMovePkt.remove(uuid);
         lastSafePos.remove(uuid);
         lastActivityPkt.remove(uuid);
+        lastKnownPos.remove(uuid);
+        posStallTicks.remove(uuid);
     }
 }

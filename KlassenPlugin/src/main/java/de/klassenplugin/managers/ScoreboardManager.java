@@ -74,9 +74,11 @@ public class ScoreboardManager {
         String rankName = plugin.getRankManager().getPlayerRank(player.getUniqueId());
         String prefix = plugin.getRankManager().getPlayerPrefix(player.getUniqueId());
 
+        // Use the prefix alone (e.g. "[Admin]") if available; the rank name is
+        // already embedded in the prefix so we must not append it again.
         String rankDisplay;
         if (!prefix.isEmpty()) {
-            rankDisplay = prefix + (rankName != null ? " " + rankName : "");
+            rankDisplay = prefix;
         } else if (rankName != null && !rankName.isEmpty()) {
             rankDisplay = rankName;
         } else {

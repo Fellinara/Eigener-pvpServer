@@ -95,8 +95,7 @@ public class ShopCommand implements TabExecutor {
             if (args.length > 2) try { amount = Integer.parseInt(args[2]); } catch (NumberFormatException e) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUngültige Menge!")); return; }
         }
         if (amount <= 0) { p.sendMessage(KlassenPlugin.colorizeComponent("&cMenge > 0!")); return; }
-        if (!shop.hasItem(matName)) { p.sendMessage(KlassenPlugin.colorizeComponent("&cArtikel &e" + matName + " &cnicht im Shop!")); return; }
-        double price = shop.getSellPrice(matName);
+        double price = shop.getEffectiveSellPrice(matName);
         if (price < 0) { p.sendMessage(KlassenPlugin.colorizeComponent("&cKann nicht verkauft werden!")); return; }
         Material mat = Material.matchMaterial(matName);
         if (mat == null) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUnbekanntes Material!")); return; }

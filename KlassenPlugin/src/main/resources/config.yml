@@ -199,7 +199,9 @@ anticheat:
     freecam:
       enabled: true
       # Sekunden ohne Bewegungspaket bei gleichzeitiger Aktivität = FreeCam-Verdacht
-      idle-seconds: 8
+      idle-seconds: 4
+      # Sekunden mit eingefrorener Server-Position bei Aktivität = FreeCam-Stall-Verdacht
+      stall-seconds: 5
 
     # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
     packetreach:
@@ -240,6 +242,16 @@ anticheat:
       - "zeroday"
       - "xray"
       - "killaura"
+      - "vape"
+      - "ice"
+      - "bzler"
+      - "rectify"
+      - "salhack"
+      - "pandaleak"
+      - "pyro"
+      - "ghost"
+      - "flex"
+      - "entropy"
     # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
     blocked-channels:
       - "wurst:"
@@ -260,6 +272,9 @@ ranks:
 economy:
   currency-name: "Coins"
   starting-balance: 500.0
+  # Fallback-Verkaufspreis (Coins pro Item) für Gegenstände, die nicht in shop.yml stehen.
+  # Auf -1 setzen, um das Verkaufen unbekannter Gegenstände zu deaktivieren.
+  default-sell-price: 0.5
   inflation:
     target-balance-per-player: 1000.0
 

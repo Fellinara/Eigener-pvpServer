@@ -76,28 +76,34 @@ public class HackClientDetector implements Listener {
         if (player == null) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        // Read the channel name.
-        String channel;
+        // Read the channel name – try multiple ProtocolLib accessor patterns
+        // to remain compatible across different server/ProtocolLib versions.
+        String channel = null;
         try {
             channel = event.getPacket().getStrings().read(0);
-        } catch (Exception e) {
-            return; // Unexpected packet structure – skip safely.
+        } catch (Exception ignored) {}
+        if (channel == null || channel.isEmpty()) {
+            try {
+                // In some ProtocolLib builds the channel is exposed as a MinecraftKey.
+                channel = event.getPacket().getMinecraftKeys().read(0).getFullKey();
+            } catch (Exception ignored) {}
         }
+        if (channel == null) return;
 
-        if (!BRAND_CHANNEL.equals(channel)) return;
+        if (!BRAND_CHANNEL.equals(channel) && !channel.endsWith(":brand") && !channel.equals("MC|Brand")) return;
 
         // Read raw payload bytes and decode the VarInt-prefixed brand string.
-        byte[] payload;
+        byte[] payload = null;
         try {
             payload = event.getPacket().getByteArrays().read(0);
-        } catch (Exception e) {
-            return;
-        }
+        } catch (Exception ignored) {}
+        if (payload == null || payload.length == 0) return;
 
         String brand = readVarIntString(payload).toLowerCase(Locale.ROOT).trim();
         if (brand.isEmpty()) return;
 
-        plugin.getLogger().fine("[HackClient] Brand von " + player.getName() + ": " + brand);
+        // Always log at INFO so the server operator can see what clients connect.
+        plugin.getLogger().info("[HackClient] Brand von " + player.getName() + ": " + brand);
         checkBrand(player, brand);
     }
 

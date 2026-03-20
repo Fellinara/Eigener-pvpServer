@@ -46,6 +46,26 @@ public class AntiCheatListener implements Listener {
         this.manager = plugin.getAntiCheatManager();
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    /**
+     * Detects Bedrock players proxied through GeyserMC / Floodgate.
+     *
+     * <p>Floodgate assigns Bedrock players UUIDs whose most-significant bytes are
+     * all zero ({@code 00000000-0000-0000-xxxx-xxxxxxxxxxxx}), and prepends their
+     * username with a period ({@code ".Steve"}).  Both heuristics are checked so
+     * Bedrock players are not falsely flagged for movement checks that require
+     * Java-Edition physics (Jesus, Phase, Speed).
+     */
+    private static boolean isBedrockPlayer(Player player) {
+        UUID uuid = player.getUniqueId();
+        // GeyserMC / Floodgate: MSBs are 0  →  first 3 dash-groups are all zeros.
+        if (uuid.getMostSignificantBits() == 0L) return true;
+        // Floodgate username prefix ("." by default, configurable by server owner).
+        String name = player.getName();
+        return name.startsWith(".");
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         if (!manager.isEnabled()) return;
@@ -84,7 +104,7 @@ public class AntiCheatListener implements Listener {
         UUID uuid = player.getUniqueId();
 
         // ── Speed check ──────────────────────────────────────────────────────
-        if (manager.isCheckEnabled("speed")) {
+        if (manager.isCheckEnabled("speed") && !isBedrockPlayer(player)) {
             double distSq = from.distanceSquared(to);
             if (distSq > 0.01) {
                 Long lastTime = manager.getLastMoveTime(uuid);
@@ -130,7 +150,7 @@ public class AntiCheatListener implements Listener {
 
         if (onGround || inLiquid || inVehicle || gliding) {
             manager.resetAirTicks(uuid);
-        } else if (!player.getAllowFlight()) {
+        } else if (!player.getAllowFlight() && !isBedrockPlayer(player)) {
             manager.incrementAirTicks(uuid);
             int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 80);
             if (manager.isCheckEnabled("fly") && manager.getAirTicks(uuid) > maxAirTicks) {
@@ -142,7 +162,7 @@ public class AntiCheatListener implements Listener {
         }
 
         // ── Phase / NoClip check ──────────────────────────────────────────────
-        if (manager.isCheckEnabled("phase")) {
+        if (manager.isCheckEnabled("phase") && !isBedrockPlayer(player)) {
             Block headBlock = to.clone().add(0, 0.5, 0).getBlock();
             Block feetBlock = to.getBlock();
             if (isInsideSolidBlock(headBlock) && isInsideSolidBlock(feetBlock)
@@ -155,7 +175,9 @@ public class AntiCheatListener implements Listener {
         // ── Jesus / Water-walk check ──────────────────────────────────────────
         // Detect walking on top of water without the correct potion effect or
         // special item (Frost-Walker boots handled by checking for enchantment).
-        if (manager.isCheckEnabled("jesus")) {
+        // Bedrock players are exempt: Bedrock Edition physics differ and can
+        // produce false positives that look identical to water-walking.
+        if (manager.isCheckEnabled("jesus") && !isBedrockPlayer(player)) {
             Block below = to.clone().subtract(0, 0.1, 0).getBlock();
             if (below.getType() == Material.WATER && player.isOnGround()
                     && !player.isInWater()
