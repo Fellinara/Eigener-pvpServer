@@ -261,9 +261,14 @@ anticheat:
       - "entropy"
     # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
     blocked-channels:
+      # ── Wurst Client (standalone + Fabric mod) ─────────────────────────────
       - "wurst:"
+      # ── Meteor Client (standalone + Fabric mod) ────────────────────────────
+      # As a Fabric mod under Feather/other launchers Meteor still registers
+      # these channels, so brand detection won't catch it but channel audit will.
       - "meteor-client:"
       - "meteor:"
+      # ── Other known hack clients ────────────────────────────────────────────
       - "impact:"
       - "aristois:"
       - "sigma:"
@@ -278,6 +283,8 @@ anticheat:
       - "salhack:"
       - "pyro:"
       - "ghost:"
+      # Generic patterns – any channel containing these keywords is suspicious.
+      # Keep these broad so that new clients with custom prefixes are caught.
       - "hack"
       - "cheat"
 

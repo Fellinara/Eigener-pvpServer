@@ -100,17 +100,29 @@ public class HackClientBukkitListener implements Listener {
         }
     }
 
-    // ── Paper API brand check ─────────────────────────────────────────────────
+    // ── Paper API brand check + full channel audit ────────────────────────────
 
     /**
-     * Schedules a delayed brand check.
+     * Schedules two independent delayed checks after the player has joined.
      *
+     * <h4>40-tick brand check</h4>
      * <p>{@code Player#getClientBrandName()} (Paper API, no ProtocolLib required)
      * is {@code null} immediately at join because the {@code minecraft:brand}
      * packet has not yet been received.  Delaying by 40 ticks (≈2 s) reliably
      * ensures the value has been set for all normally-connecting clients.
      *
-     * <p>This provides brand detection even on servers without ProtocolLib.
+     * <h4>80-tick full channel audit</h4>
+     * <p>{@link PlayerRegisterChannelEvent} fires once per channel as the
+     * client sends its {@code REGISTER} plugin-message.  When Wurst or Meteor
+     * Client are loaded as a <em>Fabric mod</em> under a different launcher
+     * (e.g. Feather), the mod still registers its proprietary channels, but a
+     * race condition or batched {@code REGISTER} packet can cause those events
+     * to fire before the listener is fully attached.
+     *
+     * <p>At 80 ticks (≈4 s) we call {@code Player#getListeningPluginChannels()},
+     * which returns <em>all</em> channels the client has declared so far,
+     * regardless of when they were registered.  This is the definitive audit
+     * that catches mod-loaded hack clients running under a clean launcher brand.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -118,10 +130,70 @@ public class HackClientBukkitListener implements Listener {
         Player player = event.getPlayer();
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
+        // 40 ticks: brand check.
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!player.isOnline()) return;
             checkBrandPaperApi(player);
         }, 40L);
+
+        // 80 ticks: full channel audit.
+        // Must run AFTER the brand check so the dedup set is already populated
+        // if the brand check already acted, and so the brand is available for
+        // the mismatch log.
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline()) return;
+            auditAllChannels(player);
+        }, 80L);
+    }
+
+    /**
+     * Audits the full set of channels the player has registered so far.
+     *
+     * <p>This is the primary detection path for <strong>mod-loaded hack clients</strong>
+     * (e.g. Meteor Client or Wurst running as a Fabric mod under Feather).
+     * In that scenario the client's brand is the launcher's name (e.g.
+     * {@code "feather"}, {@code "fabric"}), which passes the brand check.
+     * However, the Fabric mod still registers its proprietary plugin channels
+     * (e.g. {@code meteor-client:main}, {@code wurst:hacks}) — these will
+     * appear in {@code Player#getListeningPluginChannels()}.
+     *
+     * <p>A secondary benefit: if the {@link PlayerRegisterChannelEvent} for a
+     * particular channel was somehow missed (batched packet race), this audit
+     * catches it.
+     */
+    private void auditAllChannels(Player player) {
+        if (!isEnabled()) return;
+        if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+
+        Set<String> channels;
+        try {
+            channels = player.getListeningPluginChannels();
+        } catch (Exception ignored) {
+            return; // API not available in this Paper build.
+        }
+
+        if (channels == null || channels.isEmpty()) return;
+
+        List<String> blockedChannels = plugin.getConfig()
+                .getStringList("anticheat.hack-client.blocked-channels");
+
+        for (String raw : channels) {
+            String channel = raw.toLowerCase(Locale.ROOT);
+            for (String entry : blockedChannels) {
+                String lc = entry.toLowerCase(Locale.ROOT);
+                if (channel.startsWith(lc) || channel.contains(lc)) {
+                    // Retrieve the brand so admins understand the "mod-under-legit-client" scenario.
+                    String brand = getBrandSafe(player);
+                    String detail = raw + (brand != null && !brand.isEmpty()
+                            ? " (Brand: " + brand + ")" : "");
+                    plugin.getLogger().warning("[HackClient/Audit] " + player.getName()
+                            + " – Hack-Mod erkannt: " + detail
+                            + " | Alle Kanäle: " + channels.size());
+                    actOnPlayer(player, "Kanal (Mod): " + raw);
+                    return;
+                }
+            }
+        }
     }
 
     /**
@@ -132,18 +204,7 @@ public class HackClientBukkitListener implements Listener {
         if (!isEnabled()) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        String brand;
-        try {
-            brand = player.getClientBrandName();
-        } catch (NoSuchMethodError | Exception ignored) {
-            // Not Paper or method unavailable – ProtocolLib path covers this.
-            return;
-        }
-
-        if (brand == null || brand.isEmpty()) return;
-
-        brand = brand.toLowerCase(Locale.ROOT).trim()
-                .replaceAll("[\\x00-\\x1F\\x7F]", "").trim();
+        String brand = getBrandSafe(player);
         if (brand.isEmpty()) return;
 
         plugin.getLogger().info("[HackClient/Paper] Brand von "
@@ -237,5 +298,20 @@ public class HackClientBukkitListener implements Listener {
     private boolean isEnabled() {
         return plugin.getAntiCheatManager().isEnabled()
                 && plugin.getConfig().getBoolean("anticheat.hack-client.enabled", true);
+    }
+
+    /**
+     * Safely reads the client brand via the Paper API.
+     * Returns an empty string when the API is unavailable or the brand is unset.
+     */
+    private String getBrandSafe(Player player) {
+        try {
+            String b = player.getClientBrandName();
+            if (b == null) return "";
+            return b.toLowerCase(Locale.ROOT).trim()
+                    .replaceAll("[\\x00-\\x1F\\x7F]", "").trim();
+        } catch (NoSuchMethodError | Exception ignored) {
+            return "";
+        }
     }
 }
