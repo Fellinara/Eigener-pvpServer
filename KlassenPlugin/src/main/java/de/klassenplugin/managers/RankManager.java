@@ -1,6 +1,9 @@
 package de.klassenplugin.managers;
 
 import de.klassenplugin.KlassenPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -105,6 +108,12 @@ public class RankManager {
     public void setPrefix(String rankName, String prefix) {
         prefixes.put(rankName, prefix);
         save();
+        // Refresh tab list name for all online players who hold this rank.
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (rankName.equals(playerRanks.get(p.getUniqueId()))) {
+                updateTabListName(p);
+            }
+        }
     }
 
     public String getPrefix(String rankName) {
@@ -176,6 +185,7 @@ public class RankManager {
         }
         attachments.put(player.getUniqueId(), att);
         player.setMetadata("klassenpluginRank", new FixedMetadataValue(plugin, rankName));
+        updateTabListName(player);
     }
 
     public void removeRankFromPlayer(Player player) {
@@ -184,9 +194,39 @@ public class RankManager {
             player.removeAttachment(att);
         }
         player.removeMetadata("klassenpluginRank", plugin);
+        player.playerListName(null);
     }
 
     public String getDefaultRank() {
         return plugin.getConfig().getString("ranks.default-rank", "");
+    }
+
+    /**
+     * Returns the raw &amp;-colour-coded prefix for the given player,
+     * falling back to the default rank. Empty string if no rank/prefix.
+     */
+    public String getPlayerPrefix(UUID playerId) {
+        String rankName = playerRanks.get(playerId);
+        if (rankName == null || !rankExists(rankName)) {
+            String def = getDefaultRank();
+            if (!def.isEmpty() && rankExists(def)) {
+                rankName = def;
+            } else {
+                return "";
+            }
+        }
+        return prefixes.getOrDefault(rankName, "");
+    }
+
+    /** Updates the tab-list display name of a player to show their rank prefix. */
+    public void updateTabListName(Player player) {
+        String prefix = getPlayerPrefix(player.getUniqueId());
+        if (prefix.isEmpty()) {
+            player.playerListName(null);
+            return;
+        }
+        Component prefixComp = LegacyComponentSerializer.legacyAmpersand().deserialize(prefix + " ");
+        player.playerListName(Component.text().append(prefixComp)
+                .append(Component.text(player.getName())).build());
     }
 }

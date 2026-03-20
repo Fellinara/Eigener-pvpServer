@@ -5,6 +5,7 @@ import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
+import de.klassenplugin.listeners.ChatListener;
 import de.klassenplugin.listeners.DeathListener;
 import de.klassenplugin.listeners.GuiListener;
 import de.klassenplugin.listeners.JoinListener;
@@ -212,6 +213,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
         getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
     }
 
     public static KlassenPlugin getInstance() {
