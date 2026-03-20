@@ -19,7 +19,7 @@ public class RankCommand implements TabExecutor {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
             "create", "delete", "setprefix", "addperm", "removeperm",
-            "assign", "remove", "list", "info", "player");
+            "assign", "remove", "list", "info", "player", "permissions");
 
     private final KlassenPlugin plugin;
     private final RankManager manager;
@@ -54,6 +54,7 @@ public class RankCommand implements TabExecutor {
             case "list" -> handleList(sender);
             case "info" -> handleInfo(sender, args);
             case "player" -> handlePlayer(sender, args);
+            case "permissions" -> handlePermissionsGui(sender, args);
             default -> sender.sendMessage(KlassenPlugin.colorizeComponent(
                     "&cUnbekannter Unterbefehl. Benutze /rank für Hilfe."));
         }
@@ -216,6 +217,23 @@ public class RankCommand implements TabExecutor {
         }
     }
 
+    private void handlePermissionsGui(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("player-only")));
+            return;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(KlassenPlugin.colorizeComponent("&cBenutzung: /rank permissions <Rang>"));
+            return;
+        }
+        String name = args[1].toLowerCase();
+        if (!manager.rankExists(name)) {
+            sender.sendMessage(KlassenPlugin.colorizeComponent("&cRang &e" + name + " &cwurde nicht gefunden!"));
+            return;
+        }
+        plugin.getRankPermissionsGui().open(p, name);
+    }
+
     @Override
     public List<String> onTabComplete(@NotNull CommandSender sender, @NotNull Command command,
                                       @NotNull String label, @NotNull String[] args) {
@@ -227,7 +245,7 @@ public class RankCommand implements TabExecutor {
         if (args.length == 2) {
             String sub = args[0].toLowerCase();
             switch (sub) {
-                case "delete", "setprefix", "addperm", "removeperm", "info" ->
+                case "delete", "setprefix", "addperm", "removeperm", "info", "permissions" ->
                         { return filterStart(new ArrayList<>(manager.getRankNames()), args[1]); }
                 case "assign", "remove", "player" -> { return onlinePlayerNames(args[1]); }
             }

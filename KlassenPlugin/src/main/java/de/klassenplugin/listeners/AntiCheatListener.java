@@ -3,6 +3,8 @@ package de.klassenplugin.listeners;
 import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.managers.AntiCheatManager;
 import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -14,10 +16,18 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
+import java.util.Set;
 import java.util.UUID;
 
 public class AntiCheatListener implements Listener {
+
+    /** Ice-type materials that allow extreme skating speeds. */
+    private static final Set<Material> ICE_MATERIALS = Set.of(
+            Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE,
+            Material.FROSTED_ICE);
 
     private final KlassenPlugin plugin;
     private final AntiCheatManager manager;
@@ -57,28 +67,49 @@ public class AntiCheatListener implements Listener {
         Location to = event.getTo();
         if (to == null) return;
 
-        // Skip if only rotation changed
+        // Skip if only rotation changed (no positional movement).
         if (from.getX() == to.getX() && from.getY() == to.getY() && from.getZ() == to.getZ()) {
             return;
         }
 
         UUID uuid = player.getUniqueId();
 
-        // Speed check
+        // ── Speed check ──────────────────────────────────────────────────────
         if (manager.isCheckEnabled("speed")) {
             double distSq = from.distanceSquared(to);
-            if (distSq > 0.01) { // distance > 0.1
+            if (distSq > 0.01) {
                 Long lastTime = manager.getLastMoveTime(uuid);
                 if (lastTime != null) {
                     long elapsed = System.currentTimeMillis() - lastTime;
-                    if (elapsed >= 50) {
-                        double distance = from.distance(to);
+                    // Use at least 100 ms for a reliable measurement to avoid
+                    // false positives from timing jitter on individual ticks.
+                    if (elapsed >= 100) {
+                        double distance = Math.sqrt(distSq);
                         double speed = distance * 1000.0 / elapsed;
-                        double maxSpeed = plugin.getConfig().getDouble("anticheat.speed.max-blocks-per-second", 12.0);
+                        double maxSpeed = plugin.getConfig()
+                                .getDouble("anticheat.speed.max-blocks-per-second", 16.0);
+
+                        // Add bonus for active Speed potion effect.
+                        PotionEffect speedEffect = player.getPotionEffect(PotionEffectType.SPEED);
+                        if (speedEffect != null) {
+                            double bonus = plugin.getConfig()
+                                    .getDouble("anticheat.speed.speed-potion-bonus-per-level", 3.5);
+                            maxSpeed += (speedEffect.getAmplifier() + 1) * bonus;
+                        }
+
+                        // Skip when gliding (Elytra) – horizontal speed is unrestricted.
+                        // Skip when on ice – skating allows very high speeds.
+                        // Skip when inside a vehicle – not player-controlled movement.
+                        Block blockBelow = to.clone().subtract(0, 0.1, 0).getBlock();
+                        boolean onIce = ICE_MATERIALS.contains(blockBelow.getType());
+
                         if (speed > maxSpeed
                                 && !player.isFlying()
+                                && !player.isGliding()
                                 && !player.isInsideVehicle()
-                                && !player.isInWater()) {
+                                && !player.isInWater()
+                                && !onIce
+                                && manager.canAddViolation(uuid)) {
                             manager.addViolation(uuid, "Speed");
                         }
                     }
@@ -87,18 +118,21 @@ public class AntiCheatListener implements Listener {
             }
         }
 
-        // Fly tracking
+        // ── Fly / air-tick check ──────────────────────────────────────────────
         boolean onGround = player.isOnGround();
         boolean inLiquid = player.isInWater() || player.isInLava();
         boolean inVehicle = player.isInsideVehicle();
+        boolean gliding = player.isGliding();
 
-        if (onGround || inLiquid || inVehicle) {
+        if (onGround || inLiquid || inVehicle || gliding) {
             manager.resetAirTicks(uuid);
         } else if (!player.getAllowFlight()) {
             manager.incrementAirTicks(uuid);
-            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 80);
+            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 120);
             if (manager.isCheckEnabled("fly") && manager.getAirTicks(uuid) > maxAirTicks) {
-                manager.addViolation(uuid, "Fly");
+                if (manager.canAddViolation(uuid)) {
+                    manager.addViolation(uuid, "Fly");
+                }
                 manager.resetAirTicks(uuid);
             }
         }
@@ -113,7 +147,7 @@ public class AntiCheatListener implements Listener {
 
         UUID uuid = damager.getUniqueId();
 
-        // Reach check
+        // ── Reach check ───────────────────────────────────────────────────────
         if (manager.isCheckEnabled("reach")) {
             double distance = damager.getLocation().distance(victim.getLocation());
             double maxReach = plugin.getConfig().getDouble("anticheat.reach.max-reach", 5.0);
@@ -122,7 +156,7 @@ public class AntiCheatListener implements Listener {
             }
         }
 
-        // KillAura check
+        // ── KillAura check ────────────────────────────────────────────────────
         if (manager.isCheckEnabled("killaura")) {
             manager.recordHit(uuid);
             int maxHits = plugin.getConfig().getInt("anticheat.killaura.max-hits-per-second", 15);

@@ -19,7 +19,11 @@ public class ShopCommand implements TabExecutor {
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command cmd, @NotNull String label, @NotNull String[] args) {
         if (!sender.hasPermission("klassenplugin.shop")) { sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("no-permission"))); return true; }
         if (!(sender instanceof Player p)) { sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("player-only"))); return true; }
-        if (args.length == 0) { sendHelp(p); return true; }
+        if (args.length == 0) {
+            // Open GUI when no sub-command given.
+            plugin.getShopGui().open(p);
+            return true;
+        }
         ShopManager shop = plugin.getShopManager();
         EconomyManager eco = plugin.getEconomyManager();
         switch (args[0].toLowerCase()) {

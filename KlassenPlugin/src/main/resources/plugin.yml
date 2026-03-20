@@ -153,7 +153,7 @@ commands:
 
   rank:
     description: Verwaltet das Rang-System
-    usage: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player>
+    usage: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player|permissions>
     permission: klassenplugin.rank.admin
 
   klassenplugin:

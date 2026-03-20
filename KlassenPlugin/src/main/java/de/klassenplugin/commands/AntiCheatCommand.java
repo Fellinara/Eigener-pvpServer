@@ -101,8 +101,14 @@ public class AntiCheatCommand implements TabExecutor {
     }
 
     private void handleViolations(CommandSender sender, String[] args) {
+        // No player argument → open GUI (player only).
         if (args.length < 2) {
-            sender.sendMessage(KlassenPlugin.colorizeComponent("&cBenutzung: /anticheat violations <Spieler>"));
+            if (!(sender instanceof Player p)) {
+                sender.sendMessage(KlassenPlugin.colorizeComponent(
+                        "&cBenutzung: /anticheat violations <Spieler>"));
+                return;
+            }
+            plugin.getViolationsGui().open(p);
             return;
         }
         Player target = Bukkit.getPlayer(args[1]);

@@ -88,6 +88,26 @@ messages:
   no-permission: "&cDu hast keine Berechtigung für diesen Befehl!"
   player-only: "&cDieser Befehl kann nur von Spielern ausgeführt werden!"
 
+# Scoreboard (Sidebar rechts im Spiel)
+scoreboard:
+  enabled: true
+  # Titel des Scoreboards (&-Farbcodes erlaubt)
+  title: "&6&lKlassenPlugin"
+  # Zeilen von oben nach unten.
+  # Platzhalter: {player} {rank} {balance} {online} {server}
+  # Leere Zeilen werden als Trennlinie dargestellt.
+  lines:
+    - " "
+    - "&7Server: &e{server}"
+    - "&7Online: &e{online}"
+    - " "
+    - "&6&lEconomy"
+    - "&7Geld: &6{balance}"
+    - " "
+    - "&7Rang: &f{rank}"
+    - " "
+    - "&8play.server.de"
+
 # Anti-Cheat Einstellungen
 anticheat:
   enabled: true
@@ -116,13 +136,16 @@ anticheat:
 
   speed:
     enabled: true
-    # Maximale Blöcke pro Sekunde (Standard Laufen ~5.6, Sprinten ~7.1)
-    max-blocks-per-second: 12.0
+    # Maximale Blöcke pro Sekunde (Sprinten ~7.1, Speed I ~10, Speed II ~12.5)
+    # Erhöhe diesen Wert, wenn legitime Bewegungen fälschlicherweise erkannt werden.
+    max-blocks-per-second: 16.0
+    # Speed-Potion-Bonus pro Verstärkungsstufe (in Blöcken pro Sekunde)
+    speed-potion-bonus-per-level: 3.5
 
   fly:
     enabled: true
-    # Maximale aufeinanderfolgende Move-Events in der Luft bevor ein Verstoß
-    max-air-ticks: 80
+    # Ticks in der Luft bevor ein Verstoß (höher = weniger Fehlalarme)
+    max-air-ticks: 120
 
   reach:
     enabled: true
