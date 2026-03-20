@@ -120,7 +120,7 @@ anticheat:
   # Aktion bei zu vielen Verstößen: warn, kick, ban
   action: ban
   # Anzahl Verstöße bevor eine Aktion ausgeführt wird
-  violations-before-action: 5
+  violations-before-action: 3
 
   xray:
     enabled: true
@@ -195,13 +195,19 @@ anticheat:
       # Maximale Pakete pro Sekunde
       max-per-second: 200
 
-    # Erkennt FreeCam: Spieler sendet keine Bewegungspakete aber ist aktiv
+    # Erkennt FreeCam: eingefrorene Server-Position bei aktiven Bewegungspaketen
     freecam:
       enabled: true
-      # Sekunden ohne Bewegungspaket bei gleichzeitiger Aktivität = FreeCam-Verdacht
-      idle-seconds: 4
-      # Sekunden mit eingefrorener Server-Position bei Aktivität = FreeCam-Stall-Verdacht
-      stall-seconds: 5
+      # Sekunden, die eine Serverposition unverändert bleiben darf, während
+      # gleichzeitig POSITION/FLYING-Pakete ankommen (lastMovePkt-Zeitstempel,
+      # NICHT Chat-Pakete), bevor ein FreeCam-Verstoß registriert wird.
+      # Einfrierung + aktive Bewegungspakete = FreeCam-Signatur.
+      stall-seconds: 3
+      # Anzahl aufeinanderfolgender POSITION-Pakete mit identischen Koordinaten
+      # (innerhalb 0.002 Blöcke) bevor ein Verstoß registriert wird.
+      # Echte Spieler haben immer Mikro-Bewegungsrauschen; perfekte Koordinaten-
+      # Einfrierung ist das zuverlässigste FreeCam-Kennzeichen.
+      frozen-packets: 20
 
     # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
     packetreach:
@@ -256,12 +262,23 @@ anticheat:
     blocked-channels:
       - "wurst:"
       - "meteor-client:"
+      - "meteor:"
       - "impact:"
       - "aristois:"
       - "sigma:"
       - "liquidbounce:"
       - "inertia:"
       - "rusherhack:"
+      - "vape:"
+      - "future:"
+      - "rise:"
+      - "wolfram:"
+      - "novoline:"
+      - "salhack:"
+      - "pyro:"
+      - "ghost:"
+      - "hack"
+      - "cheat"
 
 # Rang-System
 ranks:

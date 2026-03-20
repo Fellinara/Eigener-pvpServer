@@ -25,10 +25,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  *       impossible distance (e.g. Teleport-hack sending raw position packets).</li>
  *   <li><b>PacketFlood</b> – client sends more than {@code packet.max-per-second}
  *       play packets in one second, indicative of packet bots or certain exploits.</li>
- *   <li><b>FreeCam</b> – player has not sent a single movement packet for
- *       {@code packet.freecam-idle-seconds} seconds while still sending other
- *       packets (chat, interactions). When triggered, the player is silently
- *       teleported back to their last known safe position to "snap" them back.</li>
+ *   <li><b>FreeCam (stall)</b> – server-side position has not changed for
+ *       {@code freecam.stall-seconds} while movement packets are still arriving.
+ *       Uses movement-packet timestamps (not chat/interaction) so pure FreeCam
+ *       usage with no interactions is still detected.</li>
+ *   <li><b>FreeCam (frozen-position)</b> – consecutive POSITION/POSITION_LOOK
+ *       packets all carry exactly the same coordinates.  Real Java-Edition players
+ *       always have micro-movement noise; perfectly frozen coordinates across
+ *       {@code freecam.frozen-packets} packets is a reliable FreeCam signature.</li>
  *   <li><b>PacketReach</b> – {@code USE_ENTITY} interaction packet references an
  *       entity that is too far from the player's server-side position.</li>
  *   <li><b>PacketDig</b> – {@code BLOCK_DIG} (block break) packet targets a block
@@ -47,31 +51,65 @@ public class PacketAntiCheatListener {
     /** Maximum distance (in blocks) allowed in a single movement packet. */
     private static final double DEFAULT_MAX_MOVE_DIST = 10.0;
 
+    /**
+     * Minimum coordinate delta (in blocks) considered "movement" in a POSITION packet.
+     *
+     * <p>Legitimate Java Edition players always exceed this threshold between
+     * consecutive movement packets due to gravity, physics simulation, and server
+     * friction – even when standing "still".  A sequence of packets where all
+     * three axes change by less than this value means the client is sending a
+     * perfectly frozen position, which is the definitive FreeCam packet signature.
+     *
+     * <p>0.002 blocks ≈ 0.0016 m, well below any natural physics micro-movement.
+     */
+    private static final double FROZEN_DELTA = 0.002;
+
     // ── State ─────────────────────────────────────────────────────────────────
 
     private final KlassenPlugin plugin;
     private final AntiCheatManager manager;
 
     /** Tracks per-player packet count within the current 1-second window. */
-    private final ConcurrentHashMap<UUID, AtomicInteger> packetRate  = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, AtomicInteger> packetRate      = new ConcurrentHashMap<>();
     /** Timestamp (ms) when the current 1-second window started. */
     private final ConcurrentHashMap<UUID, Long>          rateWindowStart = new ConcurrentHashMap<>();
 
-    /** Timestamp of the last POSITION or POSITION_LOOK packet per player. */
-    private final ConcurrentHashMap<UUID, Long>    lastMovePkt   = new ConcurrentHashMap<>();
+    /** Timestamp of the last POSITION / POSITION_LOOK / FLYING packet per player. */
+    private final ConcurrentHashMap<UUID, Long>     lastMovePkt  = new ConcurrentHashMap<>();
     /** Server-confirmed position (from last valid POSITION packet). */
     private final ConcurrentHashMap<UUID, double[]> lastSafePos  = new ConcurrentHashMap<>();
 
-    /** Timestamp of the most-recent non-movement packet. Used for FreeCam. */
+    /**
+     * Timestamp of the most-recent packet of ANY kind received from each player.
+     * Updated by every packet handler, so it covers movement + interaction packets.
+     * This is the primary "player is active" signal for FreeCam detection.
+     */
+    private final ConcurrentHashMap<UUID, Long> lastAnyPkt = new ConcurrentHashMap<>();
+
+    /** Legacy: still updated by interaction-specific packets for flood detection. */
     private final ConcurrentHashMap<UUID, Long> lastActivityPkt = new ConcurrentHashMap<>();
 
+    // ── FreeCam stall detection ───────────────────────────────────────────────
+
     /**
-     * Tracks how many consecutive seconds a player's server-side
-     * position has remained the same while they are still active.
-     * Used by the Bukkit-side FreeCam stall check.
+     * Last server-side position recorded by the Bukkit-tick stall check.
+     * Initialized on first tick so the counter starts immediately.
      */
-    private final ConcurrentHashMap<UUID, double[]> lastKnownPos = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, double[]> lastKnownPos  = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<UUID, Integer>  posStallTicks = new ConcurrentHashMap<>();
+
+    // ── FreeCam frozen-position detection ────────────────────────────────────
+
+    /**
+     * Last position received in a POSITION/POSITION_LOOK packet.
+     * Used to count consecutive identical-position packets.
+     */
+    private final ConcurrentHashMap<UUID, double[]> lastPktPos       = new ConcurrentHashMap<>();
+    /**
+     * How many consecutive POSITION/POSITION_LOOK packets had coordinates
+     * within {@link #FROZEN_DELTA} of the previous packet's coordinates.
+     */
+    private final ConcurrentHashMap<UUID, AtomicInteger> frozenPktCount = new ConcurrentHashMap<>();
 
     public PacketAntiCheatListener(KlassenPlugin plugin, ProtocolManager protocolManager) {
         this.plugin  = plugin;
@@ -80,27 +118,40 @@ public class PacketAntiCheatListener {
         schedulePosStallCheck();
     }
 
+    // ── FreeCam stall check (Bukkit scheduler, every second) ─────────────────
+
     /**
-     * Every 20 ticks (≈1 second) checks each online player's server-side
-     * position.  If the position has not changed for
-     * {@code anticheat.packet.freecam.stall-seconds} seconds while packets
-     * are still being received, a FreeCam violation is recorded.
+     * Every 20 ticks (≈1 second) compares each online player's server-side
+     * position to the value recorded in the previous tick.
      *
-     * <p>This complements the packet-based FreeCam check and catches clients
-     * that freeze their server-side location while flying the camera freely
-     * without suppressing all activity packets.
+     * <p>A violation is recorded when:
+     * <ol>
+     *   <li>The position has not changed (within 0.01 blocks) for
+     *       {@code freecam.stall-seconds} consecutive seconds, AND</li>
+     *   <li>A movement packet ({@code POSITION} / {@code POSITION_LOOK} /
+     *       {@code FLYING}) was received within the last 2 seconds — this
+     *       distinguishes an active FreeCam session from a player who is simply
+     *       AFK and stopped sending packets.</li>
+     * </ol>
+     *
+     * <p>Using {@code lastMovePkt} (not {@code lastActivityPkt}) for the
+     * activity check is the critical fix: the previous code required a recent
+     * chat or interaction packet, but FreeCam users typically do neither – they
+     * just fly their camera.  FreeCam users DO keep sending {@code FLYING}
+     * keep-alive packets because Meteor/Wurst's game loop keeps running, so
+     * {@code lastMovePkt} is always fresh while the player is in FreeCam.
      */
     private void schedulePosStallCheck() {
-        org.bukkit.Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (!manager.isEnabled()) return;
             if (!manager.isCheckEnabled("freecam")) return;
-            int stallThresholdSec = plugin.getConfig()
-                    .getInt("anticheat.packet.freecam.stall-seconds", 5);
+            int stallThreshold = plugin.getConfig()
+                    .getInt("anticheat.packet.freecam.stall-seconds", 3);
 
-            for (org.bukkit.entity.Player player : org.bukkit.Bukkit.getOnlinePlayers()) {
+            for (Player player : Bukkit.getOnlinePlayers()) {
                 if (player.hasPermission("klassenplugin.anticheat.bypass")) continue;
                 if (player.getAllowFlight() || player.isFlying() || player.isInsideVehicle()) continue;
-                // Skip Bedrock players (position stall can occur normally).
+                // Skip Bedrock players – position stall happens legitimately.
                 UUID uuid = player.getUniqueId();
                 if (uuid.getMostSignificantBits() == 0L || player.getName().startsWith(".")) continue;
 
@@ -113,14 +164,17 @@ public class PacketAntiCheatListener {
                         && Math.abs(knownPos[0] - px) < 0.01
                         && Math.abs(knownPos[1] - py) < 0.01
                         && Math.abs(knownPos[2] - pz) < 0.01) {
-                    // Position has not changed since last tick.
                     int stall = posStallTicks.merge(uuid, 1, Integer::sum);
-                    // Check that there was recent packet activity (not just AFK).
-                    Long lastAct = lastActivityPkt.get(uuid);
-                    boolean recentActivity = lastAct != null
-                            && System.currentTimeMillis() - lastAct < 3000L;
-                    if (stall >= stallThresholdSec && recentActivity
+                    // Key fix: use lastMovePkt (movement packet arrival) as the
+                    // "player is active" signal, NOT lastActivityPkt (chat/interaction).
+                    // FreeCam keeps sending FLYING packets so lastMovePkt is always fresh.
+                    Long lastMove = lastMovePkt.get(uuid);
+                    boolean movingPkts = lastMove != null
+                            && System.currentTimeMillis() - lastMove < 2000L;
+                    if (stall >= stallThreshold && movingPkts
                             && manager.canAddViolation(uuid)) {
+                        plugin.getLogger().warning("[AntiCheat/FreeCam] "
+                                + player.getName() + " – Stall " + stall + "s");
                         manager.addViolation(uuid, "FreeCam");
                         posStallTicks.put(uuid, 0);
                     }
@@ -142,6 +196,7 @@ public class PacketAntiCheatListener {
                 PacketType.Play.Client.FLYING) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
+                touchAny(event);
                 handleMovement(event);
             }
         });
@@ -151,6 +206,7 @@ public class PacketAntiCheatListener {
                 PacketType.Play.Client.USE_ENTITY) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
+                touchAny(event);
                 handleUseEntity(event);
             }
         });
@@ -160,33 +216,51 @@ public class PacketAntiCheatListener {
                 PacketType.Play.Client.BLOCK_DIG) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
+                touchAny(event);
                 handleBlockDig(event);
             }
         });
 
-        // ── All other client packets – used for flood + FreeCam activity ───
+        // ── All other client packets – flood + FreeCam activity ────────────
         pm.addPacketListener(new PacketAdapter(plugin, ListenerPriority.MONITOR,
                 PacketType.Play.Client.CHAT,
                 PacketType.Play.Client.USE_ITEM,
                 PacketType.Play.Client.SET_CREATIVE_SLOT,
                 PacketType.Play.Client.WINDOW_CLICK,
                 PacketType.Play.Client.ENTITY_ACTION,
-                PacketType.Play.Client.ARM_ANIMATION) {
+                PacketType.Play.Client.ARM_ANIMATION,
+                PacketType.Play.Client.CLIENT_COMMAND,
+                PacketType.Play.Client.KEEP_ALIVE,
+                PacketType.Play.Client.BLOCK_PLACE) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
+                touchAny(event);
                 handleActivity(event);
             }
         });
     }
 
+    /**
+     * Updates the universal "last any packet" timestamp for a player.
+     * Called from every packet handler so {@code lastAnyPkt} always reflects
+     * the actual last packet time, regardless of type.
+     */
+    private void touchAny(PacketEvent event) {
+        Player player = event.getPlayer();
+        if (player == null) return;
+        lastAnyPkt.put(player.getUniqueId(), System.currentTimeMillis());
+    }
+
     // ── Handlers ─────────────────────────────────────────────────────────────
 
     /**
-     * Handles {@code POSITION} and {@code POSITION_LOOK} packets.
+     * Handles {@code POSITION}, {@code POSITION_LOOK}, and {@code FLYING} packets.
      *
      * <ul>
-     *   <li>Records the last movement packet time (used by FreeCam detection).</li>
+     *   <li>Records the last movement packet time (used by FreeCam stall check).</li>
      *   <li>Detects impossible single-packet movement distances (PacketMove).</li>
+     *   <li>Counts consecutive packets with identical coordinates; a real Java
+     *       player always has micro-movement noise – perfect freeze = FreeCam.</li>
      * </ul>
      */
     private void handleMovement(PacketEvent event) {
@@ -204,14 +278,51 @@ public class PacketAntiCheatListener {
         PacketType type = event.getPacketType();
         if (type == PacketType.Play.Client.FLYING) {
             // FLYING packet has no position data – just a ground flag.
+            // Still counts as "movement activity" for FreeCam stall detection.
             return;
         }
 
-        double x = event.getPacket().getDoubles().read(0);
-        double y = event.getPacket().getDoubles().read(1);
-        double z = event.getPacket().getDoubles().read(2);
+        double x, y, z;
+        try {
+            x = event.getPacket().getDoubles().read(0);
+            y = event.getPacket().getDoubles().read(1);
+            z = event.getPacket().getDoubles().read(2);
+        } catch (Exception ignored) {
+            return;
+        }
 
-        // ── PacketMove check ─────────────────────────────────────────────
+        // ── Frozen-position FreeCam detection ────────────────────────────────
+        // Real Java players always have tiny coordinate noise (physics, lag).
+        // A perfectly frozen position across N consecutive movement packets means
+        // the client is in FreeCam (body frozen, camera flying freely).
+        if (manager.isCheckEnabled("freecam")) {
+            // Skip Bedrock players.
+            if (uuid.getMostSignificantBits() != 0L && !player.getName().startsWith(".")) {
+                double[] lastPkt = lastPktPos.get(uuid);
+                AtomicInteger frozenCtr = frozenPktCount.computeIfAbsent(uuid, k -> new AtomicInteger(0));
+                if (lastPkt != null
+                        && Math.abs(lastPkt[0] - x) < FROZEN_DELTA
+                        && Math.abs(lastPkt[1] - y) < FROZEN_DELTA
+                        && Math.abs(lastPkt[2] - z) < FROZEN_DELTA) {
+                    int frozen = frozenCtr.incrementAndGet();
+                    int threshold = plugin.getConfig()
+                            .getInt("anticheat.packet.freecam.frozen-packets", 20);
+                    if (frozen >= threshold && !player.getAllowFlight()
+                            && !player.isInsideVehicle()
+                            && manager.canAddViolation(uuid)) {
+                        plugin.getLogger().warning("[AntiCheat/FreeCam] "
+                                + player.getName() + " – frozen position ×" + frozen);
+                        manager.addViolation(uuid, "FreeCam");
+                        frozenCtr.set(0);
+                    }
+                } else {
+                    frozenCtr.set(0);
+                    lastPktPos.put(uuid, new double[]{x, y, z});
+                }
+            }
+        }
+
+        // ── PacketMove check ─────────────────────────────────────────────────
         if (manager.isCheckEnabled("packetmove")) {
             double[] last = lastSafePos.get(uuid);
             if (last != null) {
@@ -228,9 +339,7 @@ public class PacketAntiCheatListener {
                         && !player.isInsideVehicle()
                         && manager.canAddViolation(uuid)) {
                     manager.addViolation(uuid, "PacketMove");
-                    // Cancel the packet so the illegal position isn't applied.
                     event.setCancelled(true);
-                    // Teleport back to last safe position on the main thread.
                     final double sx = last[0], sy = last[1], sz = last[2];
                     Bukkit.getScheduler().runTask(plugin, () -> {
                         Location safe = new Location(player.getWorld(), sx, sy, sz,
@@ -326,9 +435,15 @@ public class PacketAntiCheatListener {
      * Handles non-movement activity packets.
      *
      * <ul>
-     *   <li>Updates {@code lastActivityPkt} timestamp for FreeCam detection.</li>
+     *   <li>Updates {@code lastActivityPkt} and {@code lastAnyPkt} timestamps.</li>
      *   <li>Increments per-player packet rate counter for flood detection.</li>
      * </ul>
+     *
+     * <p>The old "no movement packets + activity" FreeCam check has been removed
+     * from here. That heuristic was wrong: FreeCam users DO keep sending
+     * {@code FLYING} movement packets (their body is frozen but the game loop
+     * still runs). The correct FreeCam detection is in the stall check and the
+     * frozen-position counter in {@link #handleMovement}.
      */
     private void handleActivity(PacketEvent event) {
         if (!manager.isEnabled()) return;
@@ -339,36 +454,7 @@ public class PacketAntiCheatListener {
         UUID uuid = player.getUniqueId();
         long now  = System.currentTimeMillis();
 
-        // Record activity time for FreeCam check.
         lastActivityPkt.put(uuid, now);
-
-        // ── FreeCam check ──────────────────────────────────────────────────
-        if (manager.isCheckEnabled("freecam")) {
-            long idleMs = plugin.getConfig()
-                    .getInt("anticheat.packet.freecam.idle-seconds", 8) * 1000L;
-            Long lastMove = lastMovePkt.get(uuid);
-            if (lastMove != null && (now - lastMove) > idleMs) {
-                // Player has been idle (no movement packets) but is still active.
-                if (manager.canAddViolation(uuid)) {
-                    manager.addViolation(uuid, "FreeCam");
-                }
-                // Snap player back to last safe position (prevents FreeCam abuse).
-                double[] safe = lastSafePos.get(uuid);
-                if (safe != null) {
-                    final double sx = safe[0], sy = safe[1], sz = safe[2];
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        Location snap = new Location(player.getWorld(), sx, sy, sz,
-                                player.getLocation().getYaw(),
-                                player.getLocation().getPitch());
-                        player.teleport(snap);
-                        player.sendMessage(KlassenPlugin.colorizeComponent(
-                                "&c[AntiCheat] &7Deine Position wurde zurückgesetzt."));
-                    });
-                }
-                // Reset the timer so we don't spam violations.
-                lastMovePkt.put(uuid, now);
-            }
-        }
 
         // ── Packet flood check ─────────────────────────────────────────────
         if (manager.isCheckEnabled("packetflood")) {
@@ -376,7 +462,6 @@ public class PacketAntiCheatListener {
             AtomicInteger count = packetRate.computeIfAbsent(uuid, k -> new AtomicInteger(0));
 
             if (now - windowStart > 1000L) {
-                // New second – reset window.
                 rateWindowStart.put(uuid, now);
                 count.set(1);
             } else {
@@ -401,7 +486,10 @@ public class PacketAntiCheatListener {
         lastMovePkt.remove(uuid);
         lastSafePos.remove(uuid);
         lastActivityPkt.remove(uuid);
+        lastAnyPkt.remove(uuid);
         lastKnownPos.remove(uuid);
         posStallTicks.remove(uuid);
+        lastPktPos.remove(uuid);
+        frozenPktCount.remove(uuid);
     }
 }

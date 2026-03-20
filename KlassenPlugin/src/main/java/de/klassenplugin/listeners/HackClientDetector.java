@@ -76,33 +76,51 @@ public class HackClientDetector implements Listener {
         if (player == null) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        // Read the channel name – try multiple ProtocolLib accessor patterns
-        // to remain compatible across different server/ProtocolLib versions.
+        // ── Read the channel name ─────────────────────────────────────────────
+        // Try multiple ProtocolLib accessor patterns for Paper 1.21 compatibility.
         String channel = null;
-        try {
-            channel = event.getPacket().getStrings().read(0);
-        } catch (Exception ignored) {}
+        try { channel = event.getPacket().getStrings().read(0); } catch (Exception ignored) {}
         if (channel == null || channel.isEmpty()) {
             try {
-                // In some ProtocolLib builds the channel is exposed as a MinecraftKey.
                 channel = event.getPacket().getMinecraftKeys().read(0).getFullKey();
             } catch (Exception ignored) {}
         }
         if (channel == null) return;
 
-        if (!BRAND_CHANNEL.equals(channel) && !channel.endsWith(":brand") && !channel.equals("MC|Brand")) return;
+        if (!BRAND_CHANNEL.equals(channel)
+                && !channel.endsWith(":brand")
+                && !channel.equals("MC|Brand")) {
+            return;
+        }
 
-        // Read raw payload bytes and decode the VarInt-prefixed brand string.
+        // ── Read the brand bytes ──────────────────────────────────────────────
+        // Try byte-array accessor first, then fall back to raw string.
+        String brand = null;
+
         byte[] payload = null;
-        try {
-            payload = event.getPacket().getByteArrays().read(0);
-        } catch (Exception ignored) {}
-        if (payload == null || payload.length == 0) return;
+        try { payload = event.getPacket().getByteArrays().read(0); } catch (Exception ignored) {}
 
-        String brand = readVarIntString(payload).toLowerCase(Locale.ROOT).trim();
+        if (payload != null && payload.length > 0) {
+            // Primary: VarInt-prefixed UTF-8 string (standard Minecraft protocol).
+            brand = readVarIntString(payload);
+            // Fallback: ProtocolLib may strip the VarInt and give raw UTF-8 bytes.
+            if (brand.isEmpty()) {
+                brand = new String(payload, StandardCharsets.UTF_8).trim();
+            }
+        }
+
+        // Last resort: some ProtocolLib builds expose brand as a second string.
+        if (brand == null || brand.isEmpty()) {
+            try { brand = event.getPacket().getStrings().read(1); } catch (Exception ignored) {}
+        }
+
+        if (brand == null || brand.isEmpty()) return;
+
+        brand = brand.toLowerCase(Locale.ROOT).trim();
+        // Strip NUL and control characters that some clients inject to hide brand.
+        brand = brand.replaceAll("[\\x00-\\x1F\\x7F]", "").trim();
         if (brand.isEmpty()) return;
 
-        // Always log at INFO so the server operator can see what clients connect.
         plugin.getLogger().info("[HackClient] Brand von " + player.getName() + ": " + brand);
         checkBrand(player, brand);
     }
@@ -117,13 +135,18 @@ public class HackClientDetector implements Listener {
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
         String channel = event.getChannel().toLowerCase(Locale.ROOT);
+        // Log every channel registration at INFO so the operator can investigate.
+        plugin.getLogger().info("[HackClient] " + player.getName()
+                + " registrierte Kanal: " + event.getChannel());
+
         List<String> blockedChannels = plugin.getConfig()
                 .getStringList("anticheat.hack-client.blocked-channels");
 
-        for (String prefix : blockedChannels) {
-            if (channel.startsWith(prefix.toLowerCase(Locale.ROOT))) {
+        for (String entry : blockedChannels) {
+            String lc = entry.toLowerCase(Locale.ROOT);
+            if (channel.startsWith(lc) || channel.contains(lc)) {
                 plugin.getLogger().warning("[HackClient] " + player.getName()
-                        + " registrierte verdächtigen Kanal: " + event.getChannel());
+                        + " – verdächtiger Kanal: " + event.getChannel());
                 actOnPlayer(player, "Kanal: " + event.getChannel());
                 return;
             }
