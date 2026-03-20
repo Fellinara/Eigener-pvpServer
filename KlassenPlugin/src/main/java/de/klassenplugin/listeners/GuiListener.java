@@ -25,7 +25,7 @@ public class GuiListener implements Listener {
         if (event.getClickedInventory() == null) return;
 
         // Auction House GUI
-        if (AuctionGui.isAhGui(event.getView().getTopInventory())) {
+        if (AuctionGui.isAhGui(event.getView())) {
             event.setCancelled(true);
             if (event.getClickedInventory().equals(event.getView().getTopInventory())) {
                 plugin.getAuctionGui().handleClick(player, event.getSlot());
@@ -34,7 +34,7 @@ public class GuiListener implements Listener {
         }
 
         // Order GUI
-        if (OrderGui.isOrderGui(event.getView().getTopInventory())) {
+        if (OrderGui.isOrderGui(event.getView())) {
             event.setCancelled(true);
             if (event.getClickedInventory().equals(event.getView().getTopInventory())) {
                 plugin.getOrderGui().handleClick(player, event.getSlot());

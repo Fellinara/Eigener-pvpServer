@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -112,9 +113,9 @@ public class OrderGui {
         return true;
     }
 
-    public static boolean isOrderGui(Inventory inv) {
-        if (inv == null || inv.getSize() != 54) return false;
-        String title = LegacyComponentSerializer.legacyAmpersand().serialize(inv.title());
+    public static boolean isOrderGui(InventoryView view) {
+        if (view == null || view.getTopInventory().getSize() != 54) return false;
+        String title = LegacyComponentSerializer.legacyAmpersand().serialize(view.title());
         return title.contains("Auftragshaus") || title.contains("Meine Auftr");
     }
 

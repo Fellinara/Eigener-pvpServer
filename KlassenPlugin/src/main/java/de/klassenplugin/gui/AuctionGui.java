@@ -8,6 +8,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
@@ -155,11 +156,11 @@ public class AuctionGui {
     }
 
     /**
-     * @return true if this inventory is one of our AH GUIs (title check).
+     * @return true if this inventory view is one of our AH GUIs (title check).
      */
-    public static boolean isAhGui(Inventory inv) {
-        if (inv == null || inv.getSize() != 54) return false;
-        String title = LegacyComponentSerializer.legacyAmpersand().serialize(inv.title());
+    public static boolean isAhGui(InventoryView view) {
+        if (view == null || view.getTopInventory().getSize() != 54) return false;
+        String title = LegacyComponentSerializer.legacyAmpersand().serialize(view.title());
         return title.contains("Auktionshaus") || title.contains("Meine Angebote");
     }
 
@@ -330,7 +331,7 @@ public class AuctionGui {
     // -----------------------------------------------------------------------
 
     /** Give potentially >64 items to a player, splitting into stacks automatically. */
-    static void giveItemsSplit(Player player, Material mat, int amount) {
+    public static void giveItemsSplit(Player player, Material mat, int amount) {
         int maxStack = mat.getMaxStackSize();
         if (maxStack < 1) maxStack = 64;
         while (amount > 0) {
