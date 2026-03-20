@@ -11,6 +11,10 @@ join-message:
   enabled: true
   message: "&aWillkommen auf dem Server, &e{player}&a!"
 
+# Nachricht beim Verlassen des Servers (wird von /vanish als Fake-Quit verwendet)
+quit-message:
+  message: "&e{player} hat den Server verlassen"
+
 # Teleport-Cooldown in Sekunden (0 = kein Cooldown)
 teleport-cooldown: 3
 
@@ -137,15 +141,14 @@ anticheat:
   speed:
     enabled: true
     # Maximale Blöcke pro Sekunde (Sprinten ~7.1, Speed I ~10, Speed II ~12.5)
-    # Erhöhe diesen Wert, wenn legitime Bewegungen fälschlicherweise erkannt werden.
     max-blocks-per-second: 16.0
     # Speed-Potion-Bonus pro Verstärkungsstufe (in Blöcken pro Sekunde)
     speed-potion-bonus-per-level: 3.5
 
   fly:
     enabled: true
-    # Ticks in der Luft bevor ein Verstoß (höher = weniger Fehlalarme)
-    max-air-ticks: 120
+    # Ticks in der Luft bevor ein Verstoß – niedrigerer Wert = aggressiver
+    max-air-ticks: 80
 
   reach:
     enabled: true
@@ -155,7 +158,7 @@ anticheat:
   killaura:
     enabled: true
     # Maximale Treffer pro Sekunde
-    max-hits-per-second: 15
+    max-hits-per-second: 12
 
   scaffold:
     enabled: true
@@ -163,6 +166,20 @@ anticheat:
 
   nofall:
     enabled: true
+
+  # Erkennt Spieler, die durch solide Blöcke laufen (Phase/NoClip)
+  phase:
+    enabled: true
+
+  # Erkennt Spieler, die auf Wasser laufen (Jesus-Hack)
+  jesus:
+    enabled: true
+
+  # Erkennt unmögliche Positionssprünge (Teleport-Hack)
+  teleport:
+    enabled: true
+    # Maximale Distanz die ein Spieler in einem Tick zurücklegen kann (in Blöcken)
+    max-distance: 20.0
 
 # Rang-System
 ranks:
@@ -179,6 +196,8 @@ economy:
 # Auktionshaus
 auction:
   max-listings-per-player: 10
+  # Dauer eines Angebots in Stunden (danach wird es automatisch entfernt)
+  listing-duration-hours: 24
 
 # Wöchentlicher Changelog
 changelog:

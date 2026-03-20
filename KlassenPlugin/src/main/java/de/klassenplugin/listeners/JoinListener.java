@@ -45,5 +45,8 @@ public class JoinListener implements Listener {
 
         // Apply vanish state: hide any already-vanished players from this newcomer.
         plugin.getVanishManager().applyVanishOnJoin(event.getPlayer());
+
+        // Deliver any items from auctions that expired while the player was offline.
+        plugin.getAuctionManager().deliverPendingItems(event.getPlayer());
     }
 }

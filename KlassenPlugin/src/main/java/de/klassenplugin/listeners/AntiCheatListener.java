@@ -29,6 +29,15 @@ public class AntiCheatListener implements Listener {
             Material.ICE, Material.PACKED_ICE, Material.BLUE_ICE,
             Material.FROSTED_ICE);
 
+    /** Materials that are non-passable (solid, collidable, not transparent). */
+    private static final Set<Material> PASSABLE_MATERIALS = Set.of(
+            Material.AIR, Material.CAVE_AIR, Material.VOID_AIR,
+            Material.WATER, Material.LAVA,
+            Material.TALL_GRASS, Material.SHORT_GRASS, Material.FERN,
+            Material.DEAD_BUSH, Material.SEAGRASS, Material.TALL_SEAGRASS,
+            Material.VINE, Material.LADDER, Material.SCAFFOLDING,
+            Material.SNOW, Material.LIGHT);
+
     private final KlassenPlugin plugin;
     private final AntiCheatManager manager;
 
@@ -81,8 +90,6 @@ public class AntiCheatListener implements Listener {
                 Long lastTime = manager.getLastMoveTime(uuid);
                 if (lastTime != null) {
                     long elapsed = System.currentTimeMillis() - lastTime;
-                    // Use at least 100 ms for a reliable measurement to avoid
-                    // false positives from timing jitter on individual ticks.
                     if (elapsed >= 100) {
                         double distance = Math.sqrt(distSq);
                         double speed = distance * 1000.0 / elapsed;
@@ -97,9 +104,6 @@ public class AntiCheatListener implements Listener {
                             maxSpeed += (speedEffect.getAmplifier() + 1) * bonus;
                         }
 
-                        // Skip when gliding (Elytra) – horizontal speed is unrestricted.
-                        // Skip when on ice – skating allows very high speeds.
-                        // Skip when inside a vehicle – not player-controlled movement.
                         Block blockBelow = to.clone().subtract(0, 0.1, 0).getBlock();
                         boolean onIce = ICE_MATERIALS.contains(blockBelow.getType());
 
@@ -122,18 +126,59 @@ public class AntiCheatListener implements Listener {
         boolean onGround = player.isOnGround();
         boolean inLiquid = player.isInWater() || player.isInLava();
         boolean inVehicle = player.isInsideVehicle();
-        boolean gliding = player.isGliding();
+        boolean gliding   = player.isGliding();
 
         if (onGround || inLiquid || inVehicle || gliding) {
             manager.resetAirTicks(uuid);
         } else if (!player.getAllowFlight()) {
             manager.incrementAirTicks(uuid);
-            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 120);
+            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 80);
             if (manager.isCheckEnabled("fly") && manager.getAirTicks(uuid) > maxAirTicks) {
                 if (manager.canAddViolation(uuid)) {
                     manager.addViolation(uuid, "Fly");
                 }
                 manager.resetAirTicks(uuid);
+            }
+        }
+
+        // ── Phase / NoClip check ──────────────────────────────────────────────
+        if (manager.isCheckEnabled("phase")) {
+            Block headBlock = to.clone().add(0, 0.5, 0).getBlock();
+            Block feetBlock = to.getBlock();
+            if (isInsideSolidBlock(headBlock) && isInsideSolidBlock(feetBlock)
+                    && !player.isInsideVehicle()
+                    && manager.canAddViolation(uuid)) {
+                manager.addViolation(uuid, "Phase");
+            }
+        }
+
+        // ── Jesus / Water-walk check ──────────────────────────────────────────
+        // Detect walking on top of water without the correct potion effect or
+        // special item (Frost-Walker boots handled by checking for enchantment).
+        if (manager.isCheckEnabled("jesus")) {
+            Block below = to.clone().subtract(0, 0.1, 0).getBlock();
+            if (below.getType() == Material.WATER && player.isOnGround()
+                    && !player.isInWater()
+                    && !player.isInsideVehicle()
+                    && !player.isGliding()
+                    && !hasFrostWalker(player)
+                    && manager.canAddViolation(uuid)) {
+                manager.addViolation(uuid, "Jesus");
+            }
+        }
+
+        // ── Position-Jump / Teleport-Hack check ──────────────────────────────
+        // Detect impossible position jumps (far larger than any legitimate speed).
+        if (manager.isCheckEnabled("teleport")) {
+            double distSq = from.distanceSquared(to);
+            double teleportThreshold = plugin.getConfig()
+                    .getDouble("anticheat.teleport.max-distance", 20.0);
+            if (distSq > teleportThreshold * teleportThreshold
+                    && !player.isInsideVehicle()
+                    && !player.getAllowFlight()
+                    && !player.isGliding()
+                    && manager.canAddViolation(uuid)) {
+                manager.addViolation(uuid, "TeleportHack");
             }
         }
     }
@@ -159,7 +204,7 @@ public class AntiCheatListener implements Listener {
         // ── KillAura check ────────────────────────────────────────────────────
         if (manager.isCheckEnabled("killaura")) {
             manager.recordHit(uuid);
-            int maxHits = plugin.getConfig().getInt("anticheat.killaura.max-hits-per-second", 15);
+            int maxHits = plugin.getConfig().getInt("anticheat.killaura.max-hits-per-second", 12);
             if (manager.getHitsInLastSecond(uuid) > maxHits && manager.canAddViolation(uuid)) {
                 manager.addViolation(uuid, "KillAura");
             }
@@ -191,5 +236,23 @@ public class AntiCheatListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         manager.removePlayer(event.getPlayer().getUniqueId());
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static boolean isInsideSolidBlock(Block block) {
+        if (block == null) return false;
+        Material type = block.getType();
+        if (!type.isSolid()) return false;
+        if (PASSABLE_MATERIALS.contains(type)) return false;
+        return block.getType().isOccluding();
+    }
+
+    private static boolean hasFrostWalker(Player player) {
+        for (org.bukkit.inventory.ItemStack is : player.getEquipment().getArmorContents()) {
+            if (is == null) continue;
+            if (is.containsEnchantment(org.bukkit.enchantments.Enchantment.FROST_WALKER)) return true;
+        }
+        return false;
     }
 }

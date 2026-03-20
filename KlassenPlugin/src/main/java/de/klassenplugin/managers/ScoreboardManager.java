@@ -18,6 +18,11 @@ public class ScoreboardManager {
     private final KlassenPlugin plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
 
+    // Serializers used to convert & color codes → § color codes for the
+    // legacy Bukkit scoreboard String API, which requires § codes (not &).
+    private static final LegacyComponentSerializer AMP  = LegacyComponentSerializer.legacyAmpersand();
+    private static final LegacyComponentSerializer SECT = LegacyComponentSerializer.legacySection();
+
     public ScoreboardManager(KlassenPlugin plugin) {
         this.plugin = plugin;
         Bukkit.getScheduler().runTaskTimer(plugin, this::updateAll, 20L, 20L);
@@ -30,7 +35,7 @@ public class ScoreboardManager {
         Objective obj = board.registerNewObjective(
                 "kp_side",
                 Criteria.DUMMY,
-                LegacyComponentSerializer.legacyAmpersand().deserialize(titleRaw));
+                AMP.deserialize(titleRaw));
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
         boards.put(player.getUniqueId(), board);
         player.setScoreboard(board);
@@ -60,7 +65,7 @@ public class ScoreboardManager {
 
         // Update title from config (live reload friendly).
         String titleRaw = plugin.getConfig().getString("scoreboard.title", "&6&lKlassenPlugin");
-        obj.displayName(LegacyComponentSerializer.legacyAmpersand().deserialize(titleRaw));
+        obj.displayName(AMP.deserialize(titleRaw));
 
         // Resolve placeholders.
         EconomyManager eco = plugin.getEconomyManager();
@@ -80,7 +85,6 @@ public class ScoreboardManager {
 
         List<String> configLines = plugin.getConfig().getStringList("scoreboard.lines");
         if (configLines.isEmpty()) {
-            // Fallback if lines are empty.
             configLines = Arrays.asList(
                 " ", "&7Online: &e" + online, " ",
                 "&7Geld: &6" + eco.format(balance), " ",
@@ -88,18 +92,22 @@ public class ScoreboardManager {
                 "&8play.server.de");
         }
 
+        // Replace placeholders, then convert & codes to § codes for the
+        // legacy scoreboard String API (§ required, & not supported here).
         List<String> resolved = new ArrayList<>();
         for (String line : configLines) {
-            resolved.add(line
+            String withPlaceholders = line
                     .replace("{player}", player.getName())
                     .replace("{rank}", rankDisplay)
                     .replace("{balance}", eco.format(balance))
                     .replace("{online}", String.valueOf(online))
-                    .replace("{server}", Bukkit.getServer().getName()));
+                    .replace("{server}", Bukkit.getServer().getName());
+            // Convert &-codes → Adventure Component → §-codes
+            resolved.add(SECT.serialize(AMP.deserialize(withPlaceholders)));
         }
 
         // Scoreboard entries must be unique – make duplicates unique by appending
-        // invisible reset codes without changing the visual output.
+        // invisible reset codes (§r) without changing the visual output.
         Set<String> used = new HashSet<>();
         int slot = resolved.size();
         for (String line : resolved) {
@@ -109,6 +117,10 @@ public class ScoreboardManager {
         }
     }
 
+    /**
+     * Makes {@code line} unique within {@code used} by appending §r reset
+     * codes (invisible padding that doesn't change the rendered text).
+     */
     private static String uniquify(String line, Set<String> used) {
         if (!used.contains(line)) return line;
         String base = line;

@@ -68,9 +68,9 @@ public class VanishManager {
         previousGameMode.put(player.getUniqueId(), player.getGameMode());
         player.setGameMode(GameMode.SPECTATOR);
 
-        // Fake quit message.
+        // Fake quit message – no trailing period so it looks like a vanilla quit.
         String quitMsg = plugin.getConfig().getString("quit-message.message",
-                "&e{player} hat den Server verlassen.");
+                "&e{player} hat den Server verlassen");
         Bukkit.broadcast(KlassenPlugin.colorizeComponent(quitMsg.replace("{player}", player.getName())));
 
         // Hide from all players.
@@ -111,7 +111,7 @@ public class VanishManager {
         plugin.getRankManager().updateTabListName(player);
 
         // Fake rejoin message (simple – player was already online before vanishing).
-        String rejoinMsg = "&e{player} hat den Server betreten.";
+        String rejoinMsg = "&e{player} hat den Server betreten";
         Bukkit.broadcast(KlassenPlugin.colorizeComponent(rejoinMsg.replace("{player}", player.getName())));
 
         player.sendMessage(KlassenPlugin.colorizeComponent(

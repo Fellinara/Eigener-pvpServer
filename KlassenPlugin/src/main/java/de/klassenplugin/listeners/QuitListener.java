@@ -18,10 +18,19 @@ public class QuitListener implements Listener {
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        plugin.getTpaManager().removePlayer(event.getPlayer().getUniqueId());
-        plugin.getMsgManager().removePlayer(event.getPlayer().getUniqueId());
-        plugin.getRankManager().removeRankFromPlayer(event.getPlayer());
-        plugin.getScoreboardManager().remove(event.getPlayer());
-        plugin.getVanishManager().onQuit(event.getPlayer());
+        org.bukkit.entity.Player player = event.getPlayer();
+
+        // Suppress the real quit message for vanished players – a fake quit was
+        // already broadcast when they activated /vanish, so showing the real one
+        // would reveal that they were still on the server.
+        if (plugin.getVanishManager().isVanished(player.getUniqueId())) {
+            event.quitMessage(null);
+        }
+
+        plugin.getTpaManager().removePlayer(player.getUniqueId());
+        plugin.getMsgManager().removePlayer(player.getUniqueId());
+        plugin.getRankManager().removeRankFromPlayer(player);
+        plugin.getScoreboardManager().remove(player);
+        plugin.getVanishManager().onQuit(player);
     }
 }
