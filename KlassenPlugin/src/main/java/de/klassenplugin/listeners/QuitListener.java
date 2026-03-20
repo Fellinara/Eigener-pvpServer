@@ -6,7 +6,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerQuitEvent;
 
 /**
- * Cleans up TPA requests and private-message state when a player leaves.
+ * Cleans up TPA requests, private-message state, vanish, and scoreboard when a player leaves.
  */
 public class QuitListener implements Listener {
 
@@ -22,5 +22,6 @@ public class QuitListener implements Listener {
         plugin.getMsgManager().removePlayer(event.getPlayer().getUniqueId());
         plugin.getRankManager().removeRankFromPlayer(event.getPlayer());
         plugin.getScoreboardManager().remove(event.getPlayer());
+        plugin.getVanishManager().onQuit(event.getPlayer());
     }
 }

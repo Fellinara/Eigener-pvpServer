@@ -65,7 +65,11 @@ public class RankPermissionsGui {
             "klassenplugin.changelog",
             "klassenplugin.changelog.admin",
             "klassenplugin.ally",
-            "klassenplugin.ban"
+            "klassenplugin.ban",
+            "klassenplugin.vanish",
+            "klassenplugin.vanish.see",
+            "klassenplugin.maintenance",
+            "klassenplugin.maintenance.bypass"
     );
 
     private static final int PAGE_SIZE = 45;

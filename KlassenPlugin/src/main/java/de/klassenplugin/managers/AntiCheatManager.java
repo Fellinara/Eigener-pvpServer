@@ -58,19 +58,58 @@ public class AntiCheatManager {
         Player player = Bukkit.getPlayer(playerId);
         if (player == null) return;
 
-        String action = plugin.getConfig().getString("anticheat.action", "warn");
-        String reason = "AntiCheat: " + checkName + " Verstoß";
+        String action = plugin.getConfig().getString("anticheat.action", "ban");
+        String reason = checkName + " Hack/Exploit";
 
         switch (action.toLowerCase()) {
-            case "kick" -> player.kick(KlassenPlugin.colorizeComponent("&cDu wurdest vom Anti-Cheat gekickt!\n&e" + reason));
+            case "kick" -> player.kick(buildKickScreen(
+                    "&c&lGEKICKT", reason, "Du kannst dich sofort wieder verbinden."));
             case "ban" -> {
+                String banMessage = buildBanReason(reason, "AntiCheat");
                 @SuppressWarnings("deprecation")
-                org.bukkit.BanEntry<?> entry = player.ban(reason, (java.util.Date) null, "AntiCheat");
-                player.kick(KlassenPlugin.colorizeComponent("&cDu wurdest gebannt!\n&e" + reason));
+                org.bukkit.BanEntry<?> ignored = player.ban(banMessage, (java.util.Date) null, "AntiCheat");
+                player.kick(buildKickScreen("&4&lGEBANNT – CHEATING DETECTED",
+                        reason,
+                        "&7Grund: &c" + reason
+                                + "\n&7Gebannt von: &cAntiCheat"
+                                + "\n\n&7Um entbannt zu werden, wende dich an einen Admin."));
+                for (Player online : Bukkit.getOnlinePlayers()) {
+                    if (online.hasPermission("klassenplugin.anticheat.alert")) {
+                        online.sendMessage(KlassenPlugin.colorizeComponent(
+                                "&4&l[AntiCheat-BAN] &e" + player.getName()
+                                        + " &cwurde automatisch gebannt! &8(" + checkName + ")"));
+                    }
+                }
+                plugin.getLogger().warning("[AntiCheat] " + player.getName() + " wurde automatisch gebannt: " + checkName);
             }
             default -> player.sendMessage(KlassenPlugin.colorizeComponent(
                     "&c[AntiCheat] &eWarnung: &c" + reason));
         }
+    }
+
+    /**
+     * Builds a formatted multi-line kick/ban screen component.
+     */
+    public static net.kyori.adventure.text.Component buildKickScreen(
+            String title, String subtitle, String details) {
+        String msg = "\n&r"
+                + "&8" + "▀".repeat(40) + "\n"
+                + "\n"
+                + "  " + title + "\n"
+                + "\n"
+                + "  &e" + subtitle + "\n"
+                + "\n"
+                + "  " + details + "\n"
+                + "\n"
+                + "&8" + "▄".repeat(40) + "\n";
+        return KlassenPlugin.colorizeComponent(msg);
+    }
+
+    /**
+     * Returns a short plain-text ban reason (stored in Bukkit's ban list).
+     */
+    private static String buildBanReason(String reason, String bannedBy) {
+        return "[" + bannedBy + "] " + reason;
     }
 
     public void recordOreMine(UUID playerId) {

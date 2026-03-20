@@ -44,7 +44,7 @@ und lade die neueste `KlassenPlugin-vX.X.X.jar` herunter.
 | Plugin | `/plugintoggle <enable|disable>` |
 | **Anti-Cheat** | `/anticheat status|enable|disable|check|violations|reset` |
 | **Ränge** | `/rank create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player` |
-| **Bans** | `/klassenplugin ban <Spieler>` (IP-Ban), `/klassenplugin unban <IP>` |
+| **Bans** | `/ban <Spieler> [Grund]`, `/unban <Spieler|IP>`, `/klassenplugin ban <Spieler>` (IP-Ban) |
 | **Economy** | `/balance [Spieler]`, `/pay <Spieler> <Betrag>` |
 | **Shop** | `/shop list|buy|sell|info|admin` |
 | **Auktionshaus** | `/ah sell|list|buy|request|fulfill|cancel|search|meine` |
@@ -91,18 +91,24 @@ Ränge werden in `plugins/KlassenPlugin/ranks.yml` gespeichert und beim Einlogge
 
 ---
 
-## 🔨 IP-Ban
+## 🔨 Ban-System
 
-Ein Spieler der online ist, kann per IP sofort gebannt werden:
+Spieler mit optionalem Grund bannen (styled Ban-Screen):
 
+```
+/ban <Spieler> [Grund]
+/ban SpielerName Cheating
+```
+
+Spieler/IP entbannen:
+```
+/unban <Spieler>
+/unban 192.168.1.1
+```
+
+Legacy IP-Ban (über Alias `/kp`):
 ```
 /klassenplugin ban Spielername
-# oder Alias:
-/kp ban Spielername
-```
-
-IP-Ban aufheben:
-```
 /klassenplugin unban 192.168.1.1
 ```
 

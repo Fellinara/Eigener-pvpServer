@@ -114,9 +114,9 @@ anticheat:
   # Benachrichtige Admins bei Verstößen (klassenplugin.anticheat.alert Berechtigung)
   alert-admins: true
   # Aktion bei zu vielen Verstößen: warn, kick, ban
-  action: warn
+  action: ban
   # Anzahl Verstöße bevor eine Aktion ausgeführt wird
-  violations-before-action: 10
+  violations-before-action: 5
 
   xray:
     enabled: true
@@ -190,3 +190,37 @@ changelog:
 # Bündnis-System
 alliance:
   protect-pvp: true
+
+# ClearLag – automatische Lag-Bereinigung
+clearlag:
+  enabled: true
+  # Intervall zwischen Bereinigungen in Minuten
+  interval-minutes: 30
+  # Warnung X Minuten/Sekunden vor der Bereinigung (komma-separierte Sekunden)
+  warnings-before-seconds:
+    - 300   # 5 Minuten
+    - 60    # 1 Minute
+    - 30    # 30 Sekunden
+    - 10    # 10 Sekunden
+  # Mindestabstand zur Bereinigung (in Chunks) – Entities näher dran werden verschont
+  safe-radius-chunks: 3
+  # Welche Entity-Typen werden entfernt (neben Items)
+  remove-mobs: true
+  # Entities nahe Spielern auch entfernen?
+  protect-near-players: true
+
+# Wartungsmodus
+maintenance:
+  enabled: false
+  # Nachricht die beim Verbinden während Wartung gezeigt wird
+  kick-message: |
+    &8▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+      &e&l⚙ WARTUNGSARBEITEN ⚙
+
+      &7Der Server befindet sich gerade in
+      &7der Wartung. Bitte versuche es
+      &7später erneut.
+
+      &8▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+

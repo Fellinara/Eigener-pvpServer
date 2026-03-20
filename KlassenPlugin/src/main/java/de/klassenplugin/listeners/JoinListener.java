@@ -3,8 +3,10 @@ package de.klassenplugin.listeners;
 import de.klassenplugin.KlassenPlugin;
 import net.kyori.adventure.text.Component;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerLoginEvent;
 
 public class JoinListener implements Listener {
 
@@ -12,6 +14,16 @@ public class JoinListener implements Listener {
 
     public JoinListener(KlassenPlugin plugin) {
         this.plugin = plugin;
+    }
+
+    /** Block non-admins while maintenance is active (login phase = before world load). */
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerLogin(PlayerLoginEvent event) {
+        if (plugin.getMaintenanceManager().isActive()
+                && !event.getPlayer().hasPermission("klassenplugin.maintenance.bypass")) {
+            event.disallow(PlayerLoginEvent.Result.KICK_OTHER,
+                    KlassenPlugin.colorizeComponent(plugin.getMaintenanceManager().buildKickMessage()));
+        }
     }
 
     @EventHandler
@@ -30,5 +42,8 @@ public class JoinListener implements Listener {
 
         plugin.getRankManager().applyRankToPlayer(event.getPlayer());
         plugin.getScoreboardManager().setup(event.getPlayer());
+
+        // Apply vanish state: hide any already-vanished players from this newcomer.
+        plugin.getVanishManager().applyVanishOnJoin(event.getPlayer());
     }
 }

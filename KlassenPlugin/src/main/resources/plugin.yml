@@ -207,6 +207,28 @@ commands:
     permission: klassenplugin.ally
     aliases: [alliance, bündnis]
 
+  vanish:
+    description: Macht dich für andere Spieler unsichtbar (Fake-Quit/Join)
+    usage: /vanish
+    permission: klassenplugin.vanish
+    aliases: [v]
+
+  wartungsarbeiten:
+    description: Schaltet den Wartungsmodus ein/aus
+    usage: /wartungsarbeiten [on|off]
+    permission: klassenplugin.maintenance
+    aliases: [maintenance, wartung]
+
+  ban:
+    description: Bannt einen Spieler mit einem optionalen Grund
+    usage: /ban <Spieler> [Grund]
+    permission: klassenplugin.ban
+
+  unban:
+    description: Entbannt einen Spieler oder eine IP
+    usage: /unban <Spieler|IP>
+    permission: klassenplugin.ban
+
 permissions:
   klassenplugin.lobby:
     description: Erlaubt die Nutzung von /lobby
@@ -272,7 +294,7 @@ permissions:
     description: Verwaltet das Rang-System
     default: op
   klassenplugin.ban:
-    description: Erlaubt IP-Bans über /klassenplugin ban
+    description: Erlaubt das Bannen und Entbannen von Spielern (/ban, /unban)
     default: op
   klassenplugin.economy:
     description: Zugriff auf Economy-Befehle (/balance)
@@ -310,3 +332,15 @@ permissions:
   klassenplugin.ally:
     description: Erlaubt die Nutzung des Bündnis-Systems
     default: true
+  klassenplugin.vanish:
+    description: Erlaubt die Nutzung von /vanish
+    default: op
+  klassenplugin.vanish.see:
+    description: Kann unsichtbare Spieler sehen (Info-Nachricht)
+    default: op
+  klassenplugin.maintenance:
+    description: Kann den Wartungsmodus aktivieren/deaktivieren
+    default: op
+  klassenplugin.maintenance.bypass:
+    description: Kann sich auch während der Wartung einloggen
+    default: op

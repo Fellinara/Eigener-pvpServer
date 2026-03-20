@@ -43,6 +43,9 @@ public class KlassenPlugin extends JavaPlugin {
     private ShopGui shopGui;
     private RankPermissionsGui rankPermissionsGui;
     private ViolationsGui violationsGui;
+    private VanishManager vanishManager;
+    private MaintenanceManager maintenanceManager;
+    private ClearLagManager clearLagManager;
 
     @Override
     public void onEnable() {
@@ -73,6 +76,9 @@ public class KlassenPlugin extends JavaPlugin {
         shopGui = new ShopGui(this);
         rankPermissionsGui = new RankPermissionsGui(this);
         violationsGui = new ViolationsGui(this);
+        vanishManager = new VanishManager(this);
+        maintenanceManager = new MaintenanceManager(this);
+        clearLagManager = new ClearLagManager(this);
 
         registerCommands();
         registerListeners();
@@ -213,6 +219,18 @@ public class KlassenPlugin extends JavaPlugin {
         AllianceCommand allyCmd = new AllianceCommand(this);
         getCommand("ally").setExecutor(allyCmd);
         getCommand("ally").setTabCompleter(allyCmd);
+
+        // Vanish
+        getCommand("vanish").setExecutor(new VanishCommand(this));
+
+        // Wartungsarbeiten (maintenance)
+        getCommand("wartungsarbeiten").setExecutor(new WartungsarbeitenCommand(this));
+
+        // Ban / Unban
+        BanCommand banCmd = new BanCommand(this);
+        getCommand("ban").setExecutor(banCmd);
+        getCommand("ban").setTabCompleter(banCmd);
+        getCommand("unban").setExecutor(new UnbanCommand(this));
     }
 
     private void registerListeners() {
@@ -260,6 +278,9 @@ public class KlassenPlugin extends JavaPlugin {
     public ShopGui getShopGui() { return shopGui; }
     public RankPermissionsGui getRankPermissionsGui() { return rankPermissionsGui; }
     public ViolationsGui getViolationsGui() { return violationsGui; }
+    public VanishManager getVanishManager() { return vanishManager; }
+    public MaintenanceManager getMaintenanceManager() { return maintenanceManager; }
+    public ClearLagManager getClearLagManager() { return clearLagManager; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,
