@@ -10,42 +10,36 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.player.PlayerRegisterChannelEvent;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 
 /**
- * Detects known hack clients (Wurst, Meteor, Impact, etc.) via two independent
- * fingerprinting methods and kicks or bans them immediately.
+ * Detects known hack clients (Wurst, Meteor, Impact, etc.) via client-brand
+ * fingerprinting at the ProtocolLib packet level.
  *
- * <h3>Detection methods</h3>
- * <ol>
- *   <li><b>Client Brand</b> – every Minecraft client sends a {@code minecraft:brand}
- *       plugin-channel packet shortly after entering the PLAY state.  Hack clients
- *       use their own name as the brand (e.g. {@code "wurst"}, {@code "meteor-client"})
- *       rather than {@code "vanilla"} or a plain mod-loader name.  The brand list is
- *       fully configurable under {@code anticheat.hack-client.blocked-brands}.</li>
- *   <li><b>Channel Registration</b> – several hack clients register proprietary
- *       plugin channels that vanilla clients never send (e.g. {@code "wurst:hacks"},
- *       {@code "meteor-client:mods"}).  These prefixes are configurable under
- *       {@code anticheat.hack-client.blocked-channels}.</li>
- * </ol>
+ * <h3>Detection method</h3>
+ * <p><b>Client Brand</b> – every Minecraft client sends a {@code minecraft:brand}
+ * plugin-channel packet shortly after entering the PLAY state.  Hack clients
+ * use their own name as the brand (e.g. {@code "wurst"}, {@code "meteor-client"})
+ * rather than {@code "vanilla"} or a plain mod-loader name.  The brand list is
+ * fully configurable under {@code anticheat.hack-client.blocked-brands}.</p>
  *
- * <p>Both checks respect:
+ * <p>This detector intercepts the raw {@code CUSTOM_PAYLOAD} packet via ProtocolLib,
+ * which fires before the Paper API value ({@code Player#getClientBrandName()}) is
+ * set — giving the earliest possible detection.
+ *
+ * <p>Channel-registration detection has been moved to {@link HackClientBukkitListener},
+ * which is always registered regardless of ProtocolLib availability.
+ *
+ * <p>All checks respect:
  * <ul>
  *   <li>{@code anticheat.enabled} – global anti-cheat toggle</li>
  *   <li>{@code anticheat.hack-client.enabled} – feature-specific toggle</li>
  *   <li>{@code klassenplugin.anticheat.bypass} – per-player bypass permission</li>
  * </ul>
- *
- * <p>The configured action ({@code kick} or {@code ban}) is performed on the
- * main thread and accompanied by an alert message to all online admins with the
- * {@code klassenplugin.anticheat.alert} permission.
  */
 public class HackClientDetector implements Listener {
 
@@ -126,32 +120,15 @@ public class HackClientDetector implements Listener {
     }
 
     // ── Bukkit: channel-registration detection ────────────────────────────────
-
-    /** Called by Bukkit's event system when a client registers a plugin channel. */
-    @EventHandler(priority = EventPriority.LOWEST)
-    public void onChannelRegister(PlayerRegisterChannelEvent event) {
-        if (!isEnabled()) return;
-        Player player = event.getPlayer();
-        if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
-
-        String channel = event.getChannel().toLowerCase(Locale.ROOT);
-        // Log every channel registration at INFO so the operator can investigate.
-        plugin.getLogger().info("[HackClient] " + player.getName()
-                + " registrierte Kanal: " + event.getChannel());
-
-        List<String> blockedChannels = plugin.getConfig()
-                .getStringList("anticheat.hack-client.blocked-channels");
-
-        for (String entry : blockedChannels) {
-            String lc = entry.toLowerCase(Locale.ROOT);
-            if (channel.startsWith(lc) || channel.contains(lc)) {
-                plugin.getLogger().warning("[HackClient] " + player.getName()
-                        + " – verdächtiger Kanal: " + event.getChannel());
-                actOnPlayer(player, "Kanal: " + event.getChannel());
-                return;
-            }
-        }
-    }
+    //
+    // NOTE: Channel registration is now handled by HackClientBukkitListener,
+    // which is always registered regardless of ProtocolLib availability.
+    // HackClientDetector only performs the ProtocolLib-level brand-packet
+    // detection (CUSTOM_PAYLOAD) which fires earlier and at a lower level.
+    //
+    // Both detections use the same blocked-channels / blocked-brands config
+    // keys, and HackClientBukkitListener deduplicates actions so no player
+    // is acted on twice even if both listeners fire.
 
     // ── Internal helpers ──────────────────────────────────────────────────────
 

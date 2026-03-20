@@ -11,6 +11,7 @@ import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.ChatListener;
 import de.klassenplugin.listeners.DeathListener;
 import de.klassenplugin.listeners.GuiListener;
+import de.klassenplugin.listeners.HackClientBukkitListener;
 import de.klassenplugin.listeners.JoinListener;
 import de.klassenplugin.listeners.QuitListener;
 import de.klassenplugin.managers.*;
@@ -48,6 +49,8 @@ public class KlassenPlugin extends JavaPlugin {
     private ClearLagManager clearLagManager;
     /** Null when ProtocolLib is not installed on the server. */
     private ProtocolLibManager protocolLibManager;
+    /** Always-active Bukkit hack-client listener (no ProtocolLib required). */
+    private HackClientBukkitListener hackClientBukkitListener;
 
     @Override
     public void onEnable() {
@@ -250,6 +253,8 @@ public class KlassenPlugin extends JavaPlugin {
     }
 
     private void registerListeners() {
+        hackClientBukkitListener = new HackClientBukkitListener(this);
+        getServer().getPluginManager().registerEvents(hackClientBukkitListener, this);
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
         getServer().getPluginManager().registerEvents(new DeathListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
@@ -299,6 +304,8 @@ public class KlassenPlugin extends JavaPlugin {
     public ClearLagManager getClearLagManager() { return clearLagManager; }
     /** Returns the ProtocolLib manager, or {@code null} if ProtocolLib is not installed. */
     public ProtocolLibManager getProtocolLibManager() { return protocolLibManager; }
+    /** Returns the always-active Bukkit hack-client listener. */
+    public HackClientBukkitListener getHackClientBukkitListener() { return hackClientBukkitListener; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,

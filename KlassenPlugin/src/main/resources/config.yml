@@ -226,7 +226,8 @@ anticheat:
   hack-client:
     enabled: true
     # Aktion bei Erkennung: "kick" oder "ban"
-    action: kick
+    # "ban" empfohlen: verhindert sofortiges Wiederverbinden nach Erkennung
+    action: ban
     # Kick-Nachricht (& Farbcodes; {client} wird durch den erkannten Client ersetzt)
     kick-message: "&c&lHack-Client erkannt!\n\n&7Dein Client ist auf diesem Server nicht erlaubt.\n&eDu verwendest: &c{client}"
     # Client-Brands, die geblockt werden (Kleinschreibung; Teilstring-Suche)
@@ -279,6 +280,27 @@ anticheat:
       - "ghost:"
       - "hack"
       - "cheat"
+
+    # Brand-Whitelist (opt-in, Standard: deaktiviert)
+    # Wenn aktiviert: ALLE Brands, die nicht in der Whitelist stehen, werden geblockt.
+    # Das ist die paranoideste Variante und blockiert unbekannte Hack-Clients automatisch.
+    # Nur aktivieren, wenn der Server ausschließlich bekannte Clients erlaubt.
+    brand-whitelist:
+      enabled: false
+      allowed-brands:
+        - "vanilla"
+        - "fabric"
+        - "forge"
+        - "quilt"
+        - "neoforge"
+        - "optifine"
+        - "lunar"
+        - "feather"
+        - "badlion"
+        - "labymod"
+        - "essential"
+        - "pvplounge"
+        - "modrinth"
 
 # Rang-System
 ranks:

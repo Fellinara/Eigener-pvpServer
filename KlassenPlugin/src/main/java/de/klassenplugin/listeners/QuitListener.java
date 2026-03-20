@@ -38,5 +38,10 @@ public class QuitListener implements Listener {
                 && plugin.getProtocolLibManager().getPacketListener() != null) {
             plugin.getProtocolLibManager().getPacketListener().removePlayer(player.getUniqueId());
         }
+
+        // Clear dedup set in the always-active hack-client listener.
+        if (plugin.getHackClientBukkitListener() != null) {
+            plugin.getHackClientBukkitListener().clearPlayer(player.getUniqueId());
+        }
     }
 }
