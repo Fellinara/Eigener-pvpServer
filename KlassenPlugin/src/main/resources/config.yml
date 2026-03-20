@@ -181,6 +181,38 @@ anticheat:
     # Maximale Distanz die ein Spieler in einem Tick zurücklegen kann (in Blöcken)
     max-distance: 20.0
 
+  # ProtocolLib-Paket-Checks (nur aktiv wenn ProtocolLib installiert ist)
+  packet:
+    # Erkennt unmögliche Bewegungsdistanzen direkt auf Paketebene
+    packetmove:
+      enabled: true
+      # Maximale Distanz pro Paket in Blöcken (verhindert Teleport-Hacks)
+      max-distance: 10.0
+
+    # Erkennt Spieler, die zu viele Pakete pro Sekunde senden (Bot/Exploit)
+    packetflood:
+      enabled: true
+      # Maximale Pakete pro Sekunde
+      max-per-second: 200
+
+    # Erkennt FreeCam: Spieler sendet keine Bewegungspakete aber ist aktiv
+    freecam:
+      enabled: true
+      # Sekunden ohne Bewegungspaket bei gleichzeitiger Aktivität = FreeCam-Verdacht
+      idle-seconds: 8
+
+    # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
+    packetreach:
+      enabled: true
+      # Maximale Reichweite in Blöcken
+      max-reach: 6.0
+
+    # Prüft Entfernungen bei Block-Abbau-Paketen
+    packetdig:
+      enabled: true
+      # Maximale Reichweite in Blöcken
+      max-reach: 7.0
+
 # Rang-System
 ranks:
   # Standardrang für neue Spieler (leer = kein Standardrang)

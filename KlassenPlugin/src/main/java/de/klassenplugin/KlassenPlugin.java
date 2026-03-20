@@ -46,6 +46,8 @@ public class KlassenPlugin extends JavaPlugin {
     private VanishManager vanishManager;
     private MaintenanceManager maintenanceManager;
     private ClearLagManager clearLagManager;
+    /** Null when ProtocolLib is not installed on the server. */
+    private ProtocolLibManager protocolLibManager;
 
     @Override
     public void onEnable() {
@@ -80,6 +82,19 @@ public class KlassenPlugin extends JavaPlugin {
         maintenanceManager = new MaintenanceManager(this);
         clearLagManager = new ClearLagManager(this);
 
+        // ProtocolLib integration – only if the soft dependency is present.
+        if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
+            try {
+                protocolLibManager = new ProtocolLibManager(this);
+                protocolLibManager.enable();
+            } catch (Exception e) {
+                getLogger().warning("[ProtocolLib] Fehler beim Initialisieren der Paket-Listener: " + e.getMessage());
+                protocolLibManager = null;
+            }
+        } else {
+            getLogger().info("[ProtocolLib] nicht gefunden – paketbasiertes Anti-Cheat deaktiviert.");
+        }
+
         registerCommands();
         registerListeners();
 
@@ -105,6 +120,7 @@ public class KlassenPlugin extends JavaPlugin {
         if (auctionManager != null) auctionManager.save();
         if (allianceManager != null) allianceManager.save();
         if (weeklyChangelogManager != null) weeklyChangelogManager.save();
+        if (protocolLibManager != null) protocolLibManager.disable();
         getLogger().info("KlassenPlugin wurde deaktiviert!");
     }
 
@@ -281,6 +297,8 @@ public class KlassenPlugin extends JavaPlugin {
     public VanishManager getVanishManager() { return vanishManager; }
     public MaintenanceManager getMaintenanceManager() { return maintenanceManager; }
     public ClearLagManager getClearLagManager() { return clearLagManager; }
+    /** Returns the ProtocolLib manager, or {@code null} if ProtocolLib is not installed. */
+    public ProtocolLibManager getProtocolLibManager() { return protocolLibManager; }
 
     /**
      * Returns the message for the given key as a raw &-colour-coded string,

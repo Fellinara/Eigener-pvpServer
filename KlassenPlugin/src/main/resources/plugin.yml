@@ -4,6 +4,7 @@ main: de.klassenplugin.KlassenPlugin
 api-version: '1.21'
 description: Paper 1.21 Plugin mit Lobby, Homes, Warps, Kits und mehr
 authors: [Fellinara]
+softdepend: [ProtocolLib]
 
 commands:
   lobby:

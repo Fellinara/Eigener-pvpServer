@@ -32,5 +32,11 @@ public class QuitListener implements Listener {
         plugin.getRankManager().removeRankFromPlayer(player);
         plugin.getScoreboardManager().remove(player);
         plugin.getVanishManager().onQuit(player);
+
+        // Clean up ProtocolLib packet-listener state if it is loaded.
+        if (plugin.getProtocolLibManager() != null
+                && plugin.getProtocolLibManager().getPacketListener() != null) {
+            plugin.getProtocolLibManager().getPacketListener().removePlayer(player.getUniqueId());
+        }
     }
 }
