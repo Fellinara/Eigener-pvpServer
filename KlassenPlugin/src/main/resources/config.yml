@@ -159,6 +159,9 @@ anticheat:
     enabled: true
     # Maximale Treffer pro Sekunde
     max-hits-per-second: 12
+    # Maximale Anzahl unterschiedlicher Ziele innerhalb von 500 ms
+    # KillAura wechselt Ziele weit schneller als ein Mensch zielen kann
+    max-targets-per-500ms: 3
 
   scaffold:
     enabled: true
@@ -166,6 +169,9 @@ anticheat:
 
   nofall:
     enabled: true
+    # Mindest-Fallhöhe (Blöcke) bevor NoFall-Erkennung greift
+    # Vanille-Fallschaden beginnt ab ~3 Blöcken; 4.5 vermeidet Treppen-Fehlalarme
+    min-drop-height: 4.5
 
   # Erkennt Spieler, die durch solide Blöcke laufen (Phase/NoClip)
   phase:
@@ -180,6 +186,11 @@ anticheat:
     enabled: true
     # Maximale Distanz die ein Spieler in einem Tick zurücklegen kann (in Blöcken)
     max-distance: 20.0
+
+  # Erkennt Sprint-Hack (Sprinten ohne ausreichend Hunger oder bei Blindheit)
+  # Vanilla verhindert Sprint bei Hunger 0 und Blindheit absolut.
+  invalidsprint:
+    enabled: true
 
   # ProtocolLib-Paket-Checks (nur aktiv wenn ProtocolLib installiert ist)
   packet:
@@ -220,6 +231,21 @@ anticheat:
       enabled: true
       # Maximale Reichweite in Blöcken
       max-reach: 7.0
+
+    # Erkennt Timer-Hack: Client sendet zu viele Bewegungspakete pro Sekunde.
+    # Vanilla sendet exakt 1 POSITION/POSITION_LOOK-Paket pro Tick (≈ 20/s).
+    # Timer beschleunigt die Client-Uhr → 30–100 Pakete/s.
+    # 22 lässt etwas Spielraum für Netzwerkjitter und TPS-Schwankungen.
+    timer:
+      enabled: true
+      max-packets-per-second: 22
+
+    # Erkennt AutoClicker: zu viele ARM_ANIMATION-Pakete (Mausklinks) pro Sekunde.
+    # Ein Mensch klickt maximal ~16–18×/s (Butterfly/Jitter-Klicken).
+    # AutoClicker-Module erzeugen 20–40+ Klicks/s.
+    autoclicker:
+      enabled: true
+      max-swings-per-second: 20
 
   # Hack-Client-Erkennung via Client-Brand und Plugin-Kanal-Registrierung
   # (Erfordert ProtocolLib – wird automatisch aktiviert wenn ProtocolLib verfügbar ist)

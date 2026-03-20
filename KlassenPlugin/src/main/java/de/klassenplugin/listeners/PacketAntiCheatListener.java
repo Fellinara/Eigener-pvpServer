@@ -275,7 +275,28 @@ public class PacketAntiCheatListener {
         // Always record last movement packet time.
         lastMovePkt.put(uuid, now);
 
+        // ── Timer hack check ─────────────────────────────────────────────────
+        // Vanilla Minecraft sends exactly one POSITION / POSITION_LOOK packet
+        // per game tick (≈ 20/s).  Timer hack speeds up the client clock,
+        // causing 25–100 packets/s.  We record only POSITION and POSITION_LOOK
+        // (not FLYING, which has no positional data and is not accelerated by
+        // the Timer module) to keep the signal clean.
         PacketType type = event.getPacketType();
+        if (type == PacketType.Play.Client.POSITION
+                || type == PacketType.Play.Client.POSITION_LOOK) {
+            if (manager.isCheckEnabled("timer")) {
+                manager.recordMovePkt(uuid);
+                int maxPkts = plugin.getConfig()
+                        .getInt("anticheat.packet.timer.max-packets-per-second", 22);
+                if (manager.getMovePktsInLastSecond(uuid) > maxPkts
+                        && manager.canAddViolation(uuid)) {
+                    plugin.getLogger().warning("[AntiCheat/Timer] " + player.getName()
+                            + " – " + manager.getMovePktsInLastSecond(uuid) + " POSITION pkts/s");
+                    manager.addViolation(uuid, "Timer");
+                }
+            }
+        }
+
         if (type == PacketType.Play.Client.FLYING) {
             // FLYING packet has no position data – just a ground flag.
             // Still counts as "movement activity" for FreeCam stall detection.
@@ -455,6 +476,23 @@ public class PacketAntiCheatListener {
         long now  = System.currentTimeMillis();
 
         lastActivityPkt.put(uuid, now);
+
+        // ── AutoClicker check ──────────────────────────────────────────────
+        // ARM_ANIMATION is sent once per swing/click.  Vanilla clients are
+        // capped by the attack cooldown and human CPS (~4–16 clicks/s).
+        // AutoClicker modules bypass this, producing 20–40 swings/s.
+        if (manager.isCheckEnabled("autoclicker")
+                && event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
+            manager.recordArmSwing(uuid);
+            int maxSwings = plugin.getConfig()
+                    .getInt("anticheat.packet.autoclicker.max-swings-per-second", 20);
+            if (manager.getArmSwingsInLastSecond(uuid) > maxSwings
+                    && manager.canAddViolation(uuid)) {
+                plugin.getLogger().warning("[AntiCheat/AutoClicker] " + player.getName()
+                        + " – " + manager.getArmSwingsInLastSecond(uuid) + " swings/s");
+                manager.addViolation(uuid, "AutoClicker");
+            }
+        }
 
         // ── Packet flood check ─────────────────────────────────────────────
         if (manager.isCheckEnabled("packetflood")) {

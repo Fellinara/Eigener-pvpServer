@@ -22,6 +22,22 @@ public class AntiCheatManager {
     private final Map<UUID, Long> lastFallDamageTime = new HashMap<>();
     private final Map<UUID, Long> lastViolationTime = new HashMap<>();
 
+    // ── New: multi-target KillAura tracking ──────────────────────────────────
+    /** Maps attacker UUID → (target UUID → last attack timestamp). */
+    private final Map<UUID, Map<UUID, Long>> attackTargets = new HashMap<>();
+
+    // ── New: Timer / AutoClicker packet-rate tracking ─────────────────────────
+    /** POSITION / POSITION_LOOK packet arrival times (last 1 s). */
+    private final Map<UUID, List<Long>> movePktTimes  = new HashMap<>();
+    /** ARM_ANIMATION packet arrival times (last 1 s). */
+    private final Map<UUID, List<Long>> armSwingTimes = new HashMap<>();
+
+    // ── New: NoFall Y-drop tracking ───────────────────────────────────────────
+    /** Highest Y recorded while the player was airborne in the current flight. */
+    private final Map<UUID, Double> airPeakY = new HashMap<>();
+    /** Whether the player was in the air in the last movement tick. */
+    private final Map<UUID, Boolean> wasInAir = new HashMap<>();
+
     public AntiCheatManager(KlassenPlugin plugin) {
         this.plugin = plugin;
     }
@@ -221,6 +237,99 @@ public class AntiCheatManager {
         return System.currentTimeMillis() - t < 3000L;
     }
 
+    // ── Multi-target KillAura ─────────────────────────────────────────────────
+
+    /**
+     * Records that {@code attacker} has hit {@code target}.
+     * Expires entries older than 500 ms automatically.
+     */
+    public void recordAttackTarget(UUID attacker, UUID target) {
+        long now = System.currentTimeMillis();
+        Map<UUID, Long> targets = attackTargets.computeIfAbsent(attacker, k -> new HashMap<>());
+        targets.put(target, now);
+        targets.entrySet().removeIf(e -> now - e.getValue() > 500L);
+    }
+
+    /**
+     * Returns how many distinct entities {@code attacker} has hit within the
+     * last 500 ms.  KillAura typically hits several targets faster than a human
+     * can aim-switch (normally ≤ 1–2 per 500 ms in PvP).
+     */
+    public int getDistinctTargetsInWindow(UUID attacker) {
+        Map<UUID, Long> targets = attackTargets.get(attacker);
+        if (targets == null) return 0;
+        long now = System.currentTimeMillis();
+        return (int) targets.entrySet().stream()
+                .filter(e -> now - e.getValue() <= 500L)
+                .count();
+    }
+
+    // ── Timer hack / AutoClicker packet-rate helpers ──────────────────────────
+
+    public void recordMovePkt(UUID playerId) {
+        long now = System.currentTimeMillis();
+        List<Long> times = movePktTimes.computeIfAbsent(playerId, k -> new ArrayList<>());
+        times.add(now);
+        times.removeIf(t -> now - t > 1000L);
+    }
+
+    public int getMovePktsInLastSecond(UUID playerId) {
+        List<Long> times = movePktTimes.get(playerId);
+        if (times == null) return 0;
+        long now = System.currentTimeMillis();
+        return (int) times.stream().filter(t -> now - t <= 1000L).count();
+    }
+
+    public void recordArmSwing(UUID playerId) {
+        long now = System.currentTimeMillis();
+        List<Long> times = armSwingTimes.computeIfAbsent(playerId, k -> new ArrayList<>());
+        times.add(now);
+        times.removeIf(t -> now - t > 1000L);
+    }
+
+    public int getArmSwingsInLastSecond(UUID playerId) {
+        List<Long> times = armSwingTimes.get(playerId);
+        if (times == null) return 0;
+        long now = System.currentTimeMillis();
+        return (int) times.stream().filter(t -> now - t <= 1000L).count();
+    }
+
+    // ── NoFall Y-drop tracking ────────────────────────────────────────────────
+
+    /** Called every movement tick.  Keeps the highest Y seen while airborne. */
+    public void updateAirPeak(UUID playerId, double currentY, boolean onGround) {
+        if (onGround) {
+            wasInAir.put(playerId, false);
+            // Do not clear airPeakY here – the caller needs it after landing.
+            return;
+        }
+        wasInAir.put(playerId, true);
+        Double peak = airPeakY.get(playerId);
+        if (peak == null || currentY > peak) {
+            airPeakY.put(playerId, currentY);
+        }
+    }
+
+    /** Returns {@code true} if the player was airborne in the previous tick. */
+    public boolean wasInAir(UUID playerId) {
+        return Boolean.TRUE.equals(wasInAir.get(playerId));
+    }
+
+    /**
+     * Returns the peak Y recorded during the most recent airborne period, or
+     * {@code null} if no airborne phase was tracked.
+     */
+    public Double getAirPeakY(UUID playerId) {
+        return airPeakY.get(playerId);
+    }
+
+    /** Clears the airborne-peak Y after a NoFall check. */
+    public void clearAirPeakY(UUID playerId) {
+        airPeakY.remove(playerId);
+    }
+
+    // ── Cleanup ───────────────────────────────────────────────────────────────
+
     public void removePlayer(UUID playerId) {
         oreMineTimes.remove(playerId);
         violations.remove(playerId);
@@ -231,6 +340,11 @@ public class AntiCheatManager {
         blockPlaceTimes.remove(playerId);
         lastFallDamageTime.remove(playerId);
         lastViolationTime.remove(playerId);
+        attackTargets.remove(playerId);
+        movePktTimes.remove(playerId);
+        armSwingTimes.remove(playerId);
+        airPeakY.remove(playerId);
+        wasInAir.remove(playerId);
     }
 
     public Map<UUID, Integer> getViolationMap() {

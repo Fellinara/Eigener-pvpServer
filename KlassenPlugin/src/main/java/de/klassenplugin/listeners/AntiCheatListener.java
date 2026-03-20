@@ -18,6 +18,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.enchantments.Enchantment;
 
 import java.util.Set;
 import java.util.UUID;
@@ -203,6 +204,58 @@ public class AntiCheatListener implements Listener {
                 manager.addViolation(uuid, "TeleportHack");
             }
         }
+
+        // ── InvalidSprint check ───────────────────────────────────────────────
+        // In vanilla Minecraft a player cannot sprint when food level == 0 or
+        // while affected by Blindness.  Hack clients override these constraints.
+        if (manager.isCheckEnabled("invalidsprint") && !isBedrockPlayer(player)) {
+            if (player.isSprinting()) {
+                boolean blindness = player.hasPotionEffect(PotionEffectType.BLINDNESS);
+                // Food 0 is the absolute floor: at that point the game engine
+                // forcibly cancels any sprint.  We flag only this definitive case
+                // to avoid false positives while food ticks down from 6.
+                if (player.getFoodLevel() == 0 || blindness) {
+                    if (manager.canAddViolation(uuid)) {
+                        manager.addViolation(uuid, "InvalidSprint");
+                    }
+                }
+            }
+        }
+
+        // ── NoFall Y-drop tracking ────────────────────────────────────────────
+        // Track the peak Y during every airborne phase.  When the player lands,
+        // compare the drop height to expected fall-damage threshold.  If the
+        // player dropped far enough to take damage but no fall-damage event was
+        // fired, flag NoFall.
+        //
+        // Exemptions: liquid landing, elytra gliding, vehicles, slow falling,
+        // Feather-Falling boots, ProtocolLib already handles this via PacketMove.
+        if (manager.isCheckEnabled("nofall") && !isBedrockPlayer(player)) {
+            boolean prevAir = manager.wasInAir(uuid);
+            manager.updateAirPeak(uuid, to.getY(), onGround);
+
+            if (onGround && prevAir) {
+                // Player just landed.
+                Double peakY = manager.getAirPeakY(uuid);
+                if (peakY != null) {
+                    double drop = peakY - to.getY();
+                    // Vanilla fall damage begins at > 3 blocks of drop.
+                    // We use 4.5 as threshold to avoid false positives from
+                    // stair/slab landings and small jumps.
+                    if (drop > 4.5
+                            && !inLiquid
+                            && !gliding
+                            && !inVehicle
+                            && !player.hasPotionEffect(PotionEffectType.SLOW_FALLING)
+                            && !hasFeatherFalling(player)
+                            && !manager.hadRecentFallDamage(uuid)
+                            && manager.canAddViolation(uuid)) {
+                        manager.addViolation(uuid, "NoFall");
+                    }
+                }
+                manager.clearAirPeakY(uuid);
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -223,12 +276,25 @@ public class AntiCheatListener implements Listener {
             }
         }
 
-        // ── KillAura check ────────────────────────────────────────────────────
+        // ── KillAura checks ───────────────────────────────────────────────────
         if (manager.isCheckEnabled("killaura")) {
+            // Layer 1: hits-per-second rate (existing check).
             manager.recordHit(uuid);
             int maxHits = plugin.getConfig().getInt("anticheat.killaura.max-hits-per-second", 12);
             if (manager.getHitsInLastSecond(uuid) > maxHits && manager.canAddViolation(uuid)) {
                 manager.addViolation(uuid, "KillAura");
+            }
+
+            // Layer 2: multi-target in 500 ms.
+            // KillAura auto-switches targets far faster than a human can re-aim.
+            // A legitimate PvP player very rarely attacks more than 2 different
+            // entities within 500 ms.
+            manager.recordAttackTarget(uuid, victim.getUniqueId());
+            int maxTargets = plugin.getConfig()
+                    .getInt("anticheat.killaura.max-targets-per-500ms", 3);
+            if (manager.getDistinctTargetsInWindow(uuid) > maxTargets
+                    && manager.canAddViolation(uuid)) {
+                manager.addViolation(uuid, "KillAura (Multi-Target)");
             }
         }
     }
@@ -276,5 +342,11 @@ public class AntiCheatListener implements Listener {
             if (is.containsEnchantment(org.bukkit.enchantments.Enchantment.FROST_WALKER)) return true;
         }
         return false;
+    }
+
+    private static boolean hasFeatherFalling(Player player) {
+        org.bukkit.inventory.ItemStack boots = player.getEquipment().getBoots();
+        if (boots == null) return false;
+        return boots.containsEnchantment(Enchantment.FEATHER_FALLING);
     }
 }
