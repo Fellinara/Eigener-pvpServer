@@ -285,22 +285,23 @@ anticheat:
       - "ghost"
       - "flex"
       - "entropy"
-      # ── NoRisk (norisk.gg) – hack-client launcher ───────────────────────────
-      # Brand sent as "§bnorisk:<version>§r" (colour codes are stripped before
-      # comparison, so "norisk" matches reliably).
-      - "norisk"
     # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
     blocked-channels:
       # ── Wurst Client (standalone + Fabric mod) ─────────────────────────────
+      # Wurst registers "wurst:" channels whether it runs as a standalone client
+      # or as a Fabric mod inside launchers like NoRisk.
       - "wurst:"
       # ── Meteor Client (standalone + Fabric mod) ────────────────────────────
-      # As a Fabric mod under Feather/other launchers Meteor still registers
-      # these channels, so brand detection won't catch it but channel audit will.
+      # Meteor registers these channels even when loaded as a Fabric mod under
+      # other launchers (e.g. NoRisk).  Brand detection alone won't catch it
+      # in that case, but channel detection will.
       - "meteor-client:"
       - "meteor:"
-      # ── NoRisk (norisk.gg) – hack-client launcher ───────────────────────────
-      # NoRisk registers "norisk:main" and carries Wurst/other hack mods.
-      - "norisk:"
+      # ── FreeCam (Fabric mod) ────────────────────────────────────────────────
+      # FreeCam variants are purely client-side and do NOT register plugin channels.
+      # Channel-based detection cannot catch them.
+      # FreeCam is instead detected by the packet-level "freecam" check above
+      # (anticheat.packet.freecam): frozen server position + active position packets.
       # ── Other known hack clients ────────────────────────────────────────────
       - "impact:"
       - "aristois:"
