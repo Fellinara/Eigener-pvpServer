@@ -6,9 +6,6 @@ import com.comphenix.protocol.events.ListenerPriority;
 import com.comphenix.protocol.events.PacketAdapter;
 import com.comphenix.protocol.events.PacketEvent;
 import de.klassenplugin.KlassenPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
@@ -152,39 +149,14 @@ public class HackClientDetector implements Listener {
     }
 
     /**
-     * Kicks or bans the player on the main thread, then alerts online admins.
-     *
-     * <p>Safe to call from both ProtocolLib packet listeners (main thread) and
-     * Bukkit event handlers.
+     * Delegates kick/ban to {@link HackClientBukkitListener#actOnPlayer} so that
+     * the deduplication set and the timing-safe ban logic are shared.
      */
     private void actOnPlayer(Player player, String detectedClient) {
-        // Build the kick message.
-        String rawMsg = plugin.getConfig().getString(
-                "anticheat.hack-client.kick-message",
-                "&c&lHack-Client erkannt!\n\n&7Verbindung abgelehnt.\n&eDu verwendest: &c{client}");
-        String finalMsg = rawMsg.replace("{client}", detectedClient);
-        Component kickComp = LegacyComponentSerializer.legacyAmpersand().deserialize(finalMsg);
-
-        // Alert admins.
-        String alert = "&c[AntiCheat] &e" + player.getName()
-                + " &cwurde wegen Hack-Client &e(" + detectedClient + ") &centfernt.";
-        Bukkit.getOnlinePlayers().stream()
-                .filter(p -> p.hasPermission("klassenplugin.anticheat.alert"))
-                .forEach(p -> p.sendMessage(KlassenPlugin.colorizeComponent(alert)));
-
-        // Perform the action on the main thread (kick/ban).
-        String action = plugin.getConfig()
-                .getString("anticheat.hack-client.action", "kick")
-                .toLowerCase(Locale.ROOT);
-
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline()) return;
-            if ("ban".equals(action)) {
-                Bukkit.getBanList(org.bukkit.BanList.Type.NAME)
-                        .addBan(player.getName(), "Hack-Client: " + detectedClient, null, null);
-            }
-            player.kick(kickComp);
-        });
+        HackClientBukkitListener builtinListener = plugin.getHackClientBukkitListener();
+        if (builtinListener != null) {
+            builtinListener.actOnPlayer(player, detectedClient);
+        }
     }
 
     // ── VarInt-prefixed string decoder ────────────────────────────────────────

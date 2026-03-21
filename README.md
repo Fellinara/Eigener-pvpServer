@@ -201,9 +201,16 @@ Jeder Spieler kann mit genau **einer** anderen Person ein Bündnis eingehen.
 
 ## 🏷️ Neues Release erstellen
 
+### Option A: Via git tag (klassisch)
 ```bash
 git tag v1.0.1
 git push origin v1.0.1
 ```
 
-GitHub Actions baut dann automatisch die JAR und erstellt ein neues Release.
+### Option B: Via GitHub Actions UI (einfacher)
+1. Gehe zu [**Actions → Release**](https://github.com/Fellinara/Eigener-pvpServer/actions/workflows/release.yml)
+2. Klicke auf **"Run workflow"** (rechts oben)
+3. Gib die Version ein (z.B. `v1.0.1`)
+4. Klicke **"Run workflow"**
+
+In beiden Fällen baut GitHub Actions automatisch die JAR und erstellt ein neues Release, das unter [**Releases**](https://github.com/Fellinara/Eigener-pvpServer/releases) heruntergeladen werden kann.

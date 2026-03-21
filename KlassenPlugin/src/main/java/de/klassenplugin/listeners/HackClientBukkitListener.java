@@ -273,15 +273,22 @@ public class HackClientBukkitListener implements Listener {
                 .getString("anticheat.hack-client.action", "ban")
                 .toLowerCase(Locale.ROOT);
 
+        // Apply the NAME ban immediately so the player stays banned even if they
+        // disconnect before the scheduler fires (e.g., during the configuration
+        // phase, player.isOnline() can return false when the scheduled task runs).
+        if ("ban".equals(action)) {
+            @SuppressWarnings("deprecation")
+            var ignored = Bukkit.getBanList(org.bukkit.BanList.Type.NAME)
+                    .addBan(player.getName(), "Hack-Client: " + detectedClient, null, "AntiCheat");
+            plugin.getLogger().warning("[AntiCheat] " + player.getName()
+                    + " wurde gebannt: Hack-Client (" + detectedClient + ")");
+        }
+
+        // Kick on the next tick (safe from any event-handler context).
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!player.isOnline()) return;
-            if ("ban".equals(action)) {
-                Bukkit.getBanList(org.bukkit.BanList.Type.NAME)
-                        .addBan(player.getName(), "Hack-Client: " + detectedClient, null, null);
-                plugin.getLogger().warning("[AntiCheat] " + player.getName()
-                        + " wurde gebannt: " + detectedClient);
+            if (player.isOnline()) {
+                player.kick(kickComp);
             }
-            player.kick(kickComp);
         });
     }
 

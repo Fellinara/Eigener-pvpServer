@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - "v*"   # Triggered by tags like v1.0.0, v1.2.3, etc.
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release-Version (z.B. v1.0.1) – wird als Tag und Release-Name verwendet"
+        required: true
+        type: string
 
 permissions:
   contents: write   # Required to create a GitHub Release
@@ -27,26 +33,36 @@ jobs:
       - name: Build with Maven
         run: mvn -B package --file KlassenPlugin/pom.xml
 
+      - name: Determine release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Rename JAR to include version tag
         run: |
-          VERSION="${GITHUB_REF_NAME}"
+          VERSION="${{ steps.version.outputs.VERSION }}"
           mv KlassenPlugin/target/KlassenPlugin-*.jar \
              KlassenPlugin/target/KlassenPlugin-${VERSION}.jar
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "KlassenPlugin ${{ github.ref_name }}"
+          tag_name: ${{ steps.version.outputs.VERSION }}
+          name: "KlassenPlugin ${{ steps.version.outputs.VERSION }}"
           body: |
-            ## KlassenPlugin ${{ github.ref_name }}
+            ## KlassenPlugin ${{ steps.version.outputs.VERSION }}
 
             ### Installation
-            1. Lade `KlassenPlugin-${{ github.ref_name }}.jar` herunter
+            1. Lade `KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar` herunter
             2. Kopiere die JAR-Datei in den `plugins/`-Ordner deines Paper-Servers
             3. Starte (oder lade) den Server neu
 
             ### Voraussetzungen
             - Paper 1.21.4 (oder neuer)
             - Java 21
-          files: KlassenPlugin/target/KlassenPlugin-${{ github.ref_name }}.jar
+          files: KlassenPlugin/target/KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar
           fail_on_unmatched_files: true
