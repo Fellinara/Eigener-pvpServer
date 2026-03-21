@@ -62,6 +62,16 @@ public class HackClientBukkitListener implements Listener {
      */
     private final Set<UUID> actedOn = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
+    /**
+     * Players detected during the Minecraft Configuration phase (MC 1.20.2+)
+     * before their {@code PlayerJoinEvent} fires.
+     *
+     * <p>Key = UUID, Value = String array where {@code [0]} = playerName
+     * (needed for the NAME ban) and {@code [1]} = detection reason.
+     */
+    private final java.util.concurrent.ConcurrentHashMap<UUID, String[]> pendingDetections
+            = new java.util.concurrent.ConcurrentHashMap<>();
+
     public HackClientBukkitListener(KlassenPlugin plugin) {
         this.plugin = plugin;
     }
@@ -103,26 +113,34 @@ public class HackClientBukkitListener implements Listener {
     // ── Paper API brand check + full channel audit ────────────────────────────
 
     /**
-     * Schedules two independent delayed checks after the player has joined.
+     * Schedules multiple independent delayed checks after the player has joined.
      *
-     * <h4>40-tick brand check</h4>
+     * <h4>Pending pre-join detections (Configuration phase, MC 1.20.2+)</h4>
+     * <p>If {@link de.klassenplugin.listeners.HackClientDetector} detected a
+     * hack client during the Configuration phase (before {@code PlayerJoinEvent}
+     * fires), the detection is stored in {@link #pendingDetections}.  We act on
+     * it immediately at join — no delays needed because the brand/channel was
+     * already confirmed.
+     *
+     * <h4>20 / 40 / 60-tick brand check</h4>
      * <p>{@code Player#getClientBrandName()} (Paper API, no ProtocolLib required)
      * is {@code null} immediately at join because the {@code minecraft:brand}
-     * packet has not yet been received.  Delaying by 40 ticks (≈2 s) reliably
-     * ensures the value has been set for all normally-connecting clients.
+     * packet has not yet been received (or, in MC 1.20.2+, was received during
+     * the Configuration phase and may take a tick to be accessible via the API).
+     * Running checks at 20, 40, and 60 ticks (≈1 s, 2 s, 3 s) ensures the value
+     * is available for all connection speeds, and the {@link #actedOn} set
+     * prevents duplicate actions.
      *
      * <h4>80-tick full channel audit</h4>
-     * <p>{@link PlayerRegisterChannelEvent} fires once per channel as the
-     * client sends its {@code REGISTER} plugin-message.  When Wurst or Meteor
-     * Client are loaded as a <em>Fabric mod</em> under a different launcher
-     * (e.g. Feather), the mod still registers its proprietary channels, but a
-     * race condition or batched {@code REGISTER} packet can cause those events
-     * to fire before the listener is fully attached.
+     * <p>{@link org.bukkit.event.player.PlayerRegisterChannelEvent} fires once
+     * per channel as the client sends its {@code REGISTER} plugin-message.
+     * When Wurst or Meteor Client are loaded as a <em>Fabric mod</em> under a
+     * different launcher, the mod still registers its proprietary channels but a
+     * race condition can cause those events to fire before the listener is ready.
      *
      * <p>At 80 ticks (≈4 s) we call {@code Player#getListeningPluginChannels()},
      * which returns <em>all</em> channels the client has declared so far,
-     * regardless of when they were registered.  This is the definitive audit
-     * that catches mod-loaded hack clients running under a clean launcher brand.
+     * regardless of when they were registered.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -130,14 +148,26 @@ public class HackClientBukkitListener implements Listener {
         Player player = event.getPlayer();
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        // 40 ticks: brand check.
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (!player.isOnline()) return;
-            checkBrandPaperApi(player);
-        }, 40L);
+        // ── Configuration-phase pre-join detection (MC 1.20.2+) ──────────────
+        // If the ProtocolLib listener caught a hack-client brand or channel
+        // during the Configuration phase, we act immediately on join.
+        String[] pending = pendingDetections.remove(player.getUniqueId());
+        if (pending != null) {
+            // pending[0] = playerName, pending[1] = detectedClient reason
+            actOnPlayer(player, pending[1]);
+            return; // No need for further scheduled checks.
+        }
+
+        // ── Delayed brand checks (multiple intervals for resilience) ──────────
+        // 20 ticks: fast connections may have the brand available early.
+        scheduleBrandCheck(player, 20L);
+        // 40 ticks: standard timing for most connections.
+        scheduleBrandCheck(player, 40L);
+        // 60 ticks: retry for slow connections (actedOn prevents double-action).
+        scheduleBrandCheck(player, 60L);
 
         // 80 ticks: full channel audit.
-        // Must run AFTER the brand check so the dedup set is already populated
+        // Must run AFTER the brand checks so the dedup set is already populated
         // if the brand check already acted, and so the brand is available for
         // the mismatch log.
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -298,9 +328,49 @@ public class HackClientBukkitListener implements Listener {
      */
     public void clearPlayer(UUID uuid) {
         actedOn.remove(uuid);
+        pendingDetections.remove(uuid);
+    }
+
+    /**
+     * Stores a pre-join detection so that the kick/ban is applied the instant
+     * the player fires {@link org.bukkit.event.player.PlayerJoinEvent}.
+     *
+     * <p>Called by {@link HackClientDetector} when a hack-client brand or
+     * channel is detected during the Minecraft 1.20.2+ Configuration phase
+     * (before the player is "online" in the Bukkit sense).  The NAME ban is
+     * applied immediately so the player stays banned even if they disconnect
+     * before entering the Play phase.
+     *
+     * @param uuid            the player's UUID
+     * @param playerName      the player's name (needed for the NAME ban)
+     * @param detectedClient  human-readable detection reason
+     */
+    public void markPending(UUID uuid, String playerName, String detectedClient) {
+        // Apply the name-ban immediately so reconnection is blocked even if the
+        // player never fully enters the Play phase.
+        String action = plugin.getConfig()
+                .getString("anticheat.hack-client.action", "ban")
+                .toLowerCase(Locale.ROOT);
+        if ("ban".equals(action)) {
+            @SuppressWarnings("deprecation")
+            var ignored = Bukkit.getBanList(org.bukkit.BanList.Type.NAME)
+                    .addBan(playerName, "Hack-Client: " + detectedClient, null, "AntiCheat");
+            plugin.getLogger().warning("[AntiCheat] " + playerName
+                    + " wurde vorläufig gebannt (Konfigurationsphase): "
+                    + detectedClient);
+        }
+        pendingDetections.put(uuid, new String[]{playerName, detectedClient});
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────
+
+    /** Schedules a single brand check after {@code delayTicks} ticks. */
+    private void scheduleBrandCheck(Player player, long delayTicks) {
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!player.isOnline() || actedOn.contains(player.getUniqueId())) return;
+            checkBrandPaperApi(player);
+        }, delayTicks);
+    }
 
     private boolean isEnabled() {
         return plugin.getAntiCheatManager().isEnabled()

@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
@@ -40,7 +41,8 @@ import java.util.Locale;
  */
 public class HackClientDetector implements Listener {
 
-    private static final String BRAND_CHANNEL = "minecraft:brand";
+    private static final String BRAND_CHANNEL    = "minecraft:brand";
+    private static final String REGISTER_CHANNEL = "minecraft:register";
 
     private final KlassenPlugin plugin;
 
@@ -52,8 +54,24 @@ public class HackClientDetector implements Listener {
     // ── ProtocolLib: client-brand detection ───────────────────────────────────
 
     private void registerPacketListener(ProtocolManager pm) {
+        // Always listen to the Play-phase CUSTOM_PAYLOAD.
+        List<PacketType> types = new ArrayList<>();
+        types.add(PacketType.Play.Client.CUSTOM_PAYLOAD);
+
+        // Minecraft 1.20.2+ introduced a Configuration phase that runs BEFORE
+        // Play. Both the minecraft:brand packet and the minecraft:register
+        // (channel list) packet are sent during this phase, meaning the Play
+        // listener above never fires for them.  ProtocolLib 5.1.0+ exposes
+        // PacketType.Configuration.Client.CUSTOM_PAYLOAD for exactly this case.
+        try {
+            types.add(PacketType.Configuration.Client.CUSTOM_PAYLOAD);
+        } catch (Exception | LinkageError ignored) {
+            // ProtocolLib build that pre-dates Configuration-phase support –
+            // fall back to Play-phase-only detection.
+        }
+
         pm.addPacketListener(new PacketAdapter(plugin, ListenerPriority.LOWEST,
-                PacketType.Play.Client.CUSTOM_PAYLOAD) {
+                types.toArray(new PacketType[0])) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 handleCustomPayload(event);
@@ -81,6 +99,13 @@ public class HackClientDetector implements Listener {
         if (!BRAND_CHANNEL.equals(channel)
                 && !channel.endsWith(":brand")
                 && !channel.equals("MC|Brand")) {
+            // Not a brand packet – check whether it is a REGISTER packet so we
+            // can detect hack-client channels at the ProtocolLib level.
+            // This catches channels sent in the Configuration phase before
+            // PlayerRegisterChannelEvent has a chance to fire.
+            if (REGISTER_CHANNEL.equals(channel) || channel.endsWith(":register")) {
+                handleRegisterPacket(event, player);
+            }
             return;
         }
 
@@ -127,6 +152,48 @@ public class HackClientDetector implements Listener {
     // keys, and HackClientBukkitListener deduplicates actions so no player
     // is acted on twice even if both listeners fire.
 
+    // ── REGISTER packet handler ───────────────────────────────────────────────
+
+    /**
+     * Parses a {@code minecraft:register} CUSTOM_PAYLOAD packet and checks each
+     * declared channel against the blocked-channels list.
+     *
+     * <p>In Minecraft 1.20.2+, channel registration happens during the
+     * Configuration phase (before Play), so {@link
+     * org.bukkit.event.player.PlayerRegisterChannelEvent} may not fire.
+     * Intercepting the raw packet here guarantees we see every channel
+     * regardless of which protocol phase it was sent in.
+     *
+     * <p>Channels in the payload are NUL-byte separated UTF-8 strings.
+     */
+    private void handleRegisterPacket(PacketEvent event, Player player) {
+        if (!isEnabled()) return;
+        if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+
+        byte[] payload = null;
+        try { payload = event.getPacket().getByteArrays().read(0); } catch (Exception ignored) {}
+        if (payload == null || payload.length == 0) return;
+
+        List<String> blockedChannels = plugin.getConfig()
+                .getStringList("anticheat.hack-client.blocked-channels");
+        if (blockedChannels.isEmpty()) return;
+
+        // Channels are NUL-separated in the payload.
+        for (String raw : new String(payload, StandardCharsets.UTF_8).split("\0")) {
+            String ch = raw.toLowerCase(Locale.ROOT).trim();
+            if (ch.isEmpty()) continue;
+            for (String entry : blockedChannels) {
+                String lc = entry.toLowerCase(Locale.ROOT);
+                if (ch.startsWith(lc) || ch.contains(lc)) {
+                    plugin.getLogger().warning("[HackClient/Packet] " + player.getName()
+                            + " – Hack-Client-Kanal registriert: " + raw);
+                    actOnPlayer(player, "Kanal: " + raw);
+                    return;
+                }
+            }
+        }
+    }
+
     // ── Internal helpers ──────────────────────────────────────────────────────
 
     private boolean isEnabled() {
@@ -151,11 +218,23 @@ public class HackClientDetector implements Listener {
     /**
      * Delegates kick/ban to {@link HackClientBukkitListener#actOnPlayer} so that
      * the deduplication set and the timing-safe ban logic are shared.
+     *
+     * <p>During the Configuration phase (MC 1.20.2+) the player object is available
+     * through ProtocolLib but the player has not yet entered the Play phase, so
+     * {@code player.isOnline()} returns {@code false}.  We still apply the ban
+     * immediately via the shared listener and mark the player as pending so the
+     * kick is delivered the instant {@code PlayerJoinEvent} fires.
      */
     private void actOnPlayer(Player player, String detectedClient) {
         HackClientBukkitListener builtinListener = plugin.getHackClientBukkitListener();
-        if (builtinListener != null) {
+        if (builtinListener == null) return;
+
+        if (player.isOnline()) {
             builtinListener.actOnPlayer(player, detectedClient);
+        } else {
+            // Pre-join detection (Configuration phase): apply the ban now so the
+            // next connection attempt is rejected even if the kick misses.
+            builtinListener.markPending(player.getUniqueId(), player.getName(), detectedClient);
         }
     }
 
