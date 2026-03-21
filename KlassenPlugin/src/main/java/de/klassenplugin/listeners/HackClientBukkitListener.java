@@ -401,13 +401,22 @@ public class HackClientBukkitListener implements Listener {
     /**
      * Safely reads the client brand via the Paper API.
      * Returns an empty string when the API is unavailable or the brand is unset.
+     *
+     * <p>Some clients (e.g. NoRisk) embed Minecraft colour-code sequences
+     * ({@code §b…§r}) directly in the brand string.  Both the legacy {@code §x}
+     * format and the modern ampersand-prefixed {@code &x} format (after
+     * lowercasing) are stripped so that comparison against the blocked-brands
+     * list is reliable and the logged brand is human-readable.
      */
     private String getBrandSafe(Player player) {
         try {
             String b = player.getClientBrandName();
             if (b == null) return "";
             return b.toLowerCase(Locale.ROOT).trim()
-                    .replaceAll("[\\x00-\\x1F\\x7F]", "").trim();
+                    .replaceAll("[\\x00-\\x1F\\x7F]", "") // ASCII control chars
+                    .replaceAll("§.", "")                  // §x Minecraft colour codes
+                    .replaceAll("&[0-9a-fk-or]", "")      // &x legacy colour codes
+                    .trim();
         } catch (NoSuchMethodError | Exception ignored) {
             return "";
         }

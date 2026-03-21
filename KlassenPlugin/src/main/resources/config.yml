@@ -285,6 +285,10 @@ anticheat:
       - "ghost"
       - "flex"
       - "entropy"
+      # ── NoRisk (norisk.gg) – hack-client launcher ───────────────────────────
+      # Brand sent as "§bnorisk:<version>§r" (colour codes are stripped before
+      # comparison, so "norisk" matches reliably).
+      - "norisk"
     # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
     blocked-channels:
       # ── Wurst Client (standalone + Fabric mod) ─────────────────────────────
@@ -294,6 +298,9 @@ anticheat:
       # these channels, so brand detection won't catch it but channel audit will.
       - "meteor-client:"
       - "meteor:"
+      # ── NoRisk (norisk.gg) – hack-client launcher ───────────────────────────
+      # NoRisk registers "norisk:main" and carries Wurst/other hack mods.
+      - "norisk:"
       # ── Other known hack clients ────────────────────────────────────────────
       - "impact:"
       - "aristois:"
