@@ -282,8 +282,23 @@ public class HackClientBukkitListener implements Listener {
      * more than once (e.g., when both channel detection and brand detection fire
      * simultaneously, or when both this listener and {@link HackClientDetector}
      * detect the same player within the same tick).
+     *
+     * <p>If the player is not yet "online" (e.g. {@link PlayerRegisterChannelEvent}
+     * fired during the MC 1.20.2+ Configuration phase, before
+     * {@link PlayerJoinEvent}), we cannot kick them immediately.  We delegate to
+     * {@link #markPending} so the kick is applied the instant
+     * {@link PlayerJoinEvent} fires.  The NAME ban is applied by
+     * {@link #markPending} immediately, so the player stays banned even if they
+     * disconnect during the Configuration phase.
      */
     void actOnPlayer(Player player, String detectedClient) {
+        // If the player hasn't fully joined yet (Configuration-phase detection),
+        // we can't kick them now. Defer via markPending.
+        if (!player.isOnline()) {
+            markPending(player.getUniqueId(), player.getName(), detectedClient);
+            return;
+        }
+
         if (!actedOn.add(player.getUniqueId())) return; // already acted
 
         String rawMsg = plugin.getConfig().getString(
@@ -346,6 +361,13 @@ public class HackClientBukkitListener implements Listener {
      * @param detectedClient  human-readable detection reason
      */
     public void markPending(UUID uuid, String playerName, String detectedClient) {
+        // Atomic put: if another detection already stored a pending entry for
+        // this player (e.g. both ProtocolLib and Bukkit listeners fire in the
+        // same Configuration phase), the second call is a no-op.
+        if (pendingDetections.putIfAbsent(uuid, new String[]{playerName, detectedClient}) != null) {
+            return; // already pending – first detection wins
+        }
+
         // Apply the name-ban immediately so reconnection is blocked even if the
         // player never fully enters the Play phase.
         String action = plugin.getConfig()
@@ -359,7 +381,6 @@ public class HackClientBukkitListener implements Listener {
                     + " wurde vorläufig gebannt (Konfigurationsphase): "
                     + detectedClient);
         }
-        pendingDetections.put(uuid, new String[]{playerName, detectedClient});
     }
 
     // ── Helper ────────────────────────────────────────────────────────────────

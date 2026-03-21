@@ -165,33 +165,63 @@ public class HackClientDetector implements Listener {
      * regardless of which protocol phase it was sent in.
      *
      * <p>Channels in the payload are NUL-byte separated UTF-8 strings.
+     * Multiple ProtocolLib accessor patterns are tried in order of reliability.
      */
     private void handleRegisterPacket(PacketEvent event, Player player) {
         if (!isEnabled()) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        byte[] payload = null;
-        try { payload = event.getPacket().getByteArrays().read(0); } catch (Exception ignored) {}
-        if (payload == null || payload.length == 0) return;
-
         List<String> blockedChannels = plugin.getConfig()
                 .getStringList("anticheat.hack-client.blocked-channels");
         if (blockedChannels.isEmpty()) return;
 
-        // Channels are NUL-separated in the payload.
-        for (String raw : new String(payload, StandardCharsets.UTF_8).split("\0")) {
-            String ch = raw.toLowerCase(Locale.ROOT).trim();
-            if (ch.isEmpty()) continue;
-            for (String entry : blockedChannels) {
-                String lc = entry.toLowerCase(Locale.ROOT);
-                if (ch.startsWith(lc) || ch.contains(lc)) {
-                    plugin.getLogger().warning("[HackClient/Packet] " + player.getName()
-                            + " – Hack-Client-Kanal registriert: " + raw);
-                    actOnPlayer(player, "Kanal: " + raw);
-                    return;
+        // ── Strategy 1: byte-array accessor (most common ProtocolLib path) ──
+        byte[] payload = null;
+        try { payload = event.getPacket().getByteArrays().read(0); } catch (Exception ignored) {}
+
+        // ── Strategy 2: second byte-array slot (some ProtocolLib builds) ──
+        if (payload == null || payload.length == 0) {
+            try { payload = event.getPacket().getByteArrays().read(1); } catch (Exception ignored) {}
+        }
+
+        if (payload != null && payload.length > 0) {
+            // Channels are NUL-separated in the payload.
+            String channelList = new String(payload, StandardCharsets.UTF_8);
+            for (String raw : channelList.split("\0")) {
+                String ch = raw.toLowerCase(Locale.ROOT).trim();
+                if (ch.isEmpty()) continue;
+                for (String entry : blockedChannels) {
+                    String lc = entry.toLowerCase(Locale.ROOT);
+                    if (ch.startsWith(lc) || ch.contains(lc)) {
+                        plugin.getLogger().warning("[HackClient/Packet] " + player.getName()
+                                + " – Hack-Client-Kanal registriert: " + raw);
+                        actOnPlayer(player, "Kanal: " + raw);
+                        return;
+                    }
                 }
             }
+            return; // parsed successfully, no blocked channel found
         }
+
+        // ── Strategy 3: string list (some ProtocolLib/Paper builds expose
+        //    the channel names as additional String fields) ──────────────────
+        try {
+            int size = event.getPacket().getStrings().size();
+            for (int i = 1; i < size; i++) { // index 0 = the packet channel name
+                String raw = event.getPacket().getStrings().read(i);
+                if (raw == null || raw.isEmpty()) continue;
+                String ch = raw.toLowerCase(Locale.ROOT).trim();
+                for (String entry : blockedChannels) {
+                    String lc = entry.toLowerCase(Locale.ROOT);
+                    if (ch.startsWith(lc) || ch.contains(lc)) {
+                        plugin.getLogger().warning("[HackClient/Packet] " + player.getName()
+                                + " – Hack-Client-Kanal (str) registriert: " + raw);
+                        actOnPlayer(player, "Kanal: " + raw);
+                        return;
+                    }
+                }
+            }
+        } catch (Exception ignored) {}
     }
 
     // ── Internal helpers ──────────────────────────────────────────────────────

@@ -144,7 +144,7 @@ public class PacketAntiCheatListener {
     private void schedulePosStallCheck() {
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             if (!manager.isEnabled()) return;
-            if (!manager.isCheckEnabled("freecam")) return;
+            if (!isPacketCheckEnabled("freecam")) return;
             int stallThreshold = plugin.getConfig()
                     .getInt("anticheat.packet.freecam.stall-seconds", 3);
 
@@ -284,7 +284,7 @@ public class PacketAntiCheatListener {
         PacketType type = event.getPacketType();
         if (type == PacketType.Play.Client.POSITION
                 || type == PacketType.Play.Client.POSITION_LOOK) {
-            if (manager.isCheckEnabled("timer")) {
+            if (isPacketCheckEnabled("timer")) {
                 manager.recordMovePkt(uuid);
                 int maxPkts = plugin.getConfig()
                         .getInt("anticheat.packet.timer.max-packets-per-second", 22);
@@ -316,7 +316,7 @@ public class PacketAntiCheatListener {
         // Real Java players always have tiny coordinate noise (physics, lag).
         // A perfectly frozen position across N consecutive movement packets means
         // the client is in FreeCam (body frozen, camera flying freely).
-        if (manager.isCheckEnabled("freecam")) {
+        if (isPacketCheckEnabled("freecam")) {
             // Skip Bedrock players.
             if (uuid.getMostSignificantBits() != 0L && !player.getName().startsWith(".")) {
                 double[] lastPkt = lastPktPos.get(uuid);
@@ -344,7 +344,7 @@ public class PacketAntiCheatListener {
         }
 
         // ── PacketMove check ─────────────────────────────────────────────────
-        if (manager.isCheckEnabled("packetmove")) {
+        if (isPacketCheckEnabled("packetmove")) {
             double[] last = lastSafePos.get(uuid);
             if (last != null) {
                 double dx = x - last[0];
@@ -386,7 +386,7 @@ public class PacketAntiCheatListener {
      */
     private void handleUseEntity(PacketEvent event) {
         if (!manager.isEnabled()) return;
-        if (!manager.isCheckEnabled("packetreach")) return;
+        if (!isPacketCheckEnabled("packetreach")) return;
         Player player = event.getPlayer();
         if (player == null) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
@@ -425,7 +425,7 @@ public class PacketAntiCheatListener {
      */
     private void handleBlockDig(PacketEvent event) {
         if (!manager.isEnabled()) return;
-        if (!manager.isCheckEnabled("packetdig")) return;
+        if (!isPacketCheckEnabled("packetdig")) return;
         Player player = event.getPlayer();
         if (player == null) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
@@ -481,7 +481,7 @@ public class PacketAntiCheatListener {
         // ARM_ANIMATION is sent once per swing/click.  Vanilla clients are
         // capped by the attack cooldown and human CPS (~4–16 clicks/s).
         // AutoClicker modules bypass this, producing 20–40 swings/s.
-        if (manager.isCheckEnabled("autoclicker")
+        if (isPacketCheckEnabled("autoclicker")
                 && event.getPacketType() == PacketType.Play.Client.ARM_ANIMATION) {
             manager.recordArmSwing(uuid);
             int maxSwings = plugin.getConfig()
@@ -495,7 +495,7 @@ public class PacketAntiCheatListener {
         }
 
         // ── Packet flood check ─────────────────────────────────────────────
-        if (manager.isCheckEnabled("packetflood")) {
+        if (isPacketCheckEnabled("packetflood")) {
             long windowStart = rateWindowStart.computeIfAbsent(uuid, k -> now);
             AtomicInteger count = packetRate.computeIfAbsent(uuid, k -> new AtomicInteger(0));
 
@@ -529,5 +529,21 @@ public class PacketAntiCheatListener {
         posStallTicks.remove(uuid);
         lastPktPos.remove(uuid);
         frozenPktCount.remove(uuid);
+    }
+
+    // ── Config helper ─────────────────────────────────────────────────────────
+
+    /**
+     * Returns whether a packet-level anti-cheat check is enabled.
+     * Reads {@code anticheat.packet.<checkName>.enabled} (defaults to {@code true}).
+     *
+     * <p>This is the correct config path for all packet checks; it is distinct
+     * from {@link de.klassenplugin.managers.AntiCheatManager#isCheckEnabled}
+     * which reads {@code anticheat.<checkName>.enabled} (used for Bukkit-event
+     * checks like speed, fly, reach, etc.).
+     */
+    private boolean isPacketCheckEnabled(String checkName) {
+        return plugin.getConfig().getBoolean(
+                "anticheat.packet." + checkName + ".enabled", true);
     }
 }
