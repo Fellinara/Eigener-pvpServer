@@ -11,21 +11,28 @@ Paper 1.21 Minecraft Plugin für einen eigenen PvP-Server.
 
 ### Stabile Version (empfohlen)
 Gehe zur [**Releases-Seite**](https://github.com/Fellinara/Eigener-pvpServer/releases/latest)
-und lade die neueste `KlassenPlugin-vX.X.X.jar` herunter.
+und lade **beide** Dateien herunter:
+- `KlassenPlugin-vX.X.X.jar` — das eigentliche Plugin
+- `ProtocolLib.jar` — Pflichtabhängigkeit für die vollständige Hack-Client-Erkennung
 
 ### Entwicklungsversion (neuester Build)
 1. Öffne den Tab [**Actions → Build**](https://github.com/Fellinara/Eigener-pvpServer/actions/workflows/build.yml)
 2. Klicke auf den neuesten erfolgreichen Workflow-Run
 3. Lade unter **Artifacts** die Datei `KlassenPlugin` herunter
+4. Lade zusätzlich [ProtocolLib.jar](https://github.com/dmulloy2/ProtocolLib/releases/latest/download/ProtocolLib.jar) herunter
 
 ---
 
 ## 🔧 Installation
 
 1. Stelle sicher, dass du **Paper 1.21.4+** mit **Java 21** verwendest
-2. Kopiere die JAR-Datei in den `plugins/`-Ordner deines Servers
+2. Kopiere **beide** JAR-Dateien in den `plugins/`-Ordner deines Servers:
+   - `KlassenPlugin-vX.X.X.jar`
+   - `ProtocolLib.jar` *(erforderlich für Hack-Client-Erkennung, PacketMove, FreeCam u.a.)*
 3. Starte den Server (oder führe `/reload confirm` aus)
 4. Passe die Konfiguration in `plugins/KlassenPlugin/config.yml` an
+
+> **ProtocolLib fehlt?** Falls du beim ersten Start die Meldung `[ProtocolLib] nicht gefunden` siehst, lädt das Plugin ProtocolLib **automatisch herunter** und legt es in den `plugins/`-Ordner. Danach einfach den Server neu starten.
 
 ---
 

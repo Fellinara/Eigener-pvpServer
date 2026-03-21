@@ -95,7 +95,9 @@ public class KlassenPlugin extends JavaPlugin {
                 protocolLibManager = null;
             }
         } else {
-            getLogger().info("[ProtocolLib] nicht gefunden – paketbasiertes Anti-Cheat deaktiviert.");
+            getLogger().warning("[ProtocolLib] ProtocolLib nicht gefunden – paketbasiertes Anti-Cheat (Hack-Client-Erkennung, PacketMove, FreeCam …) ist deaktiviert.");
+            getLogger().warning("[ProtocolLib] Lade ProtocolLib automatisch herunter …");
+            tryDownloadProtocolLib();
         }
 
         registerCommands();
@@ -323,6 +325,82 @@ public class KlassenPlugin extends JavaPlugin {
      */
     public static Component colorizeComponent(String text) {
         return LegacyComponentSerializer.legacyAmpersand().deserialize(text);
+    }
+
+    // ── ProtocolLib auto-download ─────────────────────────────────────────────
+
+    /**
+     * Downloads {@code ProtocolLib.jar} asynchronously into the {@code plugins/}
+     * directory when ProtocolLib is not already installed.
+     *
+     * <p>If the file already exists in the plugins folder (downloaded in a
+     * previous run but not yet loaded), the admin is simply reminded to restart.
+     * The download runs on an async thread so it never blocks server startup.
+     * A direct download link is always logged as a manual fallback.
+     */
+    private void tryDownloadProtocolLib() {
+        java.nio.file.Path pluginsDir = getDataFolder().toPath().getParent();
+        java.nio.file.Path dest = pluginsDir.resolve("ProtocolLib.jar");
+
+        if (java.nio.file.Files.exists(dest)) {
+            getLogger().warning("[ProtocolLib] ProtocolLib.jar ist im plugins/-Ordner vorhanden, aber noch nicht geladen.");
+            getLogger().warning("[ProtocolLib] → Bitte starte den Server neu, um ProtocolLib zu aktivieren.");
+            return;
+        }
+
+        getLogger().info("[ProtocolLib] Starte Download im Hintergrund …");
+        getServer().getScheduler().runTaskAsynchronously(this, () -> {
+            String downloadUrl =
+                    "https://github.com/dmulloy2/ProtocolLib/releases/latest/download/ProtocolLib.jar";
+            try {
+                java.net.URL url = new java.net.URL(downloadUrl);
+                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                conn.setConnectTimeout(10_000);
+                conn.setReadTimeout(30_000);
+                conn.setInstanceFollowRedirects(true);
+                conn.setRequestProperty("User-Agent",
+                        "KlassenPlugin/" + getDescription().getVersion());
+
+                int status = conn.getResponseCode();
+                // GitHub issues a redirect (301/302) to its CDN; follow it.
+                if (status == java.net.HttpURLConnection.HTTP_MOVED_PERM
+                        || status == java.net.HttpURLConnection.HTTP_MOVED_TEMP) {
+                    String location = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    conn = (java.net.HttpURLConnection) new java.net.URL(location).openConnection();
+                    conn.setConnectTimeout(10_000);
+                    conn.setReadTimeout(30_000);
+                    conn.setRequestProperty("User-Agent",
+                            "KlassenPlugin/" + getDescription().getVersion());
+                    status = conn.getResponseCode();
+                }
+
+                if (status != 200) {
+                    getLogger().warning("[ProtocolLib] Download fehlgeschlagen (HTTP " + status + ").");
+                    logProtocolLibManualDownload(downloadUrl);
+                    return;
+                }
+
+                java.nio.file.Path tmp = pluginsDir.resolve("ProtocolLib.jar.download");
+                try (java.io.InputStream in = conn.getInputStream()) {
+                    java.nio.file.Files.copy(in, tmp,
+                            java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                }
+                java.nio.file.Files.move(tmp, dest,
+                        java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                getLogger().warning("[ProtocolLib] ✔ ProtocolLib wurde erfolgreich heruntergeladen!");
+                getLogger().warning("[ProtocolLib] → Bitte starte den Server neu, damit ProtocolLib geladen wird.");
+            } catch (Exception e) {
+                getLogger().warning("[ProtocolLib] Automatischer Download fehlgeschlagen: " + e.getMessage());
+                logProtocolLibManualDownload(downloadUrl);
+            }
+        });
+    }
+
+    private void logProtocolLibManualDownload(String url) {
+        getLogger().warning("[ProtocolLib] Bitte ProtocolLib manuell herunterladen und in den plugins/-Ordner legen:");
+        getLogger().warning("[ProtocolLib] → " + url);
     }
 }
 

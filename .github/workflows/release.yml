@@ -48,6 +48,11 @@ jobs:
           mv KlassenPlugin/target/KlassenPlugin-*.jar \
              KlassenPlugin/target/KlassenPlugin-${VERSION}.jar
 
+      - name: Download ProtocolLib for bundling
+        run: |
+          curl -L -o ProtocolLib.jar \
+            "https://github.com/dmulloy2/ProtocolLib/releases/latest/download/ProtocolLib.jar"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -57,12 +62,16 @@ jobs:
             ## KlassenPlugin ${{ steps.version.outputs.VERSION }}
 
             ### Installation
-            1. Lade `KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar` herunter
-            2. Kopiere die JAR-Datei in den `plugins/`-Ordner deines Paper-Servers
+            1. Lade **beide** Dateien unten herunter: `KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar` **und** `ProtocolLib.jar`
+            2. Kopiere **beide** JAR-Dateien in den `plugins/`-Ordner deines Paper-Servers
             3. Starte (oder lade) den Server neu
+
+            > **Hinweis:** Falls du ProtocolLib noch nicht installiert hast, lädt das Plugin es beim ersten Start automatisch herunter – dann einfach den Server neu starten.
 
             ### Voraussetzungen
             - Paper 1.21.4 (oder neuer)
             - Java 21
-          files: KlassenPlugin/target/KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar
+          files: |
+            KlassenPlugin/target/KlassenPlugin-${{ steps.version.outputs.VERSION }}.jar
+            ProtocolLib.jar
           fail_on_unmatched_files: true
