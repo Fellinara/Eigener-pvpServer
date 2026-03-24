@@ -73,6 +73,8 @@ public class ScoreboardManager {
         int online = Bukkit.getOnlinePlayers().size();
         String rankName = plugin.getRankManager().getPlayerRank(player.getUniqueId());
         String prefix = plugin.getRankManager().getPlayerPrefix(player.getUniqueId());
+        int combatSeconds = plugin.getCombatManager().getRemainingSeconds(player.getUniqueId());
+        String combatDisplay = combatSeconds > 0 ? "&c⚔ Kampf: &e" + combatSeconds + "s" : "&7Kein Kampf";
 
         // Use the prefix alone (e.g. "[Admin]") if available; the rank name is
         // already embedded in the prefix so we must not append it again.
@@ -103,7 +105,8 @@ public class ScoreboardManager {
                     .replace("{rank}", rankDisplay)
                     .replace("{balance}", eco.format(balance))
                     .replace("{online}", String.valueOf(online))
-                    .replace("{server}", Bukkit.getServer().getName());
+                    .replace("{server}", Bukkit.getServer().getName())
+                    .replace("{combat}", combatDisplay);
             // Convert &-codes → Adventure Component → §-codes
             resolved.add(SECT.serialize(AMP.deserialize(withPlaceholders)));
         }

@@ -51,6 +51,13 @@ public class BackCommand implements TabExecutor {
             return true;
         }
 
+        if (plugin.getCombatManager().isTagged(player.getUniqueId())) {
+            int seconds = plugin.getCombatManager().getRemainingSeconds(player.getUniqueId());
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu bist im Kampf! Warte noch &e" + seconds + "s &cbevor du teleportieren kannst."));
+            return true;
+        }
+
         int cooldown = plugin.getConfig().getInt("teleport-cooldown", 3);
         if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), cooldown)) {
             int remaining = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), cooldown);

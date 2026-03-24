@@ -42,6 +42,13 @@ public class TpAcceptCommand implements TabExecutor {
             return true;
         }
 
+        if (plugin.getCombatManager().isTagged(target.getUniqueId())) {
+            int seconds = plugin.getCombatManager().getRemainingSeconds(target.getUniqueId());
+            target.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu bist im Kampf! Warte noch &e" + seconds + "s &cbevor du /tpaccept nutzen kannst."));
+            return true;
+        }
+
         Player requester = Bukkit.getPlayer(requesterUUID);
         plugin.getTpaManager().clearRequest(target.getUniqueId());
 

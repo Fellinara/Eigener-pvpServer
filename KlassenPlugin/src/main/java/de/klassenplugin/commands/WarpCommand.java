@@ -34,6 +34,13 @@ public class WarpCommand implements CommandExecutor {
             return true;
         }
 
+        if (plugin.getCombatManager().isTagged(player.getUniqueId())) {
+            int seconds = plugin.getCombatManager().getRemainingSeconds(player.getUniqueId());
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu bist im Kampf! Warte noch &e" + seconds + "s &cbevor du teleportieren kannst."));
+            return true;
+        }
+
         if (args.length == 0) {
             player.sendMessage(KlassenPlugin.colorizeComponent("&cBenutzung: /warp <name>"));
             return true;

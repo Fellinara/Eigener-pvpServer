@@ -40,6 +40,13 @@ public class TpaCommand implements TabExecutor {
             return true;
         }
 
+        if (plugin.getCombatManager().isTagged(requester.getUniqueId())) {
+            int seconds = plugin.getCombatManager().getRemainingSeconds(requester.getUniqueId());
+            requester.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu bist im Kampf! Warte noch &e" + seconds + "s &cbevor du /tpa nutzen kannst."));
+            return true;
+        }
+
         if (args.length == 0) {
             requester.sendMessage(KlassenPlugin.colorizeComponent("&cBenutzung: /tpa <Spieler>"));
             return true;

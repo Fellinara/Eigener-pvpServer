@@ -17,6 +17,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
@@ -100,6 +101,10 @@ public class CorpseManager implements Listener {
     @EventHandler(priority = EventPriority.HIGH)
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
+        // PlayerInteractEvent fires once per hand; ignore the off-hand event to
+        // avoid opening the corpse GUI twice (which would trigger a close event
+        // on the first GUI and cause item duplication).
+        if (event.getHand() != EquipmentSlot.HAND) return;
         Block block = event.getClickedBlock();
         if (block == null || block.getType() != Material.PLAYER_HEAD) return;
 

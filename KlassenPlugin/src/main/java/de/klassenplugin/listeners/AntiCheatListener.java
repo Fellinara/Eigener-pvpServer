@@ -5,6 +5,8 @@ import de.klassenplugin.managers.AntiCheatManager;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Boat;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,6 +18,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.enchantments.Enchantment;
@@ -67,6 +70,22 @@ public class AntiCheatListener implements Listener {
         return name.startsWith(".");
     }
 
+    /**
+     * Server-side ground check: verifies there is actually a solid/liquid block
+     * in the 0.0–0.6 range below the given location, regardless of what the
+     * client's "on-ground" flag says.
+     */
+    private static boolean isOnGroundServerSide(Location loc) {
+        for (double offset = 0.05; offset <= 0.6; offset += 0.1) {
+            Block b = loc.clone().subtract(0, offset, 0).getBlock();
+            Material t = b.getType();
+            if ((t.isSolid() && !b.isPassable()) || t == Material.WATER || t == Material.LAVA) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBlockBreak(BlockBreakEvent event) {
         if (!manager.isEnabled()) return;
@@ -84,6 +103,19 @@ public class AntiCheatListener implements Listener {
         if (manager.getOreCountInWindow(uuid) > threshold) {
             manager.addViolation(uuid, "XRay");
         }
+    }
+
+    /**
+     * Whitelists legitimate plugin teleports (home, lobby, warp, tpa, …) so the
+     * TeleportHack check does not fire immediately after a sanctioned teleport.
+     */
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onPlayerTeleport(PlayerTeleportEvent event) {
+        if (!manager.isEnabled()) return;
+        Player player = event.getPlayer();
+        if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        // Whitelist for 2 seconds after any legitimate teleport.
+        manager.notifyTeleport(player.getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -144,21 +176,39 @@ public class AntiCheatListener implements Listener {
         }
 
         // ── Fly / air-tick check ──────────────────────────────────────────────
-        boolean onGround = player.isOnGround();
-        boolean inLiquid = player.isInWater() || player.isInLava();
-        boolean inVehicle = player.isInsideVehicle();
-        boolean gliding   = player.isGliding();
+        // Use a server-side ground check so a hack that spams isOnGround=true
+        // does not bypass the air-tick counter.
+        boolean inLiquid   = player.isInWater() || player.isInLava();
+        boolean inVehicle  = player.isInsideVehicle();
+        boolean gliding    = player.isGliding();
+        boolean serverOnGround = inLiquid || inVehicle || gliding || isOnGroundServerSide(to);
 
-        if (onGround || inLiquid || inVehicle || gliding) {
+        if (serverOnGround) {
             manager.resetAirTicks(uuid);
         } else if (!player.getAllowFlight() && !isBedrockPlayer(player)) {
             manager.incrementAirTicks(uuid);
-            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 80);
+            int maxAirTicks = plugin.getConfig().getInt("anticheat.fly.max-air-ticks", 40);
             if (manager.isCheckEnabled("fly") && manager.getAirTicks(uuid) > maxAirTicks) {
                 if (manager.canAddViolation(uuid)) {
                     manager.addViolation(uuid, "Fly");
                 }
                 manager.resetAirTicks(uuid);
+            }
+        }
+
+        // ── BoatFly check ─────────────────────────────────────────────────────
+        // Detects players using a boat to gain altitude illegitimately.
+        if (manager.isCheckEnabled("boatfly") && inVehicle && !isBedrockPlayer(player)) {
+            Entity vehicle = player.getVehicle();
+            if (vehicle instanceof Boat) {
+                Location boatLoc = vehicle.getLocation();
+                boolean boatOnSurface = isOnGroundServerSide(boatLoc) ||
+                        boatLoc.clone().subtract(0, 0.3, 0).getBlock().getType() == Material.WATER;
+                // Flag if boat is moving upward while not near any surface.
+                if (!boatOnSurface && to.getY() > from.getY() + 0.1
+                        && manager.canAddViolation(uuid)) {
+                    manager.addViolation(uuid, "BoatFly");
+                }
             }
         }
 
@@ -192,7 +242,8 @@ public class AntiCheatListener implements Listener {
 
         // ── Position-Jump / Teleport-Hack check ──────────────────────────────
         // Detect impossible position jumps (far larger than any legitimate speed).
-        if (manager.isCheckEnabled("teleport")) {
+        // Exempt players who were recently teleported by a plugin command.
+        if (manager.isCheckEnabled("teleport") && !manager.wasRecentlyTeleported(uuid)) {
             double distSq = from.distanceSquared(to);
             double teleportThreshold = plugin.getConfig()
                     .getDouble("anticheat.teleport.max-distance", 20.0);
@@ -231,6 +282,7 @@ public class AntiCheatListener implements Listener {
         // Exemptions: liquid landing, elytra gliding, vehicles, slow falling,
         // Feather-Falling boots, ProtocolLib already handles this via PacketMove.
         if (manager.isCheckEnabled("nofall") && !isBedrockPlayer(player)) {
+            boolean onGround = serverOnGround;
             boolean prevAir = manager.wasInAir(uuid);
             manager.updateAirPeak(uuid, to.getY(), onGround);
 
@@ -266,6 +318,12 @@ public class AntiCheatListener implements Listener {
         if (damager.hasPermission("klassenplugin.anticheat.bypass")) return;
 
         UUID uuid = damager.getUniqueId();
+
+        // ── Combat tag both players when they hit each other ──────────────────
+        if (victim instanceof Player victimPlayer) {
+            plugin.getCombatManager().tag(damager.getUniqueId());
+            plugin.getCombatManager().tag(victimPlayer.getUniqueId());
+        }
 
         // ── Reach check ───────────────────────────────────────────────────────
         if (manager.isCheckEnabled("reach")) {
@@ -350,3 +408,4 @@ public class AntiCheatListener implements Listener {
         return boots.containsEnchantment(Enchantment.FEATHER_FALLING);
     }
 }
+

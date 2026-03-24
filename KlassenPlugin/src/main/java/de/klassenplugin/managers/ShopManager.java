@@ -368,6 +368,7 @@ public class ShopManager {
             }
         }
         migrateOreBuyPrices();
+        migrateRedstoneItems();
     }
 
     /**
@@ -404,6 +405,42 @@ public class ShopManager {
             }
         }
         shopConfig.set("migrated-ore-prices", true);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    /**
+     * Ensures all Redstone-category items have a valid buy price on existing
+     * shop.yml files.  Guarded by a version flag so it runs only once.
+     */
+    private void migrateRedstoneItems() {
+        if (shopConfig.getBoolean("migrated-redstone-prices", false)) return;
+
+        Object[][] redstoneItems = {
+            {"REDSTONE",10.0},{"REDSTONE_BLOCK",80.0},{"REDSTONE_TORCH",5.0},{"LEVER",4.0},
+            {"OAK_PRESSURE_PLATE",5.0},{"STONE_PRESSURE_PLATE",6.0},
+            {"HEAVY_WEIGHTED_PRESSURE_PLATE",15.0},{"LIGHT_WEIGHTED_PRESSURE_PLATE",20.0},
+            {"STONE_BUTTON",4.0},{"OAK_BUTTON",3.0},
+            {"OBSERVER",20.0},{"PISTON",25.0},{"STICKY_PISTON",35.0},
+            {"DISPENSER",30.0},{"DROPPER",20.0},{"HOPPER",40.0},
+            {"COMPARATOR",20.0},{"REPEATER",15.0},
+            {"RAIL",8.0},{"POWERED_RAIL",20.0},{"DETECTOR_RAIL",15.0},{"ACTIVATOR_RAIL",15.0},
+            {"MINECART",25.0},{"CHEST_MINECART",40.0},{"HOPPER_MINECART",60.0},
+            {"TNT",50.0},{"FIREWORK_ROCKET",15.0},{"BELL",60.0},
+            {"IRON_TRAPDOOR",20.0},{"OAK_TRAPDOOR",8.0},{"IRON_DOOR",20.0},{"OAK_DOOR",8.0},
+        };
+        for (Object[] row : redstoneItems) {
+            String key = (String) row[0];
+            double defaultBuy = (double) row[1];
+            double ratio = defaultBuy >= VALUABLE_THRESHOLD ? 0.60 : 0.50;
+            double[] p = items.get(key);
+            if (p == null) {
+                items.put(key, new double[]{defaultBuy, defaultBuy * ratio});
+            } else if (p[0] < 0) {
+                p[0] = defaultBuy;
+                p[1] = defaultBuy * ratio;
+            }
+        }
+        shopConfig.set("migrated-redstone-prices", true);
         Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 

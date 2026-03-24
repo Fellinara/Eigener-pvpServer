@@ -35,6 +35,13 @@ public class HomeCommand implements CommandExecutor {
             return true;
         }
 
+        if (plugin.getCombatManager().isTagged(player.getUniqueId())) {
+            int seconds = plugin.getCombatManager().getRemainingSeconds(player.getUniqueId());
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu bist im Kampf! Warte noch &e" + seconds + "s &cbevor du teleportieren kannst."));
+            return true;
+        }
+
         HomeManager homeManager = plugin.getHomeManager();
         String homeName = args.length > 0 ? args[0] : "home";
 

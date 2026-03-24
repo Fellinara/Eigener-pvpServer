@@ -43,6 +43,9 @@ public class DeathListener implements Listener {
             back.clearPvpDeath(player.getUniqueId());
         }
 
+        // Clear combat tag on death so re-spawned players are not still tagged.
+        plugin.getCombatManager().untag(player.getUniqueId());
+
         // Spawn corpse skull and store dropped items
         plugin.getCorpseManager().handleDeath(event);
     }

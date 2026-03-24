@@ -148,7 +148,8 @@ anticheat:
   fly:
     enabled: true
     # Ticks in der Luft bevor ein Verstoß – niedrigerer Wert = aggressiver
-    max-air-ticks: 80
+    # Erhöht auf 40 (2 Sekunden) für schnellere Fly-Erkennung
+    max-air-ticks: 40
 
   reach:
     enabled: true

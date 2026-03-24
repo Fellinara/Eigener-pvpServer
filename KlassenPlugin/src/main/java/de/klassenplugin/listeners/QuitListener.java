@@ -27,6 +27,9 @@ public class QuitListener implements Listener {
             event.quitMessage(null);
         }
 
+        // Kill the player if they log out while in combat.
+        plugin.getCombatManager().handleQuit(player);
+
         plugin.getTpaManager().removePlayer(player.getUniqueId());
         plugin.getMsgManager().removePlayer(player.getUniqueId());
         plugin.getRankManager().removeRankFromPlayer(player);

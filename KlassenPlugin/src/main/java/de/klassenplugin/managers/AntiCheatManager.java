@@ -38,6 +38,10 @@ public class AntiCheatManager {
     /** Whether the player was in the air in the last movement tick. */
     private final Map<UUID, Boolean> wasInAir = new HashMap<>();
 
+    // ── Teleport whitelist (prevents false TeleportHack flags) ───────────────
+    /** Timestamp of last legitimate teleport per player. */
+    private final Map<UUID, Long> recentTeleport = new HashMap<>();
+
     public AntiCheatManager(KlassenPlugin plugin) {
         this.plugin = plugin;
     }
@@ -328,6 +332,33 @@ public class AntiCheatManager {
         airPeakY.remove(playerId);
     }
 
+    // ── Teleport whitelist ────────────────────────────────────────────────────
+
+    /**
+     * Notifies the anti-cheat that {@code playerId} just performed a legitimate
+     * teleport.  The TeleportHack check is suppressed for 2 seconds afterwards.
+     */
+    public void notifyTeleport(UUID playerId) {
+        recentTeleport.put(playerId, System.currentTimeMillis());
+        // Also reset air state so Fly/NoFall don't flag the landing after teleport.
+        resetAirTicks(playerId);
+        clearAirPeakY(playerId);
+    }
+
+    /**
+     * Returns {@code true} if the player teleported within the last 2 seconds
+     * and should therefore be exempt from position-jump detection.
+     */
+    public boolean wasRecentlyTeleported(UUID playerId) {
+        Long t = recentTeleport.get(playerId);
+        if (t == null) return false;
+        if (System.currentTimeMillis() - t > 2000L) {
+            recentTeleport.remove(playerId);
+            return false;
+        }
+        return true;
+    }
+
     // ── Cleanup ───────────────────────────────────────────────────────────────
 
     public void removePlayer(UUID playerId) {
@@ -345,6 +376,7 @@ public class AntiCheatManager {
         armSwingTimes.remove(playerId);
         airPeakY.remove(playerId);
         wasInAir.remove(playerId);
+        recentTeleport.remove(playerId);
     }
 
     public Map<UUID, Integer> getViolationMap() {
