@@ -103,8 +103,8 @@ public class AdminPanelGui {
     /** Opens a simple text-only ban-list overview in chat (no extra GUI needed). */
     private void openBanList(Player player) {
         player.closeInventory();
-        @SuppressWarnings("deprecation")
-        Set<? extends org.bukkit.BanEntry<?>> entries =
+        @SuppressWarnings({"deprecation", "rawtypes"})
+        Set<org.bukkit.BanEntry> entries =
                 Bukkit.getBanList(BanList.Type.NAME).getBanEntries();
         if (entries.isEmpty()) {
             player.sendMessage(KlassenPlugin.colorizeComponent(
@@ -114,7 +114,7 @@ public class AdminPanelGui {
         player.sendMessage(KlassenPlugin.colorizeComponent(
                 "&8[&4Admin&8] &eGebannte Spieler (&c" + entries.size() + "&e):"));
         int shown = 0;
-        for (org.bukkit.BanEntry<?> e : entries) {
+        for (org.bukkit.BanEntry e : entries) {
             if (shown++ >= 20) {
                 player.sendMessage(KlassenPlugin.colorizeComponent(
                         "  &8… und " + (entries.size() - 20) + " weitere. Nutze /banlist."));
