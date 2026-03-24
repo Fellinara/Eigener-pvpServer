@@ -4,6 +4,7 @@ import de.klassenplugin.commands.*;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.gui.RankPermissionsGui;
+import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
 import de.klassenplugin.gui.ViolationsGui;
 import de.klassenplugin.listeners.AllianceListener;
@@ -41,6 +42,7 @@ public class KlassenPlugin extends JavaPlugin {
     private ScoreboardManager scoreboardManager;
     private AuctionGui auctionGui;
     private OrderGui orderGui;
+    private SellGui sellGui;
     private ShopGui shopGui;
     private RankPermissionsGui rankPermissionsGui;
     private ViolationsGui violationsGui;
@@ -79,6 +81,7 @@ public class KlassenPlugin extends JavaPlugin {
         scoreboardManager = new ScoreboardManager(this);
         auctionGui = new AuctionGui(this);
         orderGui = new OrderGui(this);
+        sellGui = new SellGui(this);
         shopGui = new ShopGui(this);
         rankPermissionsGui = new RankPermissionsGui(this);
         violationsGui = new ViolationsGui(this);
@@ -301,6 +304,7 @@ public class KlassenPlugin extends JavaPlugin {
     public ScoreboardManager getScoreboardManager() { return scoreboardManager; }
     public AuctionGui getAuctionGui() { return auctionGui; }
     public OrderGui getOrderGui() { return orderGui; }
+    public SellGui getSellGui() { return sellGui; }
     public ShopGui getShopGui() { return shopGui; }
     public RankPermissionsGui getRankPermissionsGui() { return rankPermissionsGui; }
     public ViolationsGui getViolationsGui() { return violationsGui; }

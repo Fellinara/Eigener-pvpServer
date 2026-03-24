@@ -103,7 +103,27 @@ public class ShopManager {
             "IRON_TRAPDOOR","OAK_TRAPDOOR","IRON_DOOR","OAK_DOOR"
         });
         CATEGORY_ICONS.put("Redstone", Material.REDSTONE);
+
+        CATEGORIES.put("Erze", new String[]{
+            "COAL_ORE","DEEPSLATE_COAL_ORE",
+            "IRON_ORE","DEEPSLATE_IRON_ORE","RAW_IRON",
+            "COPPER_ORE","DEEPSLATE_COPPER_ORE","RAW_COPPER",
+            "GOLD_ORE","DEEPSLATE_GOLD_ORE","NETHER_GOLD_ORE","RAW_GOLD",
+            "REDSTONE_ORE","DEEPSLATE_REDSTONE_ORE",
+            "LAPIS_ORE","DEEPSLATE_LAPIS_ORE",
+            "DIAMOND_ORE","DEEPSLATE_DIAMOND_ORE",
+            "EMERALD_ORE","DEEPSLATE_EMERALD_ORE",
+            "NETHER_QUARTZ_ORE",
+            "AMETHYST_SHARD","AMETHYST_BLOCK","BUDDING_AMETHYST"
+        });
+        CATEGORY_ICONS.put("Erze", Material.DIAMOND_ORE);
     }
+
+    /**
+     * Items (by exact material name) whose base buy price marks them as "valuable".
+     * Valuable items sell for 60 % of buy price; everything else sells for 50 %.
+     */
+    private static final double VALUABLE_THRESHOLD = 100.0;
 
 
     private final KlassenPlugin plugin;
@@ -125,22 +145,22 @@ public class ShopManager {
         // Excluded: spawn eggs, spawners, command blocks, bedrock, structure blocks.
         Object[][] defaults = {
             // ── Precious minerals ──
-            {"DIAMOND",150.0,75.0},{"DIAMOND_ORE",-1.0,120.0},{"DEEPSLATE_DIAMOND_ORE",-1.0,120.0},
-            {"EMERALD",100.0,50.0},{"EMERALD_ORE",-1.0,80.0},{"DEEPSLATE_EMERALD_ORE",-1.0,80.0},
+            {"DIAMOND",150.0,75.0},{"DIAMOND_ORE",220.0,110.0},{"DEEPSLATE_DIAMOND_ORE",240.0,120.0},
+            {"EMERALD",100.0,50.0},{"EMERALD_ORE",160.0,80.0},{"DEEPSLATE_EMERALD_ORE",170.0,85.0},
             {"NETHERITE_INGOT",500.0,250.0},{"NETHERITE_SCRAP",120.0,60.0},
             {"ANCIENT_DEBRIS",400.0,200.0},
             // ── Metals ──
             {"GOLD_INGOT",20.0,10.0},{"GOLD_NUGGET",3.0,1.5},
-            {"GOLD_ORE",-1.0,16.0},{"DEEPSLATE_GOLD_ORE",-1.0,16.0},{"NETHER_GOLD_ORE",-1.0,14.0},
+            {"GOLD_ORE",32.0,16.0},{"DEEPSLATE_GOLD_ORE",35.0,17.0},{"NETHER_GOLD_ORE",25.0,12.0},
             {"IRON_INGOT",8.0,4.0},{"IRON_NUGGET",1.5,0.8},
-            {"IRON_ORE",-1.0,6.0},{"DEEPSLATE_IRON_ORE",-1.0,6.0},
-            {"COPPER_INGOT",4.0,2.0},{"RAW_COPPER",2.0,1.0},{"COPPER_ORE",-1.0,3.0},{"DEEPSLATE_COPPER_ORE",-1.0,3.0},
+            {"IRON_ORE",12.0,6.0},{"DEEPSLATE_IRON_ORE",13.0,6.5},
+            {"COPPER_INGOT",4.0,2.0},{"RAW_COPPER",3.0,1.5},{"COPPER_ORE",6.0,3.0},{"DEEPSLATE_COPPER_ORE",7.0,3.5},
             // ── Coal & Redstone ──
-            {"COAL",3.0,1.5},{"COAL_ORE",-1.0,2.5},{"DEEPSLATE_COAL_ORE",-1.0,2.5},{"CHARCOAL",2.5,1.2},
-            {"REDSTONE",5.0,2.5},{"REDSTONE_ORE",-1.0,4.0},{"DEEPSLATE_REDSTONE_ORE",-1.0,4.0},
+            {"COAL",3.0,1.5},{"COAL_ORE",5.0,2.5},{"DEEPSLATE_COAL_ORE",6.0,3.0},{"CHARCOAL",2.5,1.2},
+            {"REDSTONE",5.0,2.5},{"REDSTONE_ORE",8.0,4.0},{"DEEPSLATE_REDSTONE_ORE",9.0,4.5},
             // ── Lapis & Quartz ──
-            {"LAPIS_LAZULI",8.0,4.0},{"LAPIS_ORE",-1.0,6.0},{"DEEPSLATE_LAPIS_ORE",-1.0,6.0},
-            {"QUARTZ",4.0,2.0},{"NETHER_QUARTZ_ORE",-1.0,3.0},
+            {"LAPIS_LAZULI",8.0,4.0},{"LAPIS_ORE",12.0,6.0},{"DEEPSLATE_LAPIS_ORE",13.0,6.5},
+            {"QUARTZ",4.0,2.0},{"NETHER_QUARTZ_ORE",8.0,4.0},
             // ── Wood (all types) ──
             {"OAK_LOG",8.0,4.0},{"OAK_PLANKS",3.0,1.0},{"OAK_SAPLING",4.0,2.0},
             {"SPRUCE_LOG",8.0,4.0},{"SPRUCE_PLANKS",3.0,1.0},{"SPRUCE_SAPLING",4.0,2.0},
@@ -347,6 +367,44 @@ public class ShopManager {
                 items.put(key.toUpperCase(), new double[]{buy, sell});
             }
         }
+        migrateOreBuyPrices();
+    }
+
+    /**
+     * Fills in buy prices for ores that were previously set to -1 (sell-only).
+     * Guarded by a version key in shop.yml so it only writes to disk once.
+     */
+    private void migrateOreBuyPrices() {
+        // Skip if already migrated
+        if (shopConfig.getBoolean("migrated-ore-prices", false)) return;
+
+        Object[][] orePrices = {
+            {"COAL_ORE",5.0},{"DEEPSLATE_COAL_ORE",6.0},
+            {"IRON_ORE",12.0},{"DEEPSLATE_IRON_ORE",13.0},{"RAW_IRON",8.0},
+            {"COPPER_ORE",6.0},{"DEEPSLATE_COPPER_ORE",7.0},{"RAW_COPPER",3.0},
+            {"GOLD_ORE",32.0},{"DEEPSLATE_GOLD_ORE",35.0},{"NETHER_GOLD_ORE",25.0},{"RAW_GOLD",18.0},
+            {"REDSTONE_ORE",8.0},{"DEEPSLATE_REDSTONE_ORE",9.0},
+            {"LAPIS_ORE",12.0},{"DEEPSLATE_LAPIS_ORE",13.0},
+            {"DIAMOND_ORE",220.0},{"DEEPSLATE_DIAMOND_ORE",240.0},
+            {"EMERALD_ORE",160.0},{"DEEPSLATE_EMERALD_ORE",170.0},
+            {"NETHER_QUARTZ_ORE",8.0},
+            {"AMETHYST_SHARD",12.0},{"AMETHYST_BLOCK",80.0},{"BUDDING_AMETHYST",60.0},
+        };
+        for (Object[] row : orePrices) {
+            String key = (String) row[0];
+            double defaultBuy = (double) row[1];
+            double ratio = defaultBuy >= VALUABLE_THRESHOLD ? 0.60 : 0.50;
+            double[] p = items.get(key);
+            if (p == null) {
+                items.put(key, new double[]{defaultBuy, defaultBuy * ratio});
+            } else if (p[0] < 0) {
+                p[0] = defaultBuy;
+                // Recalculate stored sell price for consistency
+                p[1] = defaultBuy * ratio;
+            }
+        }
+        shopConfig.set("migrated-ore-prices", true);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 
     public void save() {
@@ -365,21 +423,22 @@ public class ShopManager {
         return p[0] * plugin.getEconomyManager().getInflationMultiplier() * boost;
     }
 
+    /**
+     * Returns the sell price for {@code mat}.
+     * <ul>
+     *   <li>Items with a base buy price ≥ {@value #VALUABLE_THRESHOLD} coins → 60 % of buy price.</li>
+     *   <li>All other items → 50 % of buy price.</li>
+     *   <li>Items that are sell-only (buy = -1) use their stored sell price.</li>
+     * </ul>
+     */
     public double getSellPrice(String mat) {
         double[] p = items.get(mat.toUpperCase());
-        if (p == null || p[1] < 0) return -1;
-        double boost = plugin.getWeeklyChangelogManager() != null ? plugin.getWeeklyChangelogManager().getBoostMultiplier(mat.toUpperCase()) : 1.0;
-        double inflation = plugin.getEconomyManager().getInflationMultiplier();
-        // Sell revenue goes DOWN when inflation is high (inverse relationship):
-        // if there is too much money, selling earns less; if scarce, earns more.
-        double sellMultiplier = Math.max(0.25, Math.min(2.0, 1.0 / inflation));
-        double sellPrice = p[1] * sellMultiplier * boost;
-        // Sell price must never be >= buy price (no risk-free arbitrage).
+        if (p == null) return -1;
         if (p[0] > 0) {
-            double maxSell = p[0] * inflation * boost * 0.8;
-            sellPrice = Math.min(sellPrice, maxSell);
+            double ratio = p[0] >= VALUABLE_THRESHOLD ? 0.60 : 0.50;
+            return p[0] * ratio;
         }
-        return sellPrice;
+        return p[1] > 0 ? p[1] : -1;
     }
 
     public double getBaseBuyPrice(String mat) { double[] p = items.get(mat.toUpperCase()); return p == null ? -1 : p[0]; }
@@ -397,20 +456,14 @@ public class ShopManager {
     }
 
     /**
-     * Returns the effective sell price per item for {@code mat}, applying
-     * inflation and checking the shop file.  Falls back to the configured
-     * {@code economy.default-sell-price} for materials not in shop.yml.
-     * Returns -1 only when selling is fully disabled for this material.
+     * Returns the effective sell price per item for {@code mat}.
+     * Falls back to the configured {@code economy.default-sell-price} for
+     * materials not in shop.yml.  Returns -1 only when selling is fully disabled.
      */
     public double getEffectiveSellPrice(String mat) {
-        double shopSell = getSellPrice(mat);
-        if (shopSell >= 0) return shopSell;
-        double def = getDefaultSellPrice();
-        if (def < 0) return -1;
-        // Apply inverse-inflation also to the default fallback price.
-        double inflation = plugin.getEconomyManager().getInflationMultiplier();
-        double sellMultiplier = Math.max(0.25, Math.min(2.0, 1.0 / inflation));
-        return def * sellMultiplier;
+        double price = getSellPrice(mat);
+        if (price >= 0) return price;
+        return getDefaultSellPrice();
     }
 
     public void setItem(String mat, double buy, double sell) {

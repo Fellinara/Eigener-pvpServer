@@ -4,6 +4,7 @@ import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.gui.RankPermissionsGui;
+import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
 import de.klassenplugin.gui.ViolationsGui;
 import org.bukkit.entity.Player;
@@ -55,6 +56,15 @@ public class GuiListener implements Listener {
             return;
         }
 
+        // Sell GUI – allow items to be placed freely; only block the info icon slot
+        if (SellGui.isSellGui(event.getView())) {
+            if (event.getClickedInventory().equals(event.getView().getTopInventory())
+                    && event.getSlot() == 35) {
+                event.setCancelled(true);
+            }
+            return;
+        }
+
         // Rank Permissions GUI
         if (RankPermissionsGui.isRankGui(event.getView())) {
             event.setCancelled(true);
@@ -78,9 +88,10 @@ public class GuiListener implements Listener {
     public void onInventoryClose(InventoryCloseEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
 
-        // Clean up page state when a player closes a GUI.
         if (ShopGui.isShopGui(event.getView())) {
             plugin.getShopGui().cleanup(player);
+        } else if (SellGui.isSellGui(event.getView())) {
+            plugin.getSellGui().processSell(player, event.getView().getTopInventory());
         } else if (RankPermissionsGui.isRankGui(event.getView())) {
             plugin.getRankPermissionsGui().cleanup(player);
         } else if (ViolationsGui.isViolationsGui(event.getView())) {
