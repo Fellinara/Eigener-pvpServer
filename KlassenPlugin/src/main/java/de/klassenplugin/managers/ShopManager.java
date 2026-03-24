@@ -488,7 +488,7 @@ public class ShopManager {
         }
     }
 
-
+    public void save() {
         shopConfig.set("items", null);
         for (Map.Entry<String, double[]> e : items.entrySet()) {
             shopConfig.set("items." + e.getKey() + ".buy", e.getValue()[0]);
