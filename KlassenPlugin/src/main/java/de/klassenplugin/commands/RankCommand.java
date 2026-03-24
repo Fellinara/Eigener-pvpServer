@@ -19,7 +19,7 @@ public class RankCommand implements TabExecutor {
 
     private static final List<String> SUBCOMMANDS = Arrays.asList(
             "create", "delete", "setprefix", "addperm", "removeperm",
-            "assign", "remove", "list", "info", "player", "permissions");
+            "assign", "remove", "list", "info", "player", "permissions", "gui");
 
     private final KlassenPlugin plugin;
     private final RankManager manager;
@@ -39,7 +39,7 @@ public class RankCommand implements TabExecutor {
 
         if (args.length == 0) {
             sender.sendMessage(KlassenPlugin.colorizeComponent(
-                    "&cBenutzung: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player>"));
+                    "&cBenutzung: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player|permissions|gui>"));
             return true;
         }
 
@@ -55,6 +55,7 @@ public class RankCommand implements TabExecutor {
             case "info" -> handleInfo(sender, args);
             case "player" -> handlePlayer(sender, args);
             case "permissions" -> handlePermissionsGui(sender, args);
+            case "gui" -> handleListGui(sender);
             default -> sender.sendMessage(KlassenPlugin.colorizeComponent(
                     "&cUnbekannter Unterbefehl. Benutze /rank für Hilfe."));
         }
@@ -232,6 +233,14 @@ public class RankCommand implements TabExecutor {
             return;
         }
         plugin.getRankPermissionsGui().open(p, name);
+    }
+
+    private void handleListGui(CommandSender sender) {
+        if (!(sender instanceof Player p)) {
+            sender.sendMessage(KlassenPlugin.colorizeComponent(plugin.getMessage("player-only")));
+            return;
+        }
+        plugin.getRankListGui().open(p);
     }
 
     @Override

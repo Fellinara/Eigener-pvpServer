@@ -84,6 +84,9 @@ public class HackClientDetector implements Listener {
         Player player = event.getPlayer();
         if (player == null) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        // Bedrock players (via GeyserMC / Floodgate) have completely different
+        // brands and channels.  Never false-flag them for hack-client heuristics.
+        if (isBedrockPlayer(player)) return;
 
         // ── Read the channel name ─────────────────────────────────────────────
         // Try multiple ProtocolLib accessor patterns for Paper 1.21 compatibility.
@@ -170,6 +173,7 @@ public class HackClientDetector implements Listener {
     private void handleRegisterPacket(PacketEvent event, Player player) {
         if (!isEnabled()) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        if (isBedrockPlayer(player)) return;
 
         List<String> blockedChannels = plugin.getConfig()
                 .getStringList("anticheat.hack-client.blocked-channels");
@@ -229,6 +233,18 @@ public class HackClientDetector implements Listener {
     private boolean isEnabled() {
         return plugin.getAntiCheatManager().isEnabled()
                 && plugin.getConfig().getBoolean("anticheat.hack-client.enabled", true);
+    }
+
+    /**
+     * Returns {@code true} if this player is a Bedrock player connected via
+     * GeyserMC / Floodgate.  Bedrock players use completely different brands and
+     * channels and must never be flagged by hack-client heuristics.
+     */
+    private static boolean isBedrockPlayer(Player player) {
+        java.util.UUID uuid = player.getUniqueId();
+        if (uuid.getMostSignificantBits() == 0L) return true;
+        String name = player.getName();
+        return name.startsWith(".");
     }
 
     private void checkBrand(Player player, String brand) {

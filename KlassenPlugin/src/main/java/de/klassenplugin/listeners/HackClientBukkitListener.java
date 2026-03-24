@@ -91,6 +91,7 @@ public class HackClientBukkitListener implements Listener {
         if (!isEnabled()) return;
         Player player = event.getPlayer();
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        if (isBedrockPlayer(player)) return;
 
         String channel = event.getChannel().toLowerCase(Locale.ROOT);
         plugin.getLogger().info("[HackClient] " + player.getName()
@@ -147,6 +148,7 @@ public class HackClientBukkitListener implements Listener {
         if (!isEnabled()) return;
         Player player = event.getPlayer();
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        if (isBedrockPlayer(player)) return;
 
         // ── Configuration-phase pre-join detection (MC 1.20.2+) ──────────────
         // If the ProtocolLib listener caught a hack-client brand or channel
@@ -194,6 +196,7 @@ public class HackClientBukkitListener implements Listener {
     private void auditAllChannels(Player player) {
         if (!isEnabled()) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        if (isBedrockPlayer(player)) return;
 
         Set<String> channels;
         try {
@@ -233,6 +236,7 @@ public class HackClientBukkitListener implements Listener {
     private void checkBrandPaperApi(Player player) {
         if (!isEnabled()) return;
         if (player.hasPermission("klassenplugin.anticheat.bypass")) return;
+        if (isBedrockPlayer(player)) return;
 
         String brand = getBrandSafe(player);
         if (brand.isEmpty()) return;
@@ -396,6 +400,18 @@ public class HackClientBukkitListener implements Listener {
     private boolean isEnabled() {
         return plugin.getAntiCheatManager().isEnabled()
                 && plugin.getConfig().getBoolean("anticheat.hack-client.enabled", true);
+    }
+
+    /**
+     * Returns {@code true} if this player is a Bedrock player connected via
+     * GeyserMC / Floodgate.  Bedrock players use completely different brands and
+     * channels and must never be flagged by hack-client heuristics.
+     */
+    private static boolean isBedrockPlayer(Player player) {
+        java.util.UUID uuid = player.getUniqueId();
+        if (uuid.getMostSignificantBits() == 0L) return true;
+        String name = player.getName();
+        return name.startsWith(".");
     }
 
     /**

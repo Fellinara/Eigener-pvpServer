@@ -3,6 +3,7 @@ package de.klassenplugin;
 import de.klassenplugin.commands.*;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
+import de.klassenplugin.gui.RankListGui;
 import de.klassenplugin.gui.RankPermissionsGui;
 import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
@@ -45,6 +46,7 @@ public class KlassenPlugin extends JavaPlugin {
     private SellGui sellGui;
     private ShopGui shopGui;
     private RankPermissionsGui rankPermissionsGui;
+    private RankListGui rankListGui;
     private ViolationsGui violationsGui;
     private VanishManager vanishManager;
     private MaintenanceManager maintenanceManager;
@@ -85,6 +87,7 @@ public class KlassenPlugin extends JavaPlugin {
         sellGui = new SellGui(this);
         shopGui = new ShopGui(this);
         rankPermissionsGui = new RankPermissionsGui(this);
+        rankListGui = new RankListGui(this);
         violationsGui = new ViolationsGui(this);
         vanishManager = new VanishManager(this);
         maintenanceManager = new MaintenanceManager(this);
@@ -309,6 +312,7 @@ public class KlassenPlugin extends JavaPlugin {
     public SellGui getSellGui() { return sellGui; }
     public ShopGui getShopGui() { return shopGui; }
     public RankPermissionsGui getRankPermissionsGui() { return rankPermissionsGui; }
+    public RankListGui getRankListGui() { return rankListGui; }
     public ViolationsGui getViolationsGui() { return violationsGui; }
     public VanishManager getVanishManager() { return vanishManager; }
     public MaintenanceManager getMaintenanceManager() { return maintenanceManager; }

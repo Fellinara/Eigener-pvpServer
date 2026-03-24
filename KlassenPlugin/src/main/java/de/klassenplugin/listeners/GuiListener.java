@@ -3,6 +3,7 @@ package de.klassenplugin.listeners;
 import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
+import de.klassenplugin.gui.RankListGui;
 import de.klassenplugin.gui.RankPermissionsGui;
 import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
@@ -65,6 +66,15 @@ public class GuiListener implements Listener {
             return;
         }
 
+        // Rank List GUI (rank selection screen)
+        if (RankListGui.isRankListGui(event.getView())) {
+            event.setCancelled(true);
+            if (event.getClickedInventory().equals(event.getView().getTopInventory())) {
+                plugin.getRankListGui().handleClick(player, event.getSlot());
+            }
+            return;
+        }
+
         // Rank Permissions GUI
         if (RankPermissionsGui.isRankGui(event.getView())) {
             event.setCancelled(true);
@@ -92,6 +102,8 @@ public class GuiListener implements Listener {
             plugin.getShopGui().cleanup(player);
         } else if (SellGui.isSellGui(event.getView())) {
             plugin.getSellGui().processSell(player, event.getView().getTopInventory());
+        } else if (RankListGui.isRankListGui(event.getView())) {
+            plugin.getRankListGui().cleanup(player);
         } else if (RankPermissionsGui.isRankGui(event.getView())) {
             plugin.getRankPermissionsGui().cleanup(player);
         } else if (ViolationsGui.isViolationsGui(event.getView())) {
