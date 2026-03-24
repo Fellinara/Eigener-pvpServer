@@ -63,11 +63,15 @@ public class AntiCheatManager {
     }
 
     public void addViolation(UUID playerId, String checkName) {
+        // Skip players who are exempt from warnings.
+        String playerName = getPlayerName(playerId);
+        List<String> exempt = plugin.getConfig().getStringList("anticheat.exempt-players");
+        if (exempt.stream().anyMatch(e -> e.equalsIgnoreCase(playerName))) return;
+
         int count = violations.merge(playerId, 1, Integer::sum);
         int threshold = plugin.getConfig().getInt("anticheat.violations-before-action", 10);
 
         // Append to violation log.
-        String playerName = getPlayerName(playerId);
         synchronized (violationLog) {
             if (violationLog.size() >= MAX_LOG_SIZE) violationLog.pollFirst();
             violationLog.addLast(new ViolationEntry(playerName, checkName, System.currentTimeMillis()));

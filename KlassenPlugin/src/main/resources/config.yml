@@ -121,6 +121,8 @@ anticheat:
   action: ban
   # Anzahl Verstöße bevor eine Aktion ausgeführt wird
   violations-before-action: 3
+  # Spieler die KEINE Verwarnungen erhalten (exakte Spielernamen, Groß-/Kleinschreibung egal)
+  exempt-players: []
 
   xray:
     enabled: true
