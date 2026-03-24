@@ -343,6 +343,12 @@ public class AntiCheatManager {
         // Also reset air state so Fly/NoFall don't flag the landing after teleport.
         resetAirTicks(playerId);
         clearAirPeakY(playerId);
+        // Reset ProtocolLib FreeCam stall counters so the new position doesn't
+        // immediately trigger a FreeCam violation.
+        if (plugin.getProtocolLibManager() != null
+                && plugin.getProtocolLibManager().getPacketListener() != null) {
+            plugin.getProtocolLibManager().getPacketListener().resetFreeCamState(playerId);
+        }
     }
 
     /**

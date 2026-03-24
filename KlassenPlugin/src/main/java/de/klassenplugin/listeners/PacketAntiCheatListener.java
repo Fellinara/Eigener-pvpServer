@@ -531,6 +531,22 @@ public class PacketAntiCheatListener {
         frozenPktCount.remove(uuid);
     }
 
+    /**
+     * Resets FreeCam stall and frozen-position state for {@code uuid}.
+     *
+     * <p>Call this whenever a player is legitimately teleported (e.g. via TPA,
+     * /warp, /lobby) so that the position-stall counter doesn't start counting
+     * from the pre-teleport location and cause a false FreeCam violation at the
+     * new position.
+     */
+    public void resetFreeCamState(UUID uuid) {
+        lastKnownPos.remove(uuid);
+        posStallTicks.remove(uuid);
+        lastPktPos.remove(uuid);
+        AtomicInteger ctr = frozenPktCount.get(uuid);
+        if (ctr != null) ctr.set(0);
+    }
+
     // ── Config helper ─────────────────────────────────────────────────────────
 
     /**

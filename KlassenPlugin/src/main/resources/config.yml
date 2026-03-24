@@ -214,12 +214,14 @@ anticheat:
       # gleichzeitig POSITION/FLYING-Pakete ankommen (lastMovePkt-Zeitstempel,
       # NICHT Chat-Pakete), bevor ein FreeCam-Verstoß registriert wird.
       # Einfrierung + aktive Bewegungspakete = FreeCam-Signatur.
-      stall-seconds: 3
+      # 2 Sekunden: schnelle Erkennung ohne Fehlalarme für kurze Stehpausen.
+      stall-seconds: 2
       # Anzahl aufeinanderfolgender POSITION-Pakete mit identischen Koordinaten
       # (innerhalb 0.002 Blöcke) bevor ein Verstoß registriert wird.
       # Echte Spieler haben immer Mikro-Bewegungsrauschen; perfekte Koordinaten-
       # Einfrierung ist das zuverlässigste FreeCam-Kennzeichen.
-      frozen-packets: 20
+      # 10 Pakete (~0.5 s) reichen aus; niedrigerer Wert = schnellere Erkennung.
+      frozen-packets: 10
 
     # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
     packetreach:
