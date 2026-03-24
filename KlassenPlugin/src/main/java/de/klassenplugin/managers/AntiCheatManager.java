@@ -10,6 +10,11 @@ import java.util.*;
 
 public class AntiCheatManager {
 
+    /** A single violation entry for the recent-log. */
+    public record ViolationEntry(String playerName, String check, long timestamp) {}
+
+    private static final int MAX_LOG_SIZE = 100;
+
     private final KlassenPlugin plugin;
 
     private final Map<UUID, List<Long>> oreMineTimes = new HashMap<>();
@@ -21,6 +26,9 @@ public class AntiCheatManager {
     private final Map<UUID, List<Long>> blockPlaceTimes = new HashMap<>();
     private final Map<UUID, Long> lastFallDamageTime = new HashMap<>();
     private final Map<UUID, Long> lastViolationTime = new HashMap<>();
+
+    /** Chronological log of recent violations (oldest first, max {@value #MAX_LOG_SIZE}). */
+    private final java.util.ArrayDeque<ViolationEntry> violationLog = new java.util.ArrayDeque<>();
 
     // ── New: multi-target KillAura tracking ──────────────────────────────────
     /** Maps attacker UUID → (target UUID → last attack timestamp). */
@@ -57,6 +65,13 @@ public class AntiCheatManager {
     public void addViolation(UUID playerId, String checkName) {
         int count = violations.merge(playerId, 1, Integer::sum);
         int threshold = plugin.getConfig().getInt("anticheat.violations-before-action", 10);
+
+        // Append to violation log.
+        String playerName = getPlayerName(playerId);
+        synchronized (violationLog) {
+            if (violationLog.size() >= MAX_LOG_SIZE) violationLog.pollFirst();
+            violationLog.addLast(new ViolationEntry(playerName, checkName, System.currentTimeMillis()));
+        }
 
         if (plugin.getConfig().getBoolean("anticheat.alert-admins", true)) {
             String alert = "&c[AntiCheat] &e" + getPlayerName(playerId) + " &chat einen Verstoß gegen &e" + checkName
@@ -387,6 +402,18 @@ public class AntiCheatManager {
 
     public Map<UUID, Integer> getViolationMap() {
         return Collections.unmodifiableMap(violations);
+    }
+
+    /**
+     * Returns a snapshot of the recent violation log (newest first).
+     * At most {@value #MAX_LOG_SIZE} entries are kept.
+     */
+    public List<ViolationEntry> getRecentViolations() {
+        synchronized (violationLog) {
+            List<ViolationEntry> list = new ArrayList<>(violationLog);
+            Collections.reverse(list); // newest first
+            return list;
+        }
     }
 
     private String getPlayerName(UUID playerId) {

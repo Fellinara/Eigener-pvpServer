@@ -104,7 +104,9 @@ public class CorpseManager implements Listener {
         // PlayerInteractEvent fires once per hand; ignore the off-hand event to
         // avoid opening the corpse GUI twice (which would trigger a close event
         // on the first GUI and cause item duplication).
-        if (event.getHand() != EquipmentSlot.HAND) return;
+        // Bedrock players via Geyser may send getHand() == null – allow those
+        // through (they will never send a duplicate off-hand event).
+        if (event.getHand() != null && event.getHand() != EquipmentSlot.HAND) return;
         Block block = event.getClickedBlock();
         if (block == null || block.getType() != Material.PLAYER_HEAD) return;
 

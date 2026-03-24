@@ -1,6 +1,7 @@
 package de.klassenplugin.listeners;
 
 import de.klassenplugin.KlassenPlugin;
+import de.klassenplugin.gui.AdminPanelGui;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.gui.RankListGui;
@@ -8,6 +9,7 @@ import de.klassenplugin.gui.RankPermissionsGui;
 import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
 import de.klassenplugin.gui.ViolationsGui;
+import de.klassenplugin.gui.WarningsLogGui;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -66,6 +68,24 @@ public class GuiListener implements Listener {
             return;
         }
 
+        // Admin Panel GUI
+        if (AdminPanelGui.isAdminPanelGui(event.getView())) {
+            event.setCancelled(true);
+            if (event.getClickedInventory().equals(event.getView().getTopInventory())) {
+                plugin.getAdminPanelGui().handleClick(player, event.getSlot());
+            }
+            return;
+        }
+
+        // Warnings Log GUI
+        if (WarningsLogGui.isWarningsLogGui(event.getView())) {
+            event.setCancelled(true);
+            if (event.getClickedInventory().equals(event.getView().getTopInventory())) {
+                plugin.getWarningsLogGui().handleClick(player, event.getSlot());
+            }
+            return;
+        }
+
         // Rank List GUI (rank selection screen)
         if (RankListGui.isRankListGui(event.getView())) {
             event.setCancelled(true);
@@ -102,6 +122,8 @@ public class GuiListener implements Listener {
             plugin.getShopGui().cleanup(player);
         } else if (SellGui.isSellGui(event.getView())) {
             plugin.getSellGui().processSell(player, event.getView().getTopInventory());
+        } else if (WarningsLogGui.isWarningsLogGui(event.getView())) {
+            plugin.getWarningsLogGui().cleanup(player);
         } else if (RankListGui.isRankListGui(event.getView())) {
             plugin.getRankListGui().cleanup(player);
         } else if (RankPermissionsGui.isRankGui(event.getView())) {

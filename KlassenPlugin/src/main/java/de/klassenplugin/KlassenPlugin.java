@@ -1,6 +1,7 @@
 package de.klassenplugin;
 
 import de.klassenplugin.commands.*;
+import de.klassenplugin.gui.AdminPanelGui;
 import de.klassenplugin.gui.AuctionGui;
 import de.klassenplugin.gui.OrderGui;
 import de.klassenplugin.gui.RankListGui;
@@ -8,6 +9,7 @@ import de.klassenplugin.gui.RankPermissionsGui;
 import de.klassenplugin.gui.SellGui;
 import de.klassenplugin.gui.ShopGui;
 import de.klassenplugin.gui.ViolationsGui;
+import de.klassenplugin.gui.WarningsLogGui;
 import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.ChatListener;
@@ -48,6 +50,8 @@ public class KlassenPlugin extends JavaPlugin {
     private RankPermissionsGui rankPermissionsGui;
     private RankListGui rankListGui;
     private ViolationsGui violationsGui;
+    private AdminPanelGui adminPanelGui;
+    private WarningsLogGui warningsLogGui;
     private VanishManager vanishManager;
     private MaintenanceManager maintenanceManager;
     private ClearLagManager clearLagManager;
@@ -89,6 +93,8 @@ public class KlassenPlugin extends JavaPlugin {
         rankPermissionsGui = new RankPermissionsGui(this);
         rankListGui = new RankListGui(this);
         violationsGui = new ViolationsGui(this);
+        adminPanelGui = new AdminPanelGui(this);
+        warningsLogGui = new WarningsLogGui(this);
         vanishManager = new VanishManager(this);
         maintenanceManager = new MaintenanceManager(this);
         clearLagManager = new ClearLagManager(this);
@@ -262,6 +268,14 @@ public class KlassenPlugin extends JavaPlugin {
         getCommand("ban").setExecutor(banCmd);
         getCommand("ban").setTabCompleter(banCmd);
         getCommand("unban").setExecutor(new UnbanCommand(this));
+
+        // Scoreboard config
+        ScoreboardCommand sbCmd = new ScoreboardCommand(this);
+        getCommand("scoreboard").setExecutor(sbCmd);
+        getCommand("scoreboard").setTabCompleter(sbCmd);
+
+        // Admin panel
+        getCommand("adminpanel").setExecutor(new AdminPanelCommand(this));
     }
 
     private void registerListeners() {
@@ -314,6 +328,8 @@ public class KlassenPlugin extends JavaPlugin {
     public RankPermissionsGui getRankPermissionsGui() { return rankPermissionsGui; }
     public RankListGui getRankListGui() { return rankListGui; }
     public ViolationsGui getViolationsGui() { return violationsGui; }
+    public AdminPanelGui getAdminPanelGui() { return adminPanelGui; }
+    public WarningsLogGui getWarningsLogGui() { return warningsLogGui; }
     public VanishManager getVanishManager() { return vanishManager; }
     public MaintenanceManager getMaintenanceManager() { return maintenanceManager; }
     public ClearLagManager getClearLagManager() { return clearLagManager; }
