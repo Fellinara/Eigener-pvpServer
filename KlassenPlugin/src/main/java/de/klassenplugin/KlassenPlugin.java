@@ -269,11 +269,6 @@ public class KlassenPlugin extends JavaPlugin {
         getCommand("ban").setTabCompleter(banCmd);
         getCommand("unban").setExecutor(new UnbanCommand(this));
 
-        // Scoreboard config
-        ScoreboardCommand sbCmd = new ScoreboardCommand(this);
-        getCommand("scoreboard").setExecutor(sbCmd);
-        getCommand("scoreboard").setTabCompleter(sbCmd);
-
         // Admin panel
         getCommand("adminpanel").setExecutor(new AdminPanelCommand(this));
     }

@@ -230,12 +230,6 @@ commands:
     usage: /unban <Spieler|IP>
     permission: klassenplugin.ban
 
-  scoreboard:
-    description: Konfiguriert das Sidebar-Scoreboard
-    usage: /scoreboard <toggle|title|setline|clearline|addline|clearlines|info>
-    permission: klassenplugin.admin
-    aliases: [sb]
-
   adminpanel:
     description: Öffnet das Admin-Kontrollzentrum (GUI)
     usage: /adminpanel

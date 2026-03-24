@@ -102,7 +102,7 @@ scoreboard:
   # Leere Zeilen werden als Trennlinie dargestellt.
   lines:
     - " "
-    - "&7Server: &e{server}"
+    - "&7Server: &eKlassen Server"
     - "&7Online: &e{online}"
     - " "
     - "&6&lEconomy"
@@ -110,7 +110,7 @@ scoreboard:
     - " "
     - "&7Rang: &f{rank}"
     - " "
-    - "&8play.server.de"
+    - "&8bonn.jodaitis.net"
 
 # Anti-Cheat Einstellungen
 anticheat:
