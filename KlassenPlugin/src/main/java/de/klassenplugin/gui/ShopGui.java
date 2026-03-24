@@ -159,15 +159,26 @@ public class ShopGui {
 
         for (int i = start; i < end; i++) {
             String matName = catItems[i];
-            Material mat   = Material.matchMaterial(matName);
-            ItemStack icon = (mat != null && mat != Material.AIR)
-                    ? new ItemStack(mat) : new ItemStack(Material.BARRIER);
+
+            // Determine icon and display name (special handling for enchanted books)
+            final ItemStack icon;
+            final String displayName;
+            if (ShopManager.isEnchantedBookKey(matName)) {
+                icon        = ShopManager.buildEnchantedBook(matName);
+                displayName = ShopManager.getEnchantedBookDisplayName(matName);
+            } else {
+                Material mat = Material.matchMaterial(matName);
+                icon        = (mat != null && mat != Material.AIR)
+                        ? new ItemStack(mat) : new ItemStack(Material.BARRIER);
+                displayName = matName;
+            }
+
             ItemMeta meta  = icon.getItemMeta();
 
             double buy  = shop.getBuyPrice(matName);
             double sell = shop.getSellPrice(matName);
             meta.displayName(LegacyComponentSerializer.legacyAmpersand()
-                    .deserialize("&b" + matName));
+                    .deserialize("&b" + displayName));
             List<String> lore = new ArrayList<>();
             lore.add("");
             lore.add(buy >= 0
@@ -175,7 +186,7 @@ public class ShopGui {
                     : "&7Kauf: &cnicht verfügbar");
             lore.add(sell >= 0
                     ? "&7Verkauf: &a" + eco.format(sell) + " &8(RK=alle verkaufen)"
-                    : "&7Verkauf: &7n/a");
+                    : "&7Verkauf: &7nicht möglich");
             lore.add("");
             lore.add("&7Dein Guthaben: &6" + eco.format(eco.getBalance(player.getUniqueId())));
             meta.lore(lore.stream()
@@ -261,17 +272,30 @@ public class ShopGui {
                     "&cNicht genug Geld! Preis: &6" + eco.format(total)));
             return;
         }
-        Material mat = Material.matchMaterial(matName);
-        if (mat == null) return;
         if (player.getInventory().firstEmpty() == -1) {
             player.sendMessage(KlassenPlugin.colorizeComponent("&cInventar voll!"));
             return;
         }
+
+        final ItemStack item;
+        final String displayName;
+        if (ShopManager.isEnchantedBookKey(matName)) {
+            ItemStack book = ShopManager.buildEnchantedBook(matName);
+            book.setAmount(amount);
+            item        = book;
+            displayName = ShopManager.getEnchantedBookDisplayName(matName);
+        } else {
+            Material mat = Material.matchMaterial(matName);
+            if (mat == null) return;
+            item        = new ItemStack(mat, amount);
+            displayName = matName;
+        }
+
         eco.withdraw(player.getUniqueId(), total);
         eco.saveAsync();
-        player.getInventory().addItem(new ItemStack(mat, amount));
+        player.getInventory().addItem(item);
         player.sendMessage(KlassenPlugin.colorizeComponent(
-                "&aGekauft: &e" + amount + "x " + matName + " &afür &6" + eco.format(total)));
+                "&aGekauft: &e" + amount + "x " + displayName + " &afür &6" + eco.format(total)));
         plugin.getScoreboardManager().update(player);
     }
 

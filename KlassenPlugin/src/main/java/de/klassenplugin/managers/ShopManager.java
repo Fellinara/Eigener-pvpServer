@@ -3,8 +3,12 @@ package de.klassenplugin.managers;
 import de.klassenplugin.KlassenPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,6 +23,33 @@ public class ShopManager {
 
     /** Representative icon Material per category shown in the category overview. */
     public static final Map<String, Material> CATEGORY_ICONS = new LinkedHashMap<>();
+
+    /**
+     * Enchanted-book shop entries.  Key (e.g. {@code "BOOK_SHARPNESS_5"}) →
+     * {@code {German display name, Minecraft enchantment key, level}}.
+     */
+    public static final LinkedHashMap<String, Object[]> ENCHANTED_BOOK_ITEMS = new LinkedHashMap<>();
+
+    /** Materials that can be bought but never sold via the shop. */
+    private static final Set<String> NON_SELLABLE = Set.of(
+        // Armor
+        "LEATHER_HELMET","LEATHER_CHESTPLATE","LEATHER_LEGGINGS","LEATHER_BOOTS",
+        "CHAINMAIL_HELMET","CHAINMAIL_CHESTPLATE","CHAINMAIL_LEGGINGS","CHAINMAIL_BOOTS",
+        "IRON_HELMET","IRON_CHESTPLATE","IRON_LEGGINGS","IRON_BOOTS",
+        "GOLDEN_HELMET","GOLDEN_CHESTPLATE","GOLDEN_LEGGINGS","GOLDEN_BOOTS",
+        "DIAMOND_HELMET","DIAMOND_CHESTPLATE","DIAMOND_LEGGINGS","DIAMOND_BOOTS",
+        "NETHERITE_HELMET","NETHERITE_CHESTPLATE","NETHERITE_LEGGINGS","NETHERITE_BOOTS",
+        "TURTLE_HELMET","SHIELD",
+        // Tools
+        "WOODEN_PICKAXE","STONE_PICKAXE","IRON_PICKAXE","GOLDEN_PICKAXE","DIAMOND_PICKAXE","NETHERITE_PICKAXE",
+        "WOODEN_AXE","STONE_AXE","IRON_AXE","GOLDEN_AXE","DIAMOND_AXE","NETHERITE_AXE",
+        "WOODEN_SHOVEL","STONE_SHOVEL","IRON_SHOVEL","GOLDEN_SHOVEL","DIAMOND_SHOVEL","NETHERITE_SHOVEL",
+        "WOODEN_HOE","STONE_HOE","IRON_HOE","GOLDEN_HOE","DIAMOND_HOE","NETHERITE_HOE",
+        "FISHING_ROD","SHEARS","FLINT_AND_STEEL",
+        // Weapons
+        "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD","NETHERITE_SWORD",
+        "BOW","CROSSBOW","TRIDENT"
+    );
 
     static {
         CATEGORIES.put("Mob Drops", new String[]{
@@ -70,7 +101,7 @@ public class ShopManager {
         CATEGORY_ICONS.put("Werkzeuge", Material.IRON_PICKAXE);
 
         CATEGORIES.put("Waffen", new String[]{
-            "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD",
+            "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD","NETHERITE_SWORD",
             "BOW","CROSSBOW","TRIDENT"
         });
         CATEGORY_ICONS.put("Waffen", Material.IRON_SWORD);
@@ -80,9 +111,60 @@ public class ShopManager {
             "IRON_HELMET","IRON_CHESTPLATE","IRON_LEGGINGS","IRON_BOOTS",
             "GOLDEN_HELMET","GOLDEN_CHESTPLATE","GOLDEN_LEGGINGS","GOLDEN_BOOTS",
             "DIAMOND_HELMET","DIAMOND_CHESTPLATE","DIAMOND_LEGGINGS","DIAMOND_BOOTS",
+            "NETHERITE_HELMET","NETHERITE_CHESTPLATE","NETHERITE_LEGGINGS","NETHERITE_BOOTS",
             "TURTLE_HELMET","SHIELD"
         });
         CATEGORY_ICONS.put("Rüstung", Material.IRON_CHESTPLATE);
+
+        CATEGORIES.put("PvP", new String[]{
+            "GOLDEN_APPLE","ENCHANTED_GOLDEN_APPLE",
+            "ENDER_PEARL","ENDER_EYE",
+            "TOTEM_OF_UNDYING",
+            "GOLDEN_CARROT","CHORUS_FRUIT"
+        });
+        CATEGORY_ICONS.put("PvP", Material.GOLDEN_APPLE);
+
+        CATEGORIES.put("Verzauberungen", new String[]{
+            "BOOK_SHARPNESS_5","BOOK_SWEEPING_EDGE_3","BOOK_FIRE_ASPECT_2",
+            "BOOK_KNOCKBACK_2","BOOK_LOOTING_3",
+            "BOOK_PROTECTION_4","BOOK_FIRE_PROTECTION_4","BOOK_BLAST_PROTECTION_4",
+            "BOOK_PROJECTILE_PROTECTION_4","BOOK_THORNS_3",
+            "BOOK_FEATHER_FALLING_4","BOOK_DEPTH_STRIDER_3",
+            "BOOK_AQUA_AFFINITY_1","BOOK_RESPIRATION_3",
+            "BOOK_UNBREAKING_3","BOOK_MENDING_1",
+            "BOOK_POWER_5","BOOK_FLAME_1","BOOK_INFINITY_1","BOOK_PUNCH_2",
+            "BOOK_EFFICIENCY_5","BOOK_FORTUNE_3","BOOK_SILK_TOUCH_1",
+            "BOOK_SWIFT_SNEAK_3","BOOK_SOUL_SPEED_3"
+        });
+        CATEGORY_ICONS.put("Verzauberungen", Material.ENCHANTED_BOOK);
+
+        // ── Enchanted-book shop entries ──────────────────────────────────────
+        // Key → {German display name, Minecraft enchantment key (lowercase), level}
+        ENCHANTED_BOOK_ITEMS.put("BOOK_SHARPNESS_5",             new Object[]{"Schärfe V",               "sharpness",             5});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_SWEEPING_EDGE_3",         new Object[]{"Fegeangriff III",          "sweeping_edge",         3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_FIRE_ASPECT_2",           new Object[]{"Verbrennen II",            "fire_aspect",           2});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_KNOCKBACK_2",             new Object[]{"Rückstoß II",              "knockback",             2});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_LOOTING_3",               new Object[]{"Beute III",                "looting",               3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_PROTECTION_4",            new Object[]{"Schutz IV",                "protection",            4});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_FIRE_PROTECTION_4",       new Object[]{"Feuerschutz IV",           "fire_protection",       4});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_BLAST_PROTECTION_4",      new Object[]{"Explosionsschutz IV",      "blast_protection",      4});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_PROJECTILE_PROTECTION_4", new Object[]{"Projektilschutz IV",       "projectile_protection", 4});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_THORNS_3",                new Object[]{"Dornen III",               "thorns",                3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_FEATHER_FALLING_4",       new Object[]{"Trittdämpfer IV",          "feather_falling",       4});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_DEPTH_STRIDER_3",         new Object[]{"Tiefenläufer III",         "depth_strider",         3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_AQUA_AFFINITY_1",         new Object[]{"Wasseraffinität I",        "aqua_affinity",         1});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_RESPIRATION_3",           new Object[]{"Atmung III",               "respiration",           3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_UNBREAKING_3",            new Object[]{"Haltbarkeit III",          "unbreaking",            3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_MENDING_1",               new Object[]{"Reparatur I",              "mending",               1});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_POWER_5",                 new Object[]{"Schlagkraft V",            "power",                 5});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_FLAME_1",                 new Object[]{"Flamme I",                 "flame",                 1});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_INFINITY_1",              new Object[]{"Unendlichkeit I",          "infinity",              1});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_PUNCH_2",                 new Object[]{"Schlag II",                "punch",                 2});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_EFFICIENCY_5",            new Object[]{"Effizienz V",              "efficiency",            5});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_FORTUNE_3",               new Object[]{"Glück III",                "fortune",               3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_SILK_TOUCH_1",            new Object[]{"Behutsamkeit I",           "silk_touch",            1});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_SWIFT_SNEAK_3",           new Object[]{"Schnellschleichen III",    "swift_sneak",           3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_SOUL_SPEED_3",            new Object[]{"Seelentempo III",          "soul_speed",            3});
 
         CATEGORIES.put("Brauen", new String[]{
             "GLASS_BOTTLE","POTION","NETHER_WART","GLOWSTONE_DUST","REDSTONE",
@@ -290,6 +372,22 @@ public class ShopManager {
         {"GOLDEN_HELMET",50.0,20.0},{"GOLDEN_CHESTPLATE",80.0,32.0},{"GOLDEN_LEGGINGS",70.0,28.0},{"GOLDEN_BOOTS",40.0,16.0},
         {"DIAMOND_HELMET",280.0,110.0},{"DIAMOND_CHESTPLATE",450.0,180.0},{"DIAMOND_LEGGINGS",380.0,150.0},{"DIAMOND_BOOTS",250.0,100.0},
         {"TURTLE_HELMET",200.0,90.0},{"SHIELD",40.0,16.0},
+        // ── Netherite Armor & Sword ──
+        {"NETHERITE_HELMET",900.0,-1.0},{"NETHERITE_CHESTPLATE",1000.0,-1.0},
+        {"NETHERITE_LEGGINGS",950.0,-1.0},{"NETHERITE_BOOTS",800.0,-1.0},
+        {"NETHERITE_SWORD",1200.0,-1.0},
+        // ── Enchanted Books ──
+        {"BOOK_SHARPNESS_5",500.0,-1.0},{"BOOK_SWEEPING_EDGE_3",300.0,-1.0},
+        {"BOOK_FIRE_ASPECT_2",200.0,-1.0},{"BOOK_KNOCKBACK_2",150.0,-1.0},{"BOOK_LOOTING_3",400.0,-1.0},
+        {"BOOK_PROTECTION_4",400.0,-1.0},{"BOOK_FIRE_PROTECTION_4",250.0,-1.0},
+        {"BOOK_BLAST_PROTECTION_4",250.0,-1.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,-1.0},
+        {"BOOK_THORNS_3",300.0,-1.0},{"BOOK_FEATHER_FALLING_4",200.0,-1.0},
+        {"BOOK_DEPTH_STRIDER_3",300.0,-1.0},{"BOOK_AQUA_AFFINITY_1",150.0,-1.0},
+        {"BOOK_RESPIRATION_3",200.0,-1.0},{"BOOK_UNBREAKING_3",350.0,-1.0},
+        {"BOOK_MENDING_1",600.0,-1.0},{"BOOK_POWER_5",450.0,-1.0},
+        {"BOOK_FLAME_1",150.0,-1.0},{"BOOK_INFINITY_1",400.0,-1.0},{"BOOK_PUNCH_2",200.0,-1.0},
+        {"BOOK_EFFICIENCY_5",300.0,-1.0},{"BOOK_FORTUNE_3",500.0,-1.0},
+        {"BOOK_SILK_TOUCH_1",400.0,-1.0},{"BOOK_SWIFT_SNEAK_3",350.0,-1.0},{"BOOK_SOUL_SPEED_3",250.0,-1.0},
         // ── Brewing ──
         {"GLASS_BOTTLE",5.0,2.0},{"POTION",8.0,3.0},{"GLISTERING_MELON_SLICE",15.0,7.0},
         // ── Redstone ──
@@ -381,6 +479,7 @@ public class ShopManager {
         migrateOreBuyPrices();
         migrateRedstoneItems();
         migrateFullShopDefaults();
+        migratePvpAndEnchantments();
     }
 
     /**
@@ -488,6 +587,44 @@ public class ShopManager {
         }
     }
 
+    /**
+     * Adds netherite armor/sword and enchanted-book entries that were
+     * introduced after {@code migrated-full-defaults} was written.
+     * Guarded by its own flag so it runs only once on existing installs.
+     */
+    private void migratePvpAndEnchantments() {
+        if (shopConfig.getBoolean("migrated-pvp-enchantments", false)) return;
+
+        Object[][] newItems = {
+            // Netherite armor + sword
+            {"NETHERITE_HELMET",900.0,-1.0},{"NETHERITE_CHESTPLATE",1000.0,-1.0},
+            {"NETHERITE_LEGGINGS",950.0,-1.0},{"NETHERITE_BOOTS",800.0,-1.0},
+            {"NETHERITE_SWORD",1200.0,-1.0},
+            // Enchanted books
+            {"BOOK_SHARPNESS_5",500.0,-1.0},{"BOOK_SWEEPING_EDGE_3",300.0,-1.0},
+            {"BOOK_FIRE_ASPECT_2",200.0,-1.0},{"BOOK_KNOCKBACK_2",150.0,-1.0},{"BOOK_LOOTING_3",400.0,-1.0},
+            {"BOOK_PROTECTION_4",400.0,-1.0},{"BOOK_FIRE_PROTECTION_4",250.0,-1.0},
+            {"BOOK_BLAST_PROTECTION_4",250.0,-1.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,-1.0},
+            {"BOOK_THORNS_3",300.0,-1.0},{"BOOK_FEATHER_FALLING_4",200.0,-1.0},
+            {"BOOK_DEPTH_STRIDER_3",300.0,-1.0},{"BOOK_AQUA_AFFINITY_1",150.0,-1.0},
+            {"BOOK_RESPIRATION_3",200.0,-1.0},{"BOOK_UNBREAKING_3",350.0,-1.0},
+            {"BOOK_MENDING_1",600.0,-1.0},{"BOOK_POWER_5",450.0,-1.0},
+            {"BOOK_FLAME_1",150.0,-1.0},{"BOOK_INFINITY_1",400.0,-1.0},{"BOOK_PUNCH_2",200.0,-1.0},
+            {"BOOK_EFFICIENCY_5",300.0,-1.0},{"BOOK_FORTUNE_3",500.0,-1.0},
+            {"BOOK_SILK_TOUCH_1",400.0,-1.0},{"BOOK_SWIFT_SNEAK_3",350.0,-1.0},{"BOOK_SOUL_SPEED_3",250.0,-1.0},
+        };
+        boolean changed = false;
+        for (Object[] row : newItems) {
+            String key = ((String) row[0]).toUpperCase();
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+                changed = true;
+            }
+        }
+        shopConfig.set("migrated-pvp-enchantments", true);
+        if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
     public void save() {
         shopConfig.set("items", null);
         for (Map.Entry<String, double[]> e : items.entrySet()) {
@@ -513,6 +650,7 @@ public class ShopManager {
      * </ul>
      */
     public double getSellPrice(String mat) {
+        if (NON_SELLABLE.contains(mat.toUpperCase())) return -1;
         double[] p = items.get(mat.toUpperCase());
         if (p == null) return -1;
         if (p[0] > 0) {
@@ -538,10 +676,12 @@ public class ShopManager {
 
     /**
      * Returns the effective sell price per item for {@code mat}.
-     * Falls back to the configured {@code economy.default-sell-price} for
-     * materials not in shop.yml.  Returns -1 only when selling is fully disabled.
+     * Returns -1 for non-sellable items (armor, tools, weapons) and when
+     * selling is fully disabled.  Falls back to {@code economy.default-sell-price}
+     * for materials not listed in shop.yml.
      */
     public double getEffectiveSellPrice(String mat) {
+        if (NON_SELLABLE.contains(mat.toUpperCase())) return -1;
         double price = getSellPrice(mat);
         if (price >= 0) return price;
         return getDefaultSellPrice();
@@ -554,5 +694,40 @@ public class ShopManager {
     public void removeItem(String mat) {
         items.remove(mat.toUpperCase());
         Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    // ── Enchanted-book helpers ────────────────────────────────────────────────
+
+    /** Returns {@code true} if {@code key} is a registered enchanted-book shop entry. */
+    public static boolean isEnchantedBookKey(String key) {
+        return ENCHANTED_BOOK_ITEMS.containsKey(key.toUpperCase());
+    }
+
+    /** Returns the German display name for an enchanted-book key, or the key itself as fallback. */
+    public static String getEnchantedBookDisplayName(String key) {
+        Object[] data = ENCHANTED_BOOK_ITEMS.get(key.toUpperCase());
+        return data != null ? (String) data[0] : key;
+    }
+
+    /**
+     * Builds an {@link ItemStack} of {@link Material#ENCHANTED_BOOK} with the
+     * stored enchantment matching the given key.  Returns a {@link Material#BARRIER}
+     * item if the key is unknown or the enchantment cannot be resolved.
+     */
+    public static ItemStack buildEnchantedBook(String key) {
+        Object[] data = ENCHANTED_BOOK_ITEMS.get(key.toUpperCase());
+        if (data == null) return new ItemStack(Material.BARRIER);
+        String enchKey = (String) data[1];
+        int level      = (int)    data[2];
+
+        ItemStack book = new ItemStack(Material.ENCHANTED_BOOK);
+        EnchantmentStorageMeta meta = (EnchantmentStorageMeta) book.getItemMeta();
+        if (meta != null) {
+            @SuppressWarnings("deprecation")
+            Enchantment ench = Enchantment.getByKey(NamespacedKey.minecraft(enchKey));
+            if (ench != null) meta.addStoredEnchant(ench, level, true);
+            book.setItemMeta(meta);
+        }
+        return book;
     }
 }

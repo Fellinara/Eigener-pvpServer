@@ -66,13 +66,24 @@ public class ShopCommand implements TabExecutor {
         if (price < 0) { p.sendMessage(KlassenPlugin.colorizeComponent("&cKann nicht gekauft werden!")); return; }
         double total = price * amount;
         if (!eco.has(p.getUniqueId(), total)) { p.sendMessage(KlassenPlugin.colorizeComponent("&cNicht genug Geld! Preis: &6" + eco.format(total))); return; }
-        Material mat = Material.matchMaterial(matName);
-        if (mat == null) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUnbekanntes Material!")); return; }
         if (p.getInventory().firstEmpty() == -1) { p.sendMessage(KlassenPlugin.colorizeComponent("&cInventar voll!")); return; }
+        final ItemStack item;
+        final String displayName;
+        if (ShopManager.isEnchantedBookKey(matName)) {
+            ItemStack book = ShopManager.buildEnchantedBook(matName);
+            book.setAmount(amount);
+            item        = book;
+            displayName = ShopManager.getEnchantedBookDisplayName(matName);
+        } else {
+            Material mat = Material.matchMaterial(matName);
+            if (mat == null) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUnbekanntes Material!")); return; }
+            item        = new ItemStack(mat, amount);
+            displayName = matName;
+        }
         eco.withdraw(p.getUniqueId(), total);
         eco.saveAsync();
-        p.getInventory().addItem(new ItemStack(mat, amount));
-        p.sendMessage(KlassenPlugin.colorizeComponent("&aGekauft: &e" + amount + "x " + matName + " &afür &6" + eco.format(total)));
+        p.getInventory().addItem(item);
+        p.sendMessage(KlassenPlugin.colorizeComponent("&aGekauft: &e" + amount + "x " + displayName + " &afür &6" + eco.format(total)));
         plugin.getScoreboardManager().update(p);
     }
 
