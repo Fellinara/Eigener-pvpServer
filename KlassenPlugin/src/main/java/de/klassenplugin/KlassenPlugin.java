@@ -51,6 +51,7 @@ public class KlassenPlugin extends JavaPlugin {
     private ProtocolLibManager protocolLibManager;
     /** Always-active Bukkit hack-client listener (no ProtocolLib required). */
     private HackClientBukkitListener hackClientBukkitListener;
+    private CorpseManager corpseManger;
 
     @Override
     public void onEnable() {
@@ -84,6 +85,7 @@ public class KlassenPlugin extends JavaPlugin {
         vanishManager = new VanishManager(this);
         maintenanceManager = new MaintenanceManager(this);
         clearLagManager = new ClearLagManager(this);
+        corpseManger = new CorpseManager(this);
 
         // ProtocolLib integration – only if the soft dependency is present.
         if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
@@ -264,6 +266,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getServer().getPluginManager().registerEvents(corpseManger, this);
     }
 
     public static KlassenPlugin getInstance() {
@@ -304,6 +307,7 @@ public class KlassenPlugin extends JavaPlugin {
     public VanishManager getVanishManager() { return vanishManager; }
     public MaintenanceManager getMaintenanceManager() { return maintenanceManager; }
     public ClearLagManager getClearLagManager() { return clearLagManager; }
+    public CorpseManager getCorpseManager() { return corpseManger; }
     /** Returns the ProtocolLib manager, or {@code null} if ProtocolLib is not installed. */
     public ProtocolLibManager getProtocolLibManager() { return protocolLibManager; }
     /** Returns the always-active Bukkit hack-client listener. */

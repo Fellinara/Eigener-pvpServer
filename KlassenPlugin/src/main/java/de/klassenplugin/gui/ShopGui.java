@@ -16,17 +16,20 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.*;
 
 /**
- * Chest-GUI for the shop ({@code /shop}).
+ * Category-based chest-GUI for the shop ({@code /shop}).
  *
- * <p>Layout – 6 rows (54 slots):
+ * <p><b>Category overview</b> (first screen): one icon per category; click to enter.
+ *
+ * <p><b>Item list</b> (after selecting a category):
  * <ul>
- *   <li>Rows 0–4 (slots 0–44): item icons (up to 45 per page)</li>
+ *   <li>Rows 0–4 (slots 0–44): up to 45 items per page</li>
  *   <li>Slot 45: previous page</li>
- *   <li>Slot 48: close / info</li>
+ *   <li>Slot 46: back to categories</li>
+ *   <li>Slot 48: close shop</li>
  *   <li>Slot 53: next page</li>
  * </ul>
  *
- * <p>Click actions:
+ * <p>Click actions on items:
  * <ul>
  *   <li>Left-click → buy 1</li>
  *   <li>Shift+Left-click → buy 64</li>
@@ -35,13 +38,16 @@ import java.util.*;
  */
 public class ShopGui {
 
-    private static final String GUI_TITLE_PREFIX = "\u00a78[\u00a76Shop\u00a78] ";
+    private static final String GUI_TITLE_PREFIX = "&8[&6Shop&8] ";
     private static final int PAGE_SIZE = 45;
 
     private final KlassenPlugin plugin;
-    /** Current page (0-based) per player. */
+
+    // null = category overview; non-null = item list for that category name
+    private final Map<UUID, String> selectedCategory = new HashMap<>();
+    /** Current page (0-based) inside a category's item list. */
     private final Map<UUID, Integer> pages = new HashMap<>();
-    /** Item names visible on the current page, mapped to slot index. */
+    /** Item material names for the currently displayed item-list page. */
     private final Map<UUID, List<String>> pageItems = new HashMap<>();
 
     public ShopGui(KlassenPlugin plugin) {
@@ -50,56 +56,21 @@ public class ShopGui {
 
     // ── Public API ───────────────────────────────────────────────────────────
 
+    /** Opens the shop at the category overview for {@code player}. */
     public void open(Player player) {
-        pages.putIfAbsent(player.getUniqueId(), 0);
-        build(player);
+        UUID uuid = player.getUniqueId();
+        selectedCategory.remove(uuid);
+        pages.remove(uuid);
+        pageItems.remove(uuid);
+        buildCategoryView(player);
     }
 
     public void handleClick(Player player, int slot, ClickType clickType) {
-        UUID uuid = player.getUniqueId();
-        List<String> items = pageItems.get(uuid);
-        int currentPage = pages.getOrDefault(uuid, 0);
-        ShopManager shop = plugin.getShopManager();
-        List<String> allItems = new ArrayList<>(shop.getItemNames());
-        int totalPages = Math.max(1, (int) Math.ceil(allItems.size() / (double) PAGE_SIZE));
-
-        if (slot == 45) {
-            // Previous page
-            if (currentPage > 0) {
-                pages.put(uuid, currentPage - 1);
-                build(player);
-            }
-            return;
+        if (selectedCategory.containsKey(player.getUniqueId())) {
+            handleItemClick(player, slot, clickType);
+        } else {
+            handleCategoryClick(player, slot);
         }
-        if (slot == 53) {
-            // Next page
-            if (currentPage < totalPages - 1) {
-                pages.put(uuid, currentPage + 1);
-                build(player);
-            }
-            return;
-        }
-        if (slot == 48) {
-            player.closeInventory();
-            return;
-        }
-
-        if (items == null || slot >= items.size() || slot < 0) return;
-        String matName = items.get(slot);
-        if (matName == null) return;
-
-        EconomyManager eco = plugin.getEconomyManager();
-
-        if (clickType == ClickType.LEFT) {
-            buyItem(player, shop, eco, matName, 1);
-        } else if (clickType == ClickType.SHIFT_LEFT) {
-            buyItem(player, shop, eco, matName, 64);
-        } else if (clickType == ClickType.RIGHT || clickType == ClickType.SHIFT_RIGHT) {
-            sellAllOfItem(player, shop, eco, matName);
-        }
-
-        // Refresh to show updated balance/info.
-        build(player);
     }
 
     public static boolean isShopGui(InventoryView view) {
@@ -108,39 +79,92 @@ public class ShopGui {
     }
 
     public void cleanup(Player player) {
-        pages.remove(player.getUniqueId());
-        pageItems.remove(player.getUniqueId());
+        UUID uuid = player.getUniqueId();
+        selectedCategory.remove(uuid);
+        pages.remove(uuid);
+        pageItems.remove(uuid);
     }
 
-    // ── Private helpers ───────────────────────────────────────────────────────
+    // ── Category overview ────────────────────────────────────────────────────
 
-    private void build(Player player) {
-        UUID uuid = player.getUniqueId();
-        ShopManager shop = plugin.getShopManager();
-        EconomyManager eco = plugin.getEconomyManager();
-        List<String> allItems = new ArrayList<>(shop.getItemNames());
-        int currentPage = pages.getOrDefault(uuid, 0);
-        int totalPages = Math.max(1, (int) Math.ceil(allItems.size() / (double) PAGE_SIZE));
+    private void buildCategoryView(Player player) {
+        List<Map.Entry<String, String[]>> cats = new ArrayList<>(ShopManager.CATEGORIES.entrySet());
 
         Inventory inv = Bukkit.createInventory(null, 54,
                 LegacyComponentSerializer.legacyAmpersand().deserialize(
-                        "&8[&6Shop&8] &7Seite " + (currentPage + 1) + "/" + totalPages));
+                        GUI_TITLE_PREFIX + "&7Kategorien"));
+
+        for (int i = 0; i < cats.size() && i < 45; i++) {
+            String catName = cats.get(i).getKey();
+            int itemCount  = cats.get(i).getValue().length;
+            Material icon  = ShopManager.CATEGORY_ICONS.getOrDefault(catName, Material.CHEST);
+
+            ItemStack item = new ItemStack(icon);
+            ItemMeta meta  = item.getItemMeta();
+            meta.displayName(LegacyComponentSerializer.legacyAmpersand()
+                    .deserialize("&e&l" + catName));
+            meta.lore(List.of(
+                    LegacyComponentSerializer.legacyAmpersand()
+                            .deserialize("&7" + itemCount + " Artikel"),
+                    LegacyComponentSerializer.legacyAmpersand().deserialize(""),
+                    LegacyComponentSerializer.legacyAmpersand()
+                            .deserialize("&aKlicke zum Öffnen")));
+            item.setItemMeta(meta);
+            inv.setItem(i, item);
+        }
+
+        inv.setItem(49, navItem(Material.BARRIER, "&cSchließen", "&7Shop schließen"));
+
+        openOrUpdate(player, inv);
+    }
+
+    private void handleCategoryClick(Player player, int slot) {
+        if (slot == 49) {
+            player.closeInventory();
+            return;
+        }
+        List<String> catNames = new ArrayList<>(ShopManager.CATEGORIES.keySet());
+        if (slot < 0 || slot >= catNames.size()) return;
+
+        UUID uuid = player.getUniqueId();
+        selectedCategory.put(uuid, catNames.get(slot));
+        pages.put(uuid, 0);
+        buildItemView(player);
+    }
+
+    // ── Item list (per category) ──────────────────────────────────────────────
+
+    private void buildItemView(Player player) {
+        UUID uuid = player.getUniqueId();
+        String cat = selectedCategory.get(uuid);
+        if (cat == null) { buildCategoryView(player); return; }
+
+        ShopManager shop = plugin.getShopManager();
+        EconomyManager eco  = plugin.getEconomyManager();
+        String[] catItems   = ShopManager.CATEGORIES.getOrDefault(cat, new String[0]);
+
+        int currentPage = pages.getOrDefault(uuid, 0);
+        int totalPages  = Math.max(1, (int) Math.ceil(catItems.length / (double) PAGE_SIZE));
+        currentPage = Math.max(0, Math.min(currentPage, totalPages - 1));
+        pages.put(uuid, currentPage);
+
+        Inventory inv = Bukkit.createInventory(null, 54,
+                LegacyComponentSerializer.legacyAmpersand().deserialize(
+                        GUI_TITLE_PREFIX + "&7" + cat
+                                + " &8(&7" + (currentPage + 1) + "/" + totalPages + "&8)"));
 
         List<String> currentItems = new ArrayList<>();
         int start = currentPage * PAGE_SIZE;
-        int end = Math.min(start + PAGE_SIZE, allItems.size());
+        int end   = Math.min(start + PAGE_SIZE, catItems.length);
 
         for (int i = start; i < end; i++) {
-            String matName = allItems.get(i);
-            Material mat = Material.matchMaterial(matName);
-            ItemStack icon;
-            if (mat == null || mat == Material.AIR) {
-                icon = new ItemStack(Material.BARRIER);
-            } else {
-                icon = new ItemStack(mat);
-            }
-            ItemMeta meta = icon.getItemMeta();
-            double buy = shop.getBuyPrice(matName);
+            String matName = catItems[i];
+            Material mat   = Material.matchMaterial(matName);
+            ItemStack icon = (mat != null && mat != Material.AIR)
+                    ? new ItemStack(mat) : new ItemStack(Material.BARRIER);
+            ItemMeta meta  = icon.getItemMeta();
+
+            double buy  = shop.getBuyPrice(matName);
             double sell = shop.getSellPrice(matName);
             meta.displayName(LegacyComponentSerializer.legacyAmpersand()
                     .deserialize("&b" + matName));
@@ -161,28 +185,68 @@ public class ShopGui {
             inv.setItem(i - start, icon);
             currentItems.add(matName);
         }
-        // Pad with null so index = slot.
         while (currentItems.size() < PAGE_SIZE) currentItems.add(null);
         pageItems.put(uuid, currentItems);
 
-        // Navigation buttons.
-        if (currentPage > 0) {
-            inv.setItem(45, navItem(Material.ARROW, "&aVorige Seite", "&7Klicke um zurück zu gehen"));
+        // Navigation row (row 5, slots 45-53)
+        if (currentPage > 0)
+            inv.setItem(45, navItem(Material.ARROW, "&aVorige Seite", "&7Zurück blättern"));
+        inv.setItem(46, navItem(Material.COMPASS, "&eKategorien", "&7Zurück zur Kategorieübersicht"));
+        inv.setItem(48, navItem(Material.BARRIER, "&cSchließen", "&7Shop schließen"));
+        if (currentPage < totalPages - 1)
+            inv.setItem(53, navItem(Material.ARROW, "&aNächste Seite", "&7Weiter blättern"));
+
+        openOrUpdate(player, inv);
+    }
+
+    private void handleItemClick(Player player, int slot, ClickType clickType) {
+        UUID uuid        = player.getUniqueId();
+        int currentPage  = pages.getOrDefault(uuid, 0);
+        String cat       = selectedCategory.get(uuid);
+        String[] catItems = ShopManager.CATEGORIES.getOrDefault(cat, new String[0]);
+        int totalPages   = Math.max(1, (int) Math.ceil(catItems.length / (double) PAGE_SIZE));
+
+        if (slot == 45) {
+            if (currentPage > 0) { pages.put(uuid, currentPage - 1); buildItemView(player); }
+            return;
         }
-        // Close button.
-        inv.setItem(48, navItem(Material.BARRIER, "&cSchließen", "&7Klicke um den Shop zu schließen"));
-        if (currentPage < totalPages - 1) {
-            inv.setItem(53, navItem(Material.ARROW, "&aNächste Seite", "&7Klicke um zur nächsten Seite zu gehen"));
+        if (slot == 46) {
+            // Back to category overview
+            selectedCategory.remove(uuid);
+            pages.remove(uuid);
+            pageItems.remove(uuid);
+            buildCategoryView(player);
+            return;
+        }
+        if (slot == 48) {
+            player.closeInventory();
+            return;
+        }
+        if (slot == 53) {
+            if (currentPage < totalPages - 1) { pages.put(uuid, currentPage + 1); buildItemView(player); }
+            return;
         }
 
-        // Re-open inventory (or open fresh).
-        if (player.getOpenInventory().getTopInventory().getSize() == 54
-                && isShopGui(player.getOpenInventory())) {
-            player.getOpenInventory().getTopInventory().setContents(inv.getContents());
-        } else {
-            player.openInventory(inv);
+        List<String> items = pageItems.get(uuid);
+        if (items == null || slot < 0 || slot >= items.size()) return;
+        String matName = items.get(slot);
+        if (matName == null) return;
+
+        ShopManager shop = plugin.getShopManager();
+        EconomyManager eco = plugin.getEconomyManager();
+
+        if (clickType == ClickType.LEFT) {
+            buyItem(player, shop, eco, matName, 1);
+        } else if (clickType == ClickType.SHIFT_LEFT) {
+            buyItem(player, shop, eco, matName, 64);
+        } else if (clickType == ClickType.RIGHT || clickType == ClickType.SHIFT_RIGHT) {
+            sellAllOfItem(player, shop, eco, matName);
         }
+
+        buildItemView(player);
     }
+
+    // ── Buy / Sell ────────────────────────────────────────────────────────────
 
     private void buyItem(Player player, ShopManager shop, EconomyManager eco,
                          String matName, int amount) {
@@ -226,10 +290,10 @@ public class ShopGui {
             if (is != null && is.getType() == mat) total += is.getAmount();
         }
         if (total == 0) {
-            player.sendMessage(KlassenPlugin.colorizeComponent("&cDu hast kein &e" + matName + " &cim Inventar!"));
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu hast kein &e" + matName + " &cim Inventar!"));
             return;
         }
-        // Remove items.
         int rem = total;
         for (ItemStack is : player.getInventory().getContents()) {
             if (is != null && is.getType() == mat && rem > 0) {
@@ -250,9 +314,20 @@ public class ShopGui {
         plugin.getScoreboardManager().update(player);
     }
 
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void openOrUpdate(Player player, Inventory inv) {
+        if (player.getOpenInventory().getTopInventory().getSize() == 54
+                && isShopGui(player.getOpenInventory())) {
+            player.getOpenInventory().getTopInventory().setContents(inv.getContents());
+        } else {
+            player.openInventory(inv);
+        }
+    }
+
     private ItemStack navItem(Material mat, String name, String lore) {
         ItemStack item = new ItemStack(mat);
-        ItemMeta meta = item.getItemMeta();
+        ItemMeta meta  = item.getItemMeta();
         meta.displayName(LegacyComponentSerializer.legacyAmpersand().deserialize(name));
         meta.lore(List.of(LegacyComponentSerializer.legacyAmpersand().deserialize(lore)));
         item.setItemMeta(meta);

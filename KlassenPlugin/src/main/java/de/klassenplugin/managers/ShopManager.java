@@ -2,6 +2,7 @@ package de.klassenplugin.managers;
 
 import de.klassenplugin.KlassenPlugin;
 import org.bukkit.Bukkit;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 
@@ -10,6 +11,100 @@ import java.io.IOException;
 import java.util.*;
 
 public class ShopManager {
+
+    // ── Category definitions (order matches the CSV sent by user) ─────────────
+
+    /** Ordered map: category display name → item material keys. */
+    public static final LinkedHashMap<String, String[]> CATEGORIES = new LinkedHashMap<>();
+
+    /** Representative icon Material per category shown in the category overview. */
+    public static final Map<String, Material> CATEGORY_ICONS = new LinkedHashMap<>();
+
+    static {
+        CATEGORIES.put("Mob Drops", new String[]{
+            "BONE","BONE_MEAL","BONE_BLOCK","ARROW","FEATHER","STRING",
+            "SPIDER_EYE","SLIMEBALL","BLAZE_ROD","BLAZE_POWDER","SLIME_BLOCK",
+            "LEATHER","RABBIT_HIDE","RABBIT_FOOT","INK_SAC","GLOW_INK_SAC",
+            "PHANTOM_MEMBRANE","GHAST_TEAR","MAGMA_CREAM","GUNPOWDER",
+            "ENDER_PEARL","ENDER_EYE","DRAGON_BREATH","SHULKER_SHELL",
+            "NAUTILUS_SHELL","HEART_OF_THE_SEA","TURTLE_EGG","SCUTE",
+            "AXOLOTL_BUCKET","PRISMARINE_CRYSTALS","PRISMARINE_SHARD",
+            "SPONGE","WET_SPONGE","GLOWSTONE_DUST","NETHER_STAR",
+            "CREEPER_HEAD","SKELETON_SKULL","ZOMBIE_HEAD"
+        });
+        CATEGORY_ICONS.put("Mob Drops", Material.BONE);
+
+        CATEGORIES.put("Nether", new String[]{
+            "NETHERRACK","NETHER_BRICK","NETHER_BRICKS","SOUL_SAND","SOUL_SOIL",
+            "GLOWSTONE","NETHER_WART","NETHER_QUARTZ_ORE",
+            "CRIMSON_FUNGUS","WARPED_FUNGUS","CRIMSON_STEM","WARPED_STEM",
+            "CRIMSON_PLANKS","WARPED_PLANKS","NETHER_SPROUTS",
+            "WARPED_ROOTS","CRIMSON_ROOTS","TWISTING_VINES","WEEPING_VINES",
+            "MAGMA_BLOCK","NETHER_WART_BLOCK","WARPED_WART_BLOCK","SHROOMLIGHT"
+        });
+        CATEGORY_ICONS.put("Nether", Material.NETHERRACK);
+
+        CATEGORIES.put("End", new String[]{
+            "END_STONE","END_STONE_BRICKS","END_ROD",
+            "PURPUR_BLOCK","PURPUR_PILLAR",
+            "CHORUS_FLOWER","CHORUS_FRUIT","POPPED_CHORUS_FRUIT"
+        });
+        CATEGORY_ICONS.put("End", Material.END_STONE);
+
+        CATEGORIES.put("Farben", new String[]{
+            "WHITE_DYE","BLACK_DYE","RED_DYE","BLUE_DYE","GREEN_DYE",
+            "YELLOW_DYE","ORANGE_DYE","GRAY_DYE","LIGHT_GRAY_DYE",
+            "PURPLE_DYE","MAGENTA_DYE","CYAN_DYE","BROWN_DYE",
+            "LIME_DYE","LIGHT_BLUE_DYE","PINK_DYE"
+        });
+        CATEGORY_ICONS.put("Farben", Material.RED_DYE);
+
+        CATEGORIES.put("Werkzeuge", new String[]{
+            "WOODEN_PICKAXE","STONE_PICKAXE","IRON_PICKAXE","GOLDEN_PICKAXE","DIAMOND_PICKAXE",
+            "WOODEN_AXE","STONE_AXE","IRON_AXE","GOLDEN_AXE","DIAMOND_AXE",
+            "WOODEN_SHOVEL","STONE_SHOVEL","IRON_SHOVEL","GOLDEN_SHOVEL","DIAMOND_SHOVEL",
+            "WOODEN_HOE","STONE_HOE","IRON_HOE","GOLDEN_HOE","DIAMOND_HOE",
+            "FISHING_ROD","SHEARS","MAP","COMPASS","CLOCK","FLINT_AND_STEEL",
+            "BUCKET","WATER_BUCKET","LAVA_BUCKET","MILK_BUCKET","POWDER_SNOW_BUCKET"
+        });
+        CATEGORY_ICONS.put("Werkzeuge", Material.IRON_PICKAXE);
+
+        CATEGORIES.put("Waffen", new String[]{
+            "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD",
+            "BOW","CROSSBOW","TRIDENT"
+        });
+        CATEGORY_ICONS.put("Waffen", Material.IRON_SWORD);
+
+        CATEGORIES.put("Rüstung", new String[]{
+            "LEATHER_HELMET","LEATHER_CHESTPLATE","LEATHER_LEGGINGS","LEATHER_BOOTS",
+            "IRON_HELMET","IRON_CHESTPLATE","IRON_LEGGINGS","IRON_BOOTS",
+            "GOLDEN_HELMET","GOLDEN_CHESTPLATE","GOLDEN_LEGGINGS","GOLDEN_BOOTS",
+            "DIAMOND_HELMET","DIAMOND_CHESTPLATE","DIAMOND_LEGGINGS","DIAMOND_BOOTS",
+            "TURTLE_HELMET","SHIELD"
+        });
+        CATEGORY_ICONS.put("Rüstung", Material.IRON_CHESTPLATE);
+
+        CATEGORIES.put("Brauen", new String[]{
+            "GLASS_BOTTLE","POTION","NETHER_WART","GLOWSTONE_DUST","REDSTONE",
+            "FERMENTED_SPIDER_EYE","SPIDER_EYE","MAGMA_CREAM","GHAST_TEAR",
+            "RABBIT_FOOT","PUFFERFISH","GLISTERING_MELON_SLICE"
+        });
+        CATEGORY_ICONS.put("Brauen", Material.GLASS_BOTTLE);
+
+        CATEGORIES.put("Redstone", new String[]{
+            "REDSTONE","REDSTONE_BLOCK","REDSTONE_TORCH","LEVER",
+            "OAK_PRESSURE_PLATE","STONE_PRESSURE_PLATE",
+            "HEAVY_WEIGHTED_PRESSURE_PLATE","LIGHT_WEIGHTED_PRESSURE_PLATE",
+            "STONE_BUTTON","OAK_BUTTON","OBSERVER","PISTON","STICKY_PISTON",
+            "DISPENSER","DROPPER","HOPPER","COMPARATOR","REPEATER",
+            "RAIL","POWERED_RAIL","DETECTOR_RAIL","ACTIVATOR_RAIL",
+            "MINECART","CHEST_MINECART","HOPPER_MINECART",
+            "TNT","FIREWORK_ROCKET","BELL",
+            "IRON_TRAPDOOR","OAK_TRAPDOOR","IRON_DOOR","OAK_DOOR"
+        });
+        CATEGORY_ICONS.put("Redstone", Material.REDSTONE);
+    }
+
 
     private final KlassenPlugin plugin;
     private final File shopFile;
@@ -140,7 +235,7 @@ public class ShopManager {
             {"BONE",5.0,2.0},{"BONE_MEAL",3.0,1.0},{"BONE_BLOCK",20.0,10.0},
             {"ARROW",3.0,1.0},{"FEATHER",5.0,2.0},{"STRING",5.0,2.0},
             {"SPIDER_EYE",8.0,4.0},{"FERMENTED_SPIDER_EYE",15.0,7.0},
-            {"GUNPOWDER",10.0,5.0},{"SLIME_BALL",10.0,5.0},{"SLIME_BLOCK",80.0,40.0},{"MAGMA_CREAM",15.0,7.0},
+            {"GUNPOWDER",10.0,5.0},{"SLIMEBALL",10.0,5.0},{"SLIME_BLOCK",80.0,40.0},{"MAGMA_CREAM",15.0,7.0},
             {"BLAZE_ROD",25.0,12.0},{"BLAZE_POWDER",15.0,7.0},
             {"GHAST_TEAR",50.0,25.0},{"PHANTOM_MEMBRANE",30.0,15.0},
             {"RABBIT_HIDE",8.0,4.0},{"RABBIT_FOOT",30.0,15.0},

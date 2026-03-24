@@ -44,6 +44,13 @@ public class BackCommand implements TabExecutor {
             return true;
         }
 
+        // Block /back if the most recent death was caused by another player.
+        if (plugin.getBackManager().isPvpDeath(player.getUniqueId())) {
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&cDu wurdest von einem Spieler getötet – /back ist nicht erlaubt!"));
+            return true;
+        }
+
         int cooldown = plugin.getConfig().getInt("teleport-cooldown", 3);
         if (plugin.getCooldownManager().isOnCooldown(player.getUniqueId(), cooldown)) {
             int remaining = plugin.getCooldownManager().getRemainingSeconds(player.getUniqueId(), cooldown);
