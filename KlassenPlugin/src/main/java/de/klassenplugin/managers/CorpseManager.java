@@ -94,6 +94,18 @@ public class CorpseManager implements Listener {
         String key = key(placement);
         corpseItems.put(key, new ArrayList<>(drops));
         corpseOwners.put(key, player.getName());
+
+        // Auto-despawn: remove the corpse after 2 hours (144 000 ticks at 20 TPS)
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!corpseItems.containsKey(key)) return; // already emptied by a player
+            // Close any open inventory first to keep session maps consistent
+            UUID accessor = activeSessions.get(key);
+            if (accessor != null) {
+                Player viewer = Bukkit.getPlayer(accessor);
+                if (viewer != null) viewer.closeInventory(); // fires onInventoryClose synchronously
+            }
+            removeCorpse(key);
+        }, 2L * 60 * 60 * 20); // 2 hours in ticks
     }
 
     // ── Events ────────────────────────────────────────────────────────────────
