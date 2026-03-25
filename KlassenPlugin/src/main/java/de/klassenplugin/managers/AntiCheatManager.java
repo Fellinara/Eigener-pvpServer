@@ -260,6 +260,21 @@ public class AntiCheatManager {
         return System.currentTimeMillis() - t < 3000L;
     }
 
+    /**
+     * Returns the timestamp (ms) of the most recent fall-damage event for
+     * {@code playerId}, or {@code -1} if no fall damage has been recorded.
+     *
+     * <p>Used by the delayed NoFall check to determine whether fall damage was
+     * applied <em>after</em> a specific landing timestamp, which allows the
+     * check to run correctly even when {@link
+     * org.bukkit.event.entity.EntityDamageEvent} fires in a later tick than
+     * {@link org.bukkit.event.player.PlayerMoveEvent}.
+     */
+    public long getLastFallDamageTime(UUID playerId) {
+        Long t = lastFallDamageTime.get(playerId);
+        return t != null ? t : -1L;
+    }
+
     // ── Multi-target KillAura ─────────────────────────────────────────────────
 
     /**

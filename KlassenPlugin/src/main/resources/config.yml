@@ -209,15 +209,20 @@ anticheat:
       # Maximale Pakete pro Sekunde
       max-per-second: 200
 
-    # Erkennt FreeCam: eingefrorene Server-Position bei aktiven Bewegungspaketen
+    # Erkennt FreeCam: eingefrorene Server-Position bei aktiven POSITION-Paketen
     freecam:
       enabled: true
       # Sekunden, die eine Serverposition unverändert bleiben darf, während
-      # gleichzeitig POSITION/FLYING-Pakete ankommen (lastMovePkt-Zeitstempel,
-      # NICHT Chat-Pakete), bevor ein FreeCam-Verstoß registriert wird.
-      # Einfrierung + aktive Bewegungspakete = FreeCam-Signatur.
-      # 2 Sekunden: schnelle Erkennung ohne Fehlalarme für kurze Stehpausen.
-      stall-seconds: 2
+      # gleichzeitig POSITION/POSITION_LOOK-Pakete ankommen (lastPosPkt-Zeitstempel,
+      # NICHT FLYING-Pakete), bevor ein FreeCam-Verstoß registriert wird.
+      # Da stehende Spieler nur FLYING-Pakete senden (kein lastPosPkt), löst
+      # der Stall-Check für sie NICHT aus → keine Fehlalarme beim Herumstehen.
+      # FreeCam-Clients, die eingefrorene POSITION-Pakete senden, haben ein
+      # frisches lastPosPkt und werden korrekt erkannt.
+      # 5 Sekunden: guter Kompromiss zwischen Erkennungsgeschwindigkeit und
+      # Vermeidung von Fehlalarmen bei kurzem Stehenbleiben.
+      # (Standardwert von 2 auf 5 erhöht, um Fehlalarme zu reduzieren.)
+      stall-seconds: 5
       # Anzahl aufeinanderfolgender POSITION-Pakete mit identischen Koordinaten
       # (innerhalb 0.002 Blöcke) bevor ein Verstoß registriert wird.
       # Echte Spieler haben immer Mikro-Bewegungsrauschen; perfekte Koordinaten-

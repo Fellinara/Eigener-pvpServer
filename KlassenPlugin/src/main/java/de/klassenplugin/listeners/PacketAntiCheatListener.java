@@ -76,6 +76,19 @@ public class PacketAntiCheatListener {
 
     /** Timestamp of the last POSITION / POSITION_LOOK / FLYING packet per player. */
     private final ConcurrentHashMap<UUID, Long>     lastMovePkt  = new ConcurrentHashMap<>();
+    /**
+     * Timestamp of the last <em>positional</em> packet (POSITION or
+     * POSITION_LOOK only – NOT FLYING).  Updated exclusively when the client
+     * sends actual coordinates.
+     *
+     * <p>Used instead of {@link #lastMovePkt} as the "active player" gate in
+     * the FreeCam stall check.  A standing player sends only FLYING packets
+     * (no coordinates), so {@code lastPosPkt} becomes stale while standing
+     * still, preventing the stall check from false-flagging AFK/standing
+     * players.  FreeCam clients that send frozen POSITION packets keep
+     * {@code lastPosPkt} fresh and are still caught by the stall check.
+     */
+    private final ConcurrentHashMap<UUID, Long>     lastPosPkt   = new ConcurrentHashMap<>();
     /** Server-confirmed position (from last valid POSITION packet). */
     private final ConcurrentHashMap<UUID, double[]> lastSafePos  = new ConcurrentHashMap<>();
 
@@ -165,12 +178,16 @@ public class PacketAntiCheatListener {
                         && Math.abs(knownPos[1] - py) < 0.01
                         && Math.abs(knownPos[2] - pz) < 0.01) {
                     int stall = posStallTicks.merge(uuid, 1, Integer::sum);
-                    // Key fix: use lastMovePkt (movement packet arrival) as the
-                    // "player is active" signal, NOT lastActivityPkt (chat/interaction).
-                    // FreeCam keeps sending FLYING packets so lastMovePkt is always fresh.
-                    Long lastMove = lastMovePkt.get(uuid);
-                    boolean movingPkts = lastMove != null
-                            && System.currentTimeMillis() - lastMove < 2000L;
+                    // Use lastPosPkt (POSITION/POSITION_LOOK arrival) as the
+                    // "player is active" signal rather than lastMovePkt (which
+                    // includes FLYING keep-alives).  Standing players send only
+                    // FLYING packets, so lastPosPkt becomes stale while they
+                    // stand still and the stall check correctly does not fire.
+                    // FreeCam clients that send frozen POSITION packets keep
+                    // lastPosPkt fresh and are still caught here.
+                    Long lastPos = lastPosPkt.get(uuid);
+                    boolean movingPkts = lastPos != null
+                            && System.currentTimeMillis() - lastPos < 2000L;
                     if (stall >= stallThreshold && movingPkts
                             && manager.canAddViolation(uuid)) {
                         plugin.getLogger().warning("[AntiCheat/FreeCam] "
@@ -284,6 +301,8 @@ public class PacketAntiCheatListener {
         PacketType type = event.getPacketType();
         if (type == PacketType.Play.Client.POSITION
                 || type == PacketType.Play.Client.POSITION_LOOK) {
+            // Track last positional packet time separately (used by FreeCam stall).
+            lastPosPkt.put(uuid, now);
             if (isPacketCheckEnabled("timer")) {
                 manager.recordMovePkt(uuid);
                 int maxPkts = plugin.getConfig()
@@ -522,6 +541,7 @@ public class PacketAntiCheatListener {
         packetRate.remove(uuid);
         rateWindowStart.remove(uuid);
         lastMovePkt.remove(uuid);
+        lastPosPkt.remove(uuid);
         lastSafePos.remove(uuid);
         lastActivityPkt.remove(uuid);
         lastAnyPkt.remove(uuid);
@@ -532,17 +552,28 @@ public class PacketAntiCheatListener {
     }
 
     /**
-     * Resets FreeCam stall and frozen-position state for {@code uuid}.
+     * Resets FreeCam stall, frozen-position, and PacketMove safe-position state
+     * for {@code uuid}.
      *
      * <p>Call this whenever a player is legitimately teleported (e.g. via TPA,
-     * /warp, /lobby) so that the position-stall counter doesn't start counting
-     * from the pre-teleport location and cause a false FreeCam violation at the
-     * new position.
+     * /warp, /lobby) so that:
+     * <ul>
+     *   <li>The position-stall counter does not start counting from the
+     *       pre-teleport location and cause a false FreeCam violation.</li>
+     *   <li>{@link #lastSafePos} is cleared so the PacketMove check compares
+     *       the first packet after teleportation against itself (distance = 0)
+     *       rather than against the pre-teleport location (large distance =
+     *       false PacketMove violation).</li>
+     * </ul>
      */
     public void resetFreeCamState(UUID uuid) {
         lastKnownPos.remove(uuid);
         posStallTicks.remove(uuid);
         lastPktPos.remove(uuid);
+        lastPosPkt.remove(uuid);
+        // Clear the PacketMove safe-position so the first POSITION packet after
+        // a legitimate teleport is not compared against the pre-teleport location.
+        lastSafePos.remove(uuid);
         AtomicInteger ctr = frozenPktCount.get(uuid);
         if (ctr != null) ctr.set(0);
     }

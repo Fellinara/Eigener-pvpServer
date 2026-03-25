@@ -280,7 +280,13 @@ public class AntiCheatListener implements Listener {
         // fired, flag NoFall.
         //
         // Exemptions: liquid landing, elytra gliding, vehicles, slow falling,
-        // Feather-Falling boots, ProtocolLib already handles this via PacketMove.
+        // Feather-Falling boots.
+        //
+        // The violation check is deliberately deferred by 2 ticks via
+        // runTaskLater so that EntityDamageEvent (fall damage) fires BEFORE we
+        // conclude the player bypassed it.  Without the delay, PlayerMoveEvent
+        // fires in the same tick as – but BEFORE – EntityDamageEvent, causing
+        // every legitimate fall to produce a false NoFall violation.
         if (manager.isCheckEnabled("nofall") && !isBedrockPlayer(player)) {
             boolean onGround = serverOnGround;
             boolean prevAir = manager.wasInAir(uuid);
@@ -299,10 +305,20 @@ public class AntiCheatListener implements Listener {
                             && !gliding
                             && !inVehicle
                             && !player.hasPotionEffect(PotionEffectType.SLOW_FALLING)
-                            && !hasFeatherFalling(player)
-                            && !manager.hadRecentFallDamage(uuid)
-                            && manager.canAddViolation(uuid)) {
-                        manager.addViolation(uuid, "NoFall");
+                            && !hasFeatherFalling(player)) {
+                        // Defer the actual violation check by 2 ticks so that
+                        // the EntityDamageEvent (fall damage) gets a chance to
+                        // fire and record the damage before we draw conclusions.
+                        final long landTimestamp = System.currentTimeMillis();
+                        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            if (!player.isOnline()) return;
+                            // If fall damage was recorded AFTER we landed, the
+                            // player legitimately took fall damage → not NoFall.
+                            if (manager.getLastFallDamageTime(uuid) >= landTimestamp) return;
+                            if (manager.canAddViolation(uuid)) {
+                                manager.addViolation(uuid, "NoFall");
+                            }
+                        }, 2L);
                     }
                 }
                 manager.clearAirPeakY(uuid);
