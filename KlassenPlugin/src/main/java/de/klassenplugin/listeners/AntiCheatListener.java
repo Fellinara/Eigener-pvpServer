@@ -305,7 +305,8 @@ public class AntiCheatListener implements Listener {
                             && !gliding
                             && !inVehicle
                             && !player.hasPotionEffect(PotionEffectType.SLOW_FALLING)
-                            && !hasFeatherFalling(player)) {
+                            && !hasFeatherFalling(player)
+                            && !landingNegatesFallDamage(to)) {
                         // Defer the actual violation check by 2 ticks so that
                         // the EntityDamageEvent (fall damage) gets a chance to
                         // fire and record the damage before we draw conclusions.
@@ -422,6 +423,45 @@ public class AntiCheatListener implements Listener {
         org.bukkit.inventory.ItemStack boots = player.getEquipment().getBoots();
         if (boots == null) return false;
         return boots.containsEnchantment(Enchantment.FEATHER_FALLING);
+    }
+
+    /**
+     * Returns {@code true} when the block the player lands on negates or fully
+     * absorbs fall damage, so no {@code EntityDamageEvent} with cause FALL will
+     * be fired.  These blocks must be exempted from the NoFall check, otherwise
+     * a legitimate landing produces a false violation.
+     *
+     * <ul>
+     *   <li><b>Slime block</b> – bounces the player; no fall damage.</li>
+     *   <li><b>Honey block</b> – reduces fall velocity; no fall damage.</li>
+     *   <li><b>Beds</b> – bounce the player; no fall damage.</li>
+     *   <li><b>Haybale</b> – reduces fall damage by 80 %; large falls still
+     *       deal some damage, but small ones over the 4.5-block threshold
+     *       may produce no damage event, causing a false positive.</li>
+     *   <li><b>Cobweb</b> – slows the player; no fall damage on entry.</li>
+     *   <li><b>Powder snow</b> – slows the player; no fall damage.</li>
+     * </ul>
+     */
+    private static boolean landingNegatesFallDamage(Location loc) {
+        // Check the block at the player's feet and one block below.
+        for (double offset : new double[]{0.0, -0.5, -1.0}) {
+            Block b = loc.clone().add(0, offset, 0).getBlock();
+            Material t = b.getType();
+            if (t == Material.SLIME_BLOCK
+                    || t == Material.HONEY_BLOCK
+                    || t == Material.COBWEB
+                    || t == Material.POWDER_SNOW
+                    || t == Material.HAY_BLOCK
+                    || isBedBlock(t)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isBedBlock(Material type) {
+        String name = type.name();
+        return name.endsWith("_BED");
     }
 }
 

@@ -227,8 +227,8 @@ anticheat:
       # (innerhalb 0.002 Blöcke) bevor ein Verstoß registriert wird.
       # Echte Spieler haben immer Mikro-Bewegungsrauschen; perfekte Koordinaten-
       # Einfrierung ist das zuverlässigste FreeCam-Kennzeichen.
-      # 10 Pakete (~0.5 s) reichen aus; niedrigerer Wert = schnellere Erkennung.
-      frozen-packets: 10
+      # 30 Pakete (~1.5 s) verhindert Fehlalarme beim kurzen Stehenbleiben.
+      frozen-packets: 30
 
     # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
     packetreach:
@@ -239,8 +239,11 @@ anticheat:
     # Prüft Entfernungen bei Block-Abbau-Paketen
     packetdig:
       enabled: true
-      # Maximale Reichweite in Blöcken
-      max-reach: 7.0
+      # Maximale Reichweite in Blöcken.
+      # Auf 8.5 erhöht, um Fehlalarme beim schnellen Abbauen kleiner Blöcke
+      # (Blumen, Gras) zu vermeiden: Positions-Lag zwischen Client und Server
+      # kann die scheinbare Distanz kurzfristig erhöhen.
+      max-reach: 8.5
 
     # Erkennt Timer-Hack: Client sendet zu viele Bewegungspakete pro Sekunde.
     # Vanilla sendet exakt 1 POSITION/POSITION_LOOK-Paket pro Tick (≈ 20/s).
@@ -252,10 +255,13 @@ anticheat:
 
     # Erkennt AutoClicker: zu viele ARM_ANIMATION-Pakete (Mausklinks) pro Sekunde.
     # Ein Mensch klickt maximal ~16–18×/s (Butterfly/Jitter-Klicken).
-    # AutoClicker-Module erzeugen 20–40+ Klicks/s.
+    # Beim schnellen Abbauen von Instant-Break-Blöcken (Blumen, Gras) sendet
+    # der Client ebenfalls ARM_ANIMATION-Pakete – daher Schwellwert auf 28
+    # erhöht, um Fehlalarme beim schnellen Abbauen zu vermeiden.
+    # AutoClicker-Module erzeugen typischerweise 30–50+ Klicks/s.
     autoclicker:
       enabled: true
-      max-swings-per-second: 20
+      max-swings-per-second: 28
 
   # Hack-Client-Erkennung via Client-Brand und Plugin-Kanal-Registrierung
   # (Erfordert ProtocolLib – wird automatisch aktiviert wenn ProtocolLib verfügbar ist)
