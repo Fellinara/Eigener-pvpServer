@@ -74,6 +74,11 @@ public class ShopCommand implements TabExecutor {
             book.setAmount(amount);
             item        = book;
             displayName = ShopManager.getEnchantedBookDisplayName(matName);
+        } else if (ShopManager.isSpawnerKey(matName)) {
+            ItemStack spawner = ShopManager.buildSpawner(matName);
+            spawner.setAmount(amount);
+            item        = spawner;
+            displayName = ShopManager.getSpawnerDisplayName(matName);
         } else {
             Material mat = Material.matchMaterial(matName);
             if (mat == null) { p.sendMessage(KlassenPlugin.colorizeComponent("&cUnbekanntes Material!")); return; }

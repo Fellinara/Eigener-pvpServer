@@ -4,10 +4,13 @@ import de.klassenplugin.KlassenPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.block.CreatureSpawner;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.EntityType;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.BlockStateMeta;
 import org.bukkit.inventory.meta.EnchantmentStorageMeta;
 
 import java.io.File;
@@ -31,15 +34,16 @@ public class ShopManager {
     public static final LinkedHashMap<String, Object[]> ENCHANTED_BOOK_ITEMS = new LinkedHashMap<>();
 
     /**
-     * Items that cannot be sold via the shop.
-     *
-     * <p>Previously contained armor, tools, and weapons.  As of the current
-     * version this set is intentionally <b>empty</b>: every item shown in the
-     * shop has a sell price (calculated dynamically as 60 % of buy price for
-     * items ≥ 100 coins, 50 % for cheaper items).  Items not listed in
-     * shop.yml fall back to {@code economy.default-sell-price}.
+     * Spawner shop entries.  Key (e.g. {@code "ZOMBIE_SPAWNER"}) →
+     * {@code {German display name, Bukkit EntityType}}.
      */
-    private static final Set<String> NON_SELLABLE = Set.of();
+    public static final LinkedHashMap<String, Object[]> SPAWNER_ITEMS = new LinkedHashMap<>();
+
+    /**
+     * Items that cannot be sold via the shop.
+     * Spawners are buy-only — selling them back would be a money exploit.
+     */
+    private static final Set<String> NON_SELLABLE = Set.of("ZOMBIE_SPAWNER", "SKELETON_SPAWNER");
 
     static {
         CATEGORIES.put("Mob Drops", new String[]{
@@ -207,6 +211,14 @@ public class ShopManager {
             "QUARTZ","QUARTZ_BLOCK","SMOOTH_QUARTZ"
         });
         CATEGORY_ICONS.put("Erze", Material.DIAMOND_ORE);
+
+        CATEGORIES.put("Spawner", new String[]{
+            "ZOMBIE_SPAWNER","SKELETON_SPAWNER"
+        });
+        CATEGORY_ICONS.put("Spawner", Material.SPAWNER);
+
+        SPAWNER_ITEMS.put("ZOMBIE_SPAWNER",   new Object[]{"Zombie-Spawner",   EntityType.ZOMBIE});
+        SPAWNER_ITEMS.put("SKELETON_SPAWNER", new Object[]{"Skelett-Spawner",  EntityType.SKELETON});
     }
 
     /**
@@ -444,6 +456,8 @@ public class ShopManager {
         {"MUSIC_DISC_11",120.0,60.0},{"MUSIC_DISC_WAIT",100.0,50.0},
         {"MUSIC_DISC_OTHERSIDE",150.0,75.0},{"MUSIC_DISC_5",120.0,60.0},
         {"MUSIC_DISC_PIGSTEP",200.0,100.0},{"MUSIC_DISC_RELIC",200.0,100.0},
+        // ── Spawner (buy-only, not re-sellable) ──
+        {"ZOMBIE_SPAWNER",100000.0,-1.0},{"SKELETON_SPAWNER",100000.0,-1.0},
     };
 
     private final KlassenPlugin plugin;
@@ -484,6 +498,7 @@ public class ShopManager {
         migratePvpAndEnchantments();
         migrateMaceAndEnchants();
         migrateNetheriteTools();
+        migrateSpawners();
     }
 
     /**
@@ -701,6 +716,29 @@ public class ShopManager {
         if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 
+    /**
+     * Adds Zombie- and Skeleton-Spawner as buy-only shop items (100,000 coins each).
+     * Guarded by its own migration flag so it runs only once per install.
+     */
+    private void migrateSpawners() {
+        if (shopConfig.getBoolean("migrated-spawners", false)) return;
+
+        Object[][] newItems = {
+            {"ZOMBIE_SPAWNER",100000.0,-1.0},
+            {"SKELETON_SPAWNER",100000.0,-1.0},
+        };
+        boolean changed = false;
+        for (Object[] row : newItems) {
+            String key = ((String) row[0]).toUpperCase();
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+                changed = true;
+            }
+        }
+        shopConfig.set("migrated-spawners", true);
+        if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
     public void save() {
         shopConfig.set("items", null);
         for (Map.Entry<String, double[]> e : items.entrySet()) {
@@ -805,5 +843,37 @@ public class ShopManager {
             book.setItemMeta(meta);
         }
         return book;
+    }
+
+    // ── Spawner helpers ───────────────────────────────────────────────────────
+
+    /** Returns {@code true} if {@code key} is a registered spawner shop entry. */
+    public static boolean isSpawnerKey(String key) {
+        return SPAWNER_ITEMS.containsKey(key.toUpperCase());
+    }
+
+    /** Returns the German display name for a spawner key, or the key itself as fallback. */
+    public static String getSpawnerDisplayName(String key) {
+        Object[] data = SPAWNER_ITEMS.get(key.toUpperCase());
+        return data != null ? (String) data[0] : key;
+    }
+
+    /**
+     * Builds a {@link Material#SPAWNER} {@link ItemStack} with the mob type
+     * pre-configured via {@link BlockStateMeta}.  The spawner will spawn the
+     * mob type associated with {@code key} when placed.
+     */
+    public static ItemStack buildSpawner(String key) {
+        Object[] data = SPAWNER_ITEMS.get(key.toUpperCase());
+        if (data == null) return new ItemStack(Material.BARRIER);
+
+        ItemStack spawner = new ItemStack(Material.SPAWNER);
+        if (spawner.getItemMeta() instanceof BlockStateMeta bsMeta
+                && bsMeta.getBlockState() instanceof CreatureSpawner cs) {
+            cs.setSpawnedType((EntityType) data[1]);
+            bsMeta.setBlockState(cs);
+            spawner.setItemMeta(bsMeta);
+        }
+        return spawner;
     }
 }

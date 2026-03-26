@@ -160,12 +160,15 @@ public class ShopGui {
         for (int i = start; i < end; i++) {
             String matName = catItems[i];
 
-            // Determine icon and display name (special handling for enchanted books)
+            // Determine icon and display name (special handling for enchanted books and spawners)
             final ItemStack icon;
             final String displayName;
             if (ShopManager.isEnchantedBookKey(matName)) {
                 icon        = ShopManager.buildEnchantedBook(matName);
                 displayName = ShopManager.getEnchantedBookDisplayName(matName);
+            } else if (ShopManager.isSpawnerKey(matName)) {
+                icon        = ShopManager.buildSpawner(matName);
+                displayName = ShopManager.getSpawnerDisplayName(matName);
             } else {
                 Material mat = Material.matchMaterial(matName);
                 icon        = (mat != null && mat != Material.AIR)
@@ -284,6 +287,11 @@ public class ShopGui {
             book.setAmount(amount);
             item        = book;
             displayName = ShopManager.getEnchantedBookDisplayName(matName);
+        } else if (ShopManager.isSpawnerKey(matName)) {
+            ItemStack spawner = ShopManager.buildSpawner(matName);
+            spawner.setAmount(amount);
+            item        = spawner;
+            displayName = ShopManager.getSpawnerDisplayName(matName);
         } else {
             Material mat = Material.matchMaterial(matName);
             if (mat == null) return;
