@@ -211,7 +211,7 @@ anticheat:
 
     # Erkennt FreeCam: eingefrorene Server-Position bei aktiven POSITION-Paketen
     freecam:
-      enabled: true
+      enabled: false
       # Sekunden, die eine Serverposition unverändert bleiben darf, während
       # gleichzeitig POSITION/POSITION_LOOK-Pakete ankommen (lastPosPkt-Zeitstempel,
       # NICHT FLYING-Pakete), bevor ein FreeCam-Verstoß registriert wird.
@@ -260,7 +260,7 @@ anticheat:
     # erhöht, um Fehlalarme beim schnellen Abbauen zu vermeiden.
     # AutoClicker-Module erzeugen typischerweise 30–50+ Klicks/s.
     autoclicker:
-      enabled: true
+      enabled: false
       max-swings-per-second: 28
 
   # Hack-Client-Erkennung via Client-Brand und Plugin-Kanal-Registrierung
