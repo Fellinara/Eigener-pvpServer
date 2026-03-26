@@ -393,7 +393,7 @@ alliance:
 
 # ClearLag – automatische Lag-Bereinigung
 clearlag:
-  enabled: true
+  enabled: false
   # Intervall zwischen Bereinigungen in Minuten
   interval-minutes: 30
   # Warnung X Minuten/Sekunden vor der Bereinigung (komma-separierte Sekunden)
