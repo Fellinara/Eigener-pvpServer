@@ -377,6 +377,10 @@ public class AntiCheatManager {
         // Also reset air state so Fly/NoFall don't flag the landing after teleport.
         resetAirTicks(playerId);
         clearAirPeakY(playerId);
+        // Clear the per-second movement-packet counter so that any pre-teleport
+        // packet accumulation does not cause a false Timer violation once the
+        // 2-second exemption window expires and normal packet recording resumes.
+        movePktTimes.remove(playerId);
         // Reset ProtocolLib FreeCam stall counters so the new position doesn't
         // immediately trigger a FreeCam violation.
         if (plugin.getProtocolLibManager() != null

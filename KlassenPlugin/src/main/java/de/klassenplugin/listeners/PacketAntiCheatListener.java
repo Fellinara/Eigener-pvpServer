@@ -304,14 +304,22 @@ public class PacketAntiCheatListener {
             // Track last positional packet time separately (used by FreeCam stall).
             lastPosPkt.put(uuid, now);
             if (isPacketCheckEnabled("timer")) {
-                manager.recordMovePkt(uuid);
-                int maxPkts = plugin.getConfig()
-                        .getInt("anticheat.packet.timer.max-packets-per-second", 22);
-                if (manager.getMovePktsInLastSecond(uuid) > maxPkts
-                        && manager.canAddViolation(uuid)) {
-                    plugin.getLogger().warning("[AntiCheat/Timer] " + player.getName()
-                            + " – " + manager.getMovePktsInLastSecond(uuid) + " POSITION pkts/s");
-                    manager.addViolation(uuid, "Timer");
+                // Skip the timer check (and do NOT record the packet) while the
+                // player is within the 2-second teleport exemption window.  After a
+                // teleport the client sends a burst of re-sync POSITION packets;
+                // both recording these packets AND checking the violation are bypassed
+                // so that neither the accumulated count nor the violation flag fires
+                // a false Timer alert at or after the teleport.
+                if (!manager.wasRecentlyTeleported(uuid)) {
+                    manager.recordMovePkt(uuid);
+                    int maxPkts = plugin.getConfig()
+                            .getInt("anticheat.packet.timer.max-packets-per-second", 22);
+                    if (manager.getMovePktsInLastSecond(uuid) > maxPkts
+                            && manager.canAddViolation(uuid)) {
+                        plugin.getLogger().warning("[AntiCheat/Timer] " + player.getName()
+                                + " – " + manager.getMovePktsInLastSecond(uuid) + " POSITION pkts/s");
+                        manager.addViolation(uuid, "Timer");
+                    }
                 }
             }
         }

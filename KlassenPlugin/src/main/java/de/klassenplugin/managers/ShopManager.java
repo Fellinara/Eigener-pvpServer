@@ -30,26 +30,16 @@ public class ShopManager {
      */
     public static final LinkedHashMap<String, Object[]> ENCHANTED_BOOK_ITEMS = new LinkedHashMap<>();
 
-    /** Materials that can be bought but never sold via the shop. */
-    private static final Set<String> NON_SELLABLE = Set.of(
-        // Armor
-        "LEATHER_HELMET","LEATHER_CHESTPLATE","LEATHER_LEGGINGS","LEATHER_BOOTS",
-        "CHAINMAIL_HELMET","CHAINMAIL_CHESTPLATE","CHAINMAIL_LEGGINGS","CHAINMAIL_BOOTS",
-        "IRON_HELMET","IRON_CHESTPLATE","IRON_LEGGINGS","IRON_BOOTS",
-        "GOLDEN_HELMET","GOLDEN_CHESTPLATE","GOLDEN_LEGGINGS","GOLDEN_BOOTS",
-        "DIAMOND_HELMET","DIAMOND_CHESTPLATE","DIAMOND_LEGGINGS","DIAMOND_BOOTS",
-        "NETHERITE_HELMET","NETHERITE_CHESTPLATE","NETHERITE_LEGGINGS","NETHERITE_BOOTS",
-        "TURTLE_HELMET","SHIELD",
-        // Tools
-        "WOODEN_PICKAXE","STONE_PICKAXE","IRON_PICKAXE","GOLDEN_PICKAXE","DIAMOND_PICKAXE","NETHERITE_PICKAXE",
-        "WOODEN_AXE","STONE_AXE","IRON_AXE","GOLDEN_AXE","DIAMOND_AXE","NETHERITE_AXE",
-        "WOODEN_SHOVEL","STONE_SHOVEL","IRON_SHOVEL","GOLDEN_SHOVEL","DIAMOND_SHOVEL","NETHERITE_SHOVEL",
-        "WOODEN_HOE","STONE_HOE","IRON_HOE","GOLDEN_HOE","DIAMOND_HOE","NETHERITE_HOE",
-        "FISHING_ROD","SHEARS","FLINT_AND_STEEL",
-        // Weapons
-        "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD","NETHERITE_SWORD",
-        "BOW","CROSSBOW","TRIDENT"
-    );
+    /**
+     * Items that cannot be sold via the shop.
+     *
+     * <p>Previously contained armor, tools, and weapons.  As of the current
+     * version this set is intentionally <b>empty</b>: every item shown in the
+     * shop has a sell price (calculated dynamically as 60 % of buy price for
+     * items ≥ 100 coins, 50 % for cheaper items).  Items not listed in
+     * shop.yml fall back to {@code economy.default-sell-price}.
+     */
+    private static final Set<String> NON_SELLABLE = Set.of();
 
     static {
         CATEGORIES.put("Mob Drops", new String[]{
@@ -102,7 +92,7 @@ public class ShopManager {
 
         CATEGORIES.put("Waffen", new String[]{
             "WOODEN_SWORD","STONE_SWORD","IRON_SWORD","GOLDEN_SWORD","DIAMOND_SWORD","NETHERITE_SWORD",
-            "BOW","CROSSBOW","TRIDENT"
+            "BOW","CROSSBOW","TRIDENT","MACE"
         });
         CATEGORY_ICONS.put("Waffen", Material.IRON_SWORD);
 
@@ -134,7 +124,9 @@ public class ShopManager {
             "BOOK_UNBREAKING_3","BOOK_MENDING_1",
             "BOOK_POWER_5","BOOK_FLAME_1","BOOK_INFINITY_1","BOOK_PUNCH_2",
             "BOOK_EFFICIENCY_5","BOOK_FORTUNE_3","BOOK_SILK_TOUCH_1",
-            "BOOK_SWIFT_SNEAK_3","BOOK_SOUL_SPEED_3"
+            "BOOK_SWIFT_SNEAK_3","BOOK_SOUL_SPEED_3",
+            // Mace enchantments (MC 1.21+)
+            "BOOK_WIND_BURST_3","BOOK_DENSITY_5","BOOK_BREACH_4"
         });
         CATEGORY_ICONS.put("Verzauberungen", Material.ENCHANTED_BOOK);
 
@@ -165,6 +157,10 @@ public class ShopManager {
         ENCHANTED_BOOK_ITEMS.put("BOOK_SILK_TOUCH_1",            new Object[]{"Behutsamkeit I",           "silk_touch",            1});
         ENCHANTED_BOOK_ITEMS.put("BOOK_SWIFT_SNEAK_3",           new Object[]{"Schnellschleichen III",    "swift_sneak",           3});
         ENCHANTED_BOOK_ITEMS.put("BOOK_SOUL_SPEED_3",            new Object[]{"Seelentempo III",          "soul_speed",            3});
+        // ── Mace enchantments (MC 1.21+) ────────────────────────────────────
+        ENCHANTED_BOOK_ITEMS.put("BOOK_WIND_BURST_3",            new Object[]{"Windschwall III",          "wind_burst",            3});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_DENSITY_5",               new Object[]{"Dichte V",                 "density",               5});
+        ENCHANTED_BOOK_ITEMS.put("BOOK_BREACH_4",                new Object[]{"Durchdringung IV",         "breach",                4});
 
         CATEGORIES.put("Brauen", new String[]{
             "GLASS_BOTTLE","POTION","NETHER_WART","GLOWSTONE_DUST","REDSTONE",
@@ -364,8 +360,9 @@ public class ShopManager {
         {"COMPASS",25.0,10.0},{"CLOCK",40.0,18.0},{"FLINT_AND_STEEL",20.0,8.0},
         {"BUCKET",15.0,6.0},{"WATER_BUCKET",20.0,8.0},{"LAVA_BUCKET",25.0,12.0},{"MILK_BUCKET",20.0,10.0},{"POWDER_SNOW_BUCKET",15.0,6.0},
         // ── Weapons ──
-        {"WOODEN_SWORD",15.0,6.0},{"STONE_SWORD",25.0,10.0},{"IRON_SWORD",70.0,30.0},{"GOLDEN_SWORD",55.0,22.0},{"DIAMOND_SWORD",350.0,140.0},
-        {"BOW",30.0,12.0},{"CROSSBOW",50.0,20.0},{"TRIDENT",400.0,180.0},
+        {"WOODEN_SWORD",15.0,7.0},{"STONE_SWORD",25.0,12.0},{"IRON_SWORD",70.0,35.0},{"GOLDEN_SWORD",55.0,27.0},{"DIAMOND_SWORD",350.0,210.0},
+        {"BOW",30.0,15.0},{"CROSSBOW",50.0,25.0},{"TRIDENT",400.0,240.0},
+        {"MACE",500000.0,200000.0},
         // ── Armor ──
         {"LEATHER_HELMET",20.0,8.0},{"LEATHER_CHESTPLATE",30.0,12.0},{"LEATHER_LEGGINGS",25.0,10.0},{"LEATHER_BOOTS",18.0,7.0},
         {"IRON_HELMET",60.0,25.0},{"IRON_CHESTPLATE",100.0,40.0},{"IRON_LEGGINGS",80.0,32.0},{"IRON_BOOTS",50.0,20.0},
@@ -373,21 +370,23 @@ public class ShopManager {
         {"DIAMOND_HELMET",280.0,110.0},{"DIAMOND_CHESTPLATE",450.0,180.0},{"DIAMOND_LEGGINGS",380.0,150.0},{"DIAMOND_BOOTS",250.0,100.0},
         {"TURTLE_HELMET",200.0,90.0},{"SHIELD",40.0,16.0},
         // ── Netherite Armor & Sword ──
-        {"NETHERITE_HELMET",900.0,-1.0},{"NETHERITE_CHESTPLATE",1000.0,-1.0},
-        {"NETHERITE_LEGGINGS",950.0,-1.0},{"NETHERITE_BOOTS",800.0,-1.0},
-        {"NETHERITE_SWORD",1200.0,-1.0},
+        {"NETHERITE_HELMET",900.0,540.0},{"NETHERITE_CHESTPLATE",1000.0,600.0},
+        {"NETHERITE_LEGGINGS",950.0,570.0},{"NETHERITE_BOOTS",800.0,480.0},
+        {"NETHERITE_SWORD",1200.0,720.0},
         // ── Enchanted Books ──
-        {"BOOK_SHARPNESS_5",500.0,-1.0},{"BOOK_SWEEPING_EDGE_3",300.0,-1.0},
-        {"BOOK_FIRE_ASPECT_2",200.0,-1.0},{"BOOK_KNOCKBACK_2",150.0,-1.0},{"BOOK_LOOTING_3",400.0,-1.0},
-        {"BOOK_PROTECTION_4",400.0,-1.0},{"BOOK_FIRE_PROTECTION_4",250.0,-1.0},
-        {"BOOK_BLAST_PROTECTION_4",250.0,-1.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,-1.0},
-        {"BOOK_THORNS_3",300.0,-1.0},{"BOOK_FEATHER_FALLING_4",200.0,-1.0},
-        {"BOOK_DEPTH_STRIDER_3",300.0,-1.0},{"BOOK_AQUA_AFFINITY_1",150.0,-1.0},
-        {"BOOK_RESPIRATION_3",200.0,-1.0},{"BOOK_UNBREAKING_3",350.0,-1.0},
-        {"BOOK_MENDING_1",600.0,-1.0},{"BOOK_POWER_5",450.0,-1.0},
-        {"BOOK_FLAME_1",150.0,-1.0},{"BOOK_INFINITY_1",400.0,-1.0},{"BOOK_PUNCH_2",200.0,-1.0},
-        {"BOOK_EFFICIENCY_5",300.0,-1.0},{"BOOK_FORTUNE_3",500.0,-1.0},
-        {"BOOK_SILK_TOUCH_1",400.0,-1.0},{"BOOK_SWIFT_SNEAK_3",350.0,-1.0},{"BOOK_SOUL_SPEED_3",250.0,-1.0},
+        {"BOOK_SHARPNESS_5",500.0,300.0},{"BOOK_SWEEPING_EDGE_3",300.0,180.0},
+        {"BOOK_FIRE_ASPECT_2",200.0,120.0},{"BOOK_KNOCKBACK_2",150.0,90.0},{"BOOK_LOOTING_3",400.0,240.0},
+        {"BOOK_PROTECTION_4",400.0,240.0},{"BOOK_FIRE_PROTECTION_4",250.0,150.0},
+        {"BOOK_BLAST_PROTECTION_4",250.0,150.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,150.0},
+        {"BOOK_THORNS_3",300.0,180.0},{"BOOK_FEATHER_FALLING_4",200.0,120.0},
+        {"BOOK_DEPTH_STRIDER_3",300.0,180.0},{"BOOK_AQUA_AFFINITY_1",150.0,90.0},
+        {"BOOK_RESPIRATION_3",200.0,120.0},{"BOOK_UNBREAKING_3",350.0,210.0},
+        {"BOOK_MENDING_1",600.0,360.0},{"BOOK_POWER_5",450.0,270.0},
+        {"BOOK_FLAME_1",150.0,90.0},{"BOOK_INFINITY_1",400.0,240.0},{"BOOK_PUNCH_2",200.0,120.0},
+        {"BOOK_EFFICIENCY_5",300.0,180.0},{"BOOK_FORTUNE_3",500.0,300.0},
+        {"BOOK_SILK_TOUCH_1",400.0,240.0},{"BOOK_SWIFT_SNEAK_3",350.0,210.0},{"BOOK_SOUL_SPEED_3",250.0,150.0},
+        // ── Mace enchantments (MC 1.21+) ──
+        {"BOOK_WIND_BURST_3",600.0,360.0},{"BOOK_DENSITY_5",400.0,240.0},{"BOOK_BREACH_4",450.0,270.0},
         // ── Brewing ──
         {"GLASS_BOTTLE",5.0,2.0},{"POTION",8.0,3.0},{"GLISTERING_MELON_SLICE",15.0,7.0},
         // ── Redstone ──
@@ -480,6 +479,7 @@ public class ShopManager {
         migrateRedstoneItems();
         migrateFullShopDefaults();
         migratePvpAndEnchantments();
+        migrateMaceAndEnchants();
     }
 
     /**
@@ -596,22 +596,22 @@ public class ShopManager {
         if (shopConfig.getBoolean("migrated-pvp-enchantments", false)) return;
 
         Object[][] newItems = {
-            // Netherite armor + sword
-            {"NETHERITE_HELMET",900.0,-1.0},{"NETHERITE_CHESTPLATE",1000.0,-1.0},
-            {"NETHERITE_LEGGINGS",950.0,-1.0},{"NETHERITE_BOOTS",800.0,-1.0},
-            {"NETHERITE_SWORD",1200.0,-1.0},
-            // Enchanted books
-            {"BOOK_SHARPNESS_5",500.0,-1.0},{"BOOK_SWEEPING_EDGE_3",300.0,-1.0},
-            {"BOOK_FIRE_ASPECT_2",200.0,-1.0},{"BOOK_KNOCKBACK_2",150.0,-1.0},{"BOOK_LOOTING_3",400.0,-1.0},
-            {"BOOK_PROTECTION_4",400.0,-1.0},{"BOOK_FIRE_PROTECTION_4",250.0,-1.0},
-            {"BOOK_BLAST_PROTECTION_4",250.0,-1.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,-1.0},
-            {"BOOK_THORNS_3",300.0,-1.0},{"BOOK_FEATHER_FALLING_4",200.0,-1.0},
-            {"BOOK_DEPTH_STRIDER_3",300.0,-1.0},{"BOOK_AQUA_AFFINITY_1",150.0,-1.0},
-            {"BOOK_RESPIRATION_3",200.0,-1.0},{"BOOK_UNBREAKING_3",350.0,-1.0},
-            {"BOOK_MENDING_1",600.0,-1.0},{"BOOK_POWER_5",450.0,-1.0},
-            {"BOOK_FLAME_1",150.0,-1.0},{"BOOK_INFINITY_1",400.0,-1.0},{"BOOK_PUNCH_2",200.0,-1.0},
-            {"BOOK_EFFICIENCY_5",300.0,-1.0},{"BOOK_FORTUNE_3",500.0,-1.0},
-            {"BOOK_SILK_TOUCH_1",400.0,-1.0},{"BOOK_SWIFT_SNEAK_3",350.0,-1.0},{"BOOK_SOUL_SPEED_3",250.0,-1.0},
+            // Netherite armor + sword (60% sell ratio for items ≥ 100 coins)
+            {"NETHERITE_HELMET",900.0,540.0},{"NETHERITE_CHESTPLATE",1000.0,600.0},
+            {"NETHERITE_LEGGINGS",950.0,570.0},{"NETHERITE_BOOTS",800.0,480.0},
+            {"NETHERITE_SWORD",1200.0,720.0},
+            // Enchanted books (60% sell ratio for items ≥ 100 coins)
+            {"BOOK_SHARPNESS_5",500.0,300.0},{"BOOK_SWEEPING_EDGE_3",300.0,180.0},
+            {"BOOK_FIRE_ASPECT_2",200.0,120.0},{"BOOK_KNOCKBACK_2",150.0,90.0},{"BOOK_LOOTING_3",400.0,240.0},
+            {"BOOK_PROTECTION_4",400.0,240.0},{"BOOK_FIRE_PROTECTION_4",250.0,150.0},
+            {"BOOK_BLAST_PROTECTION_4",250.0,150.0},{"BOOK_PROJECTILE_PROTECTION_4",250.0,150.0},
+            {"BOOK_THORNS_3",300.0,180.0},{"BOOK_FEATHER_FALLING_4",200.0,120.0},
+            {"BOOK_DEPTH_STRIDER_3",300.0,180.0},{"BOOK_AQUA_AFFINITY_1",150.0,90.0},
+            {"BOOK_RESPIRATION_3",200.0,120.0},{"BOOK_UNBREAKING_3",350.0,210.0},
+            {"BOOK_MENDING_1",600.0,360.0},{"BOOK_POWER_5",450.0,270.0},
+            {"BOOK_FLAME_1",150.0,90.0},{"BOOK_INFINITY_1",400.0,240.0},{"BOOK_PUNCH_2",200.0,120.0},
+            {"BOOK_EFFICIENCY_5",300.0,180.0},{"BOOK_FORTUNE_3",500.0,300.0},
+            {"BOOK_SILK_TOUCH_1",400.0,240.0},{"BOOK_SWIFT_SNEAK_3",350.0,210.0},{"BOOK_SOUL_SPEED_3",250.0,150.0},
         };
         boolean changed = false;
         for (Object[] row : newItems) {
@@ -622,6 +622,53 @@ public class ShopManager {
             }
         }
         shopConfig.set("migrated-pvp-enchantments", true);
+        if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    /**
+     * Adds the MACE (500,000 coins) and Mace enchantments (Wind Burst, Density,
+     * Breach) to existing shop.yml files.  Also fixes the stored sell price for
+     * any item that was previously written as -1 but now has a valid buy price
+     * (netherite armor/sword, enchanted books) so that the YAML on disk is
+     * consistent with the dynamically calculated sell price.
+     *
+     * <p>Guarded by its own migration flag so it runs only once per install.
+     */
+    private void migrateMaceAndEnchants() {
+        if (shopConfig.getBoolean("migrated-mace-enchants", false)) return;
+
+        Object[][] newItems = {
+            // Mace – new premium weapon (MC 1.21+)
+            {"MACE",500000.0,200000.0},
+            // Mace enchantments
+            {"BOOK_WIND_BURST_3",600.0,360.0},
+            {"BOOK_DENSITY_5",400.0,240.0},
+            {"BOOK_BREACH_4",450.0,270.0},
+        };
+        boolean changed = false;
+        for (Object[] row : newItems) {
+            String key = ((String) row[0]).toUpperCase();
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+                changed = true;
+            }
+        }
+
+        // Fix previously-stored -1 sell prices for netherite items and enchanted books.
+        // getSellPrice() already calculates dynamically from buy price (ignoring the
+        // stored value when buy > 0), but writing the correct value to shop.yml keeps
+        // the file human-readable and consistent with the live economy.
+        for (Map.Entry<String, double[]> entry : items.entrySet()) {
+            double[] p = entry.getValue();
+            if (p[0] > 0 && p[1] < 0) {
+                // Recalculate sell price: 60% for items ≥ 100 coins, 50% otherwise.
+                double ratio = p[0] >= VALUABLE_THRESHOLD ? 0.60 : 0.50;
+                p[1] = p[0] * ratio;
+                changed = true;
+            }
+        }
+
+        shopConfig.set("migrated-mace-enchants", true);
         if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 
@@ -676,9 +723,10 @@ public class ShopManager {
 
     /**
      * Returns the effective sell price per item for {@code mat}.
-     * Returns -1 for non-sellable items (armor, tools, weapons) and when
-     * selling is fully disabled.  Falls back to {@code economy.default-sell-price}
-     * for materials not listed in shop.yml.
+     * Returns -1 when selling is fully disabled ({@code economy.default-sell-price = -1}).
+     * Falls back to {@code economy.default-sell-price} for materials not listed
+     * in shop.yml (e.g. items players gathered in the wild that are not sold by
+     * the shop but can still be turned in for a small amount of coins).
      */
     public double getEffectiveSellPrice(String mat) {
         if (NON_SELLABLE.contains(mat.toUpperCase())) return -1;
