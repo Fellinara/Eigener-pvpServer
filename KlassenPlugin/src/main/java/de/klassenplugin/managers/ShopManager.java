@@ -81,10 +81,10 @@ public class ShopManager {
         CATEGORY_ICONS.put("Farben", Material.RED_DYE);
 
         CATEGORIES.put("Werkzeuge", new String[]{
-            "WOODEN_PICKAXE","STONE_PICKAXE","IRON_PICKAXE","GOLDEN_PICKAXE","DIAMOND_PICKAXE",
-            "WOODEN_AXE","STONE_AXE","IRON_AXE","GOLDEN_AXE","DIAMOND_AXE",
-            "WOODEN_SHOVEL","STONE_SHOVEL","IRON_SHOVEL","GOLDEN_SHOVEL","DIAMOND_SHOVEL",
-            "WOODEN_HOE","STONE_HOE","IRON_HOE","GOLDEN_HOE","DIAMOND_HOE",
+            "WOODEN_PICKAXE","STONE_PICKAXE","IRON_PICKAXE","GOLDEN_PICKAXE","DIAMOND_PICKAXE","NETHERITE_PICKAXE",
+            "WOODEN_AXE","STONE_AXE","IRON_AXE","GOLDEN_AXE","DIAMOND_AXE","NETHERITE_AXE",
+            "WOODEN_SHOVEL","STONE_SHOVEL","IRON_SHOVEL","GOLDEN_SHOVEL","DIAMOND_SHOVEL","NETHERITE_SHOVEL",
+            "WOODEN_HOE","STONE_HOE","IRON_HOE","GOLDEN_HOE","DIAMOND_HOE","NETHERITE_HOE",
             "FISHING_ROD","SHEARS","MAP","COMPASS","CLOCK","FLINT_AND_STEEL",
             "BUCKET","WATER_BUCKET","LAVA_BUCKET","MILK_BUCKET","POWDER_SNOW_BUCKET"
         });
@@ -356,6 +356,9 @@ public class ShopManager {
         {"WOODEN_AXE",12.0,5.0},{"STONE_AXE",20.0,8.0},{"IRON_AXE",60.0,25.0},{"GOLDEN_AXE",50.0,20.0},{"DIAMOND_AXE",300.0,120.0},
         {"WOODEN_SHOVEL",10.0,4.0},{"STONE_SHOVEL",16.0,6.0},{"IRON_SHOVEL",50.0,20.0},{"GOLDEN_SHOVEL",40.0,16.0},{"DIAMOND_SHOVEL",250.0,100.0},
         {"WOODEN_HOE",10.0,4.0},{"STONE_HOE",16.0,6.0},{"IRON_HOE",50.0,20.0},{"GOLDEN_HOE",40.0,16.0},{"DIAMOND_HOE",250.0,100.0},
+        // ── Netherite Tools ──
+        {"NETHERITE_PICKAXE",1000.0,600.0},{"NETHERITE_AXE",1000.0,600.0},
+        {"NETHERITE_SHOVEL",900.0,540.0},{"NETHERITE_HOE",900.0,540.0},
         {"FISHING_ROD",20.0,8.0},{"SHEARS",20.0,8.0},{"MAP",10.0,4.0},
         {"COMPASS",25.0,10.0},{"CLOCK",40.0,18.0},{"FLINT_AND_STEEL",20.0,8.0},
         {"BUCKET",15.0,6.0},{"WATER_BUCKET",20.0,8.0},{"LAVA_BUCKET",25.0,12.0},{"MILK_BUCKET",20.0,10.0},{"POWDER_SNOW_BUCKET",15.0,6.0},
@@ -480,6 +483,7 @@ public class ShopManager {
         migrateFullShopDefaults();
         migratePvpAndEnchantments();
         migrateMaceAndEnchants();
+        migrateNetheriteTools();
     }
 
     /**
@@ -669,6 +673,31 @@ public class ShopManager {
         }
 
         shopConfig.set("migrated-mace-enchants", true);
+        if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    /**
+     * Adds netherite tools (pickaxe, axe, shovel, hoe) to existing shop.yml files.
+     * Guarded by its own migration flag so it runs only once per install.
+     */
+    private void migrateNetheriteTools() {
+        if (shopConfig.getBoolean("migrated-netherite-tools", false)) return;
+
+        Object[][] newItems = {
+            {"NETHERITE_PICKAXE",1000.0,600.0},
+            {"NETHERITE_AXE",1000.0,600.0},
+            {"NETHERITE_SHOVEL",900.0,540.0},
+            {"NETHERITE_HOE",900.0,540.0},
+        };
+        boolean changed = false;
+        for (Object[] row : newItems) {
+            String key = ((String) row[0]).toUpperCase();
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+                changed = true;
+            }
+        }
+        shopConfig.set("migrated-netherite-tools", true);
         if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 
