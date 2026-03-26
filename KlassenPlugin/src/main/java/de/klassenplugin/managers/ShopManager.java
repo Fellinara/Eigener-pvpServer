@@ -684,8 +684,7 @@ public class ShopManager {
     public double getBuyPrice(String mat) {
         double[] p = items.get(mat.toUpperCase());
         if (p == null || p[0] < 0) return -1;
-        double boost = plugin.getWeeklyChangelogManager() != null ? plugin.getWeeklyChangelogManager().getBoostMultiplier(mat.toUpperCase()) : 1.0;
-        return p[0] * plugin.getEconomyManager().getInflationMultiplier() * boost;
+        return p[0];
     }
 
     /**

@@ -351,3 +351,6 @@ permissions:
   klassenplugin.maintenance.bypass:
     description: Kann sich auch während der Wartung einloggen
     default: op
+  klassenplugin.nightlock.bypass:
+    description: Kann sich auch während der Nacht-Sperre (00:00–07:00) einloggen
+    default: op

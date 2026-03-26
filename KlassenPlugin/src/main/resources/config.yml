@@ -418,3 +418,18 @@ maintenance:
 
       &8▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 
+# Nacht-Sperre – Server gesperrt von 00:00 bis 07:00 Uhr
+night-lock:
+  enabled: true
+  # Nachricht die beim Verbinden während der Nacht-Sperre gezeigt wird
+  kick-message: |
+    &8▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+      &c&l🌙 SERVER GESPERRT 🌙
+
+      &7Der Server ist von &e00:00 &7bis &e07:00 Uhr
+      &7gesperrt. Bitte versuche es
+      &7nach 7 Uhr morgens erneut.
+
+      &8▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+

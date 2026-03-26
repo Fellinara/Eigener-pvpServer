@@ -8,6 +8,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerLoginEvent;
 
+import java.time.LocalTime;
+
 public class JoinListener implements Listener {
 
     private final KlassenPlugin plugin;
@@ -16,13 +18,30 @@ public class JoinListener implements Listener {
         this.plugin = plugin;
     }
 
-    /** Block non-admins while maintenance is active (login phase = before world load). */
+    /**
+     * Block non-admins when maintenance is active or during the night lock (00:00–07:00).
+     * Maintenance takes priority: if it is active the night-lock check is skipped so
+     * players only receive one clear kick message.
+     */
     @EventHandler(priority = EventPriority.HIGH)
     public void onPlayerLogin(PlayerLoginEvent event) {
         if (plugin.getMaintenanceManager().isActive()
                 && !event.getPlayer().hasPermission("klassenplugin.maintenance.bypass")) {
             event.disallow(PlayerLoginEvent.Result.KICK_OTHER,
                     KlassenPlugin.colorizeComponent(plugin.getMaintenanceManager().buildKickMessage()));
+            return; // Maintenance has priority; skip further checks.
+        }
+
+        // Night lock: server is closed from 00:00 to 07:00
+        if (plugin.getConfig().getBoolean("night-lock.enabled", false)) {
+            LocalTime now = LocalTime.now();
+            LocalTime lockEnd = LocalTime.of(7, 0);
+            if (now.isBefore(lockEnd) && !event.getPlayer().hasPermission("klassenplugin.nightlock.bypass")) {
+                String msg = plugin.getConfig().getString("night-lock.kick-message",
+                        "&c&lServer gesperrt!\n\n&7Der Server ist von &e00:00 &7bis &e07:00 Uhr &7gesperrt.\n&7Bitte versuche es sp\u00e4ter erneut.");
+                event.disallow(PlayerLoginEvent.Result.KICK_OTHER,
+                        KlassenPlugin.colorizeComponent(msg));
+            }
         }
     }
 

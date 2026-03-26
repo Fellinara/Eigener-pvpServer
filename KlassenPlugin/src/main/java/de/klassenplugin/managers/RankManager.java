@@ -203,7 +203,10 @@ public class RankManager {
 
     /**
      * Returns the raw &amp;-colour-coded prefix for the given player,
-     * falling back to the default rank. Empty string if no rank/prefix.
+     * falling back to the default rank. If the rank has no custom prefix
+     * configured, the rank name itself is returned in brackets (e.g. {@code &7[Admin]})
+     * so that the rank is always visible in chat and the tab list.
+     * Returns an empty string only if the player has no rank at all.
      */
     public String getPlayerPrefix(UUID playerId) {
         String rankName = playerRanks.get(playerId);
@@ -215,7 +218,9 @@ public class RankManager {
                 return "";
             }
         }
-        return prefixes.getOrDefault(rankName, "");
+        String prefix = prefixes.getOrDefault(rankName, "");
+        // Fall back to rank name in brackets when no custom prefix is configured.
+        return prefix.isEmpty() ? "&7[" + rankName + "]" : prefix;
     }
 
     /** Updates the tab-list display name of a player to show their rank prefix. */
