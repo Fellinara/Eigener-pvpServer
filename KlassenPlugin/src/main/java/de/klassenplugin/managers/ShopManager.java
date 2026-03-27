@@ -219,6 +219,25 @@ public class ShopManager {
 
         SPAWNER_ITEMS.put("ZOMBIE_SPAWNER",   new Object[]{"Zombie-Spawner",   EntityType.ZOMBIE});
         SPAWNER_ITEMS.put("SKELETON_SPAWNER", new Object[]{"Skelett-Spawner",  EntityType.SKELETON});
+
+        CATEGORIES.put("Natur", new String[]{
+            // ── Sculk (Deep Dark) ──
+            "SCULK","SCULK_VEIN","SCULK_CATALYST","SCULK_SENSOR","SCULK_SHRIEKER",
+            // ── Farm crops ──
+            "WHEAT","WHEAT_SEEDS","CARROT","POTATO","BAKED_POTATO","POISONOUS_POTATO",
+            "BEETROOT","BEETROOT_SEEDS","SUGAR_CANE","PUMPKIN","PUMPKIN_SEEDS",
+            "MELON","MELON_SLICE","MELON_SEEDS","COCOA_BEANS","SWEET_BERRIES","GLOW_BERRIES",
+            "EGG","SUGAR","BREAD","APPLE","MUSHROOM_STEW","HONEY_BOTTLE","HONEYCOMB",
+            // ── Water & aquatic farms ──
+            "KELP","DRIED_KELP","DRIED_KELP_BLOCK","SEA_PICKLE","LILY_PAD",
+            // ── Auto farms ──
+            "CACTUS","BAMBOO","VINE",
+            // ── Mushrooms ──
+            "BROWN_MUSHROOM","RED_MUSHROOM","BROWN_MUSHROOM_BLOCK","RED_MUSHROOM_BLOCK","MUSHROOM_STEM",
+            // ── Misc nature ──
+            "GLOW_LICHEN","MOSS_BLOCK","MOSS_CARPET","FLOWERING_AZALEA","AZALEA"
+        });
+        CATEGORY_ICONS.put("Natur", Material.SCULK_CATALYST);
     }
 
     /**
@@ -357,12 +376,15 @@ public class ShopManager {
         // ── Plants & Nature ──
         {"OAK_LEAVES",2.0,1.0},{"SPRUCE_LEAVES",0.3,0.1},{"BIRCH_LEAVES",0.3,0.1},
         {"JUNGLE_LEAVES",0.3,0.1},{"ACACIA_LEAVES",0.3,0.1},{"DARK_OAK_LEAVES",0.3,0.1},
-        {"VINE",2.0,1.0},{"KELP",0.5,0.2},{"DRIED_KELP",0.3,0.1},{"DRIED_KELP_BLOCK",2.0,0.8},
+        {"VINE",2.0,1.0},{"KELP",3.0,1.5},{"DRIED_KELP",2.0,1.0},{"DRIED_KELP_BLOCK",15.0,7.0},
         {"SEA_PICKLE",2.0,0.8},{"LILY_PAD",3.0,1.0},{"CACTUS",3.0,1.0},
         {"FLOWER_POT",5.0,2.0},{"POPPY",2.0,1.0},{"DANDELION",2.0,1.0},
         {"FERN",1.0,0.5},{"GRASS",1.0,0.5},{"DEAD_BUSH",1.0,0.5},
         {"BROWN_MUSHROOM",4.0,2.0},{"RED_MUSHROOM",4.0,2.0},
         {"BROWN_MUSHROOM_BLOCK",3.0,1.0},{"RED_MUSHROOM_BLOCK",3.0,1.0},{"MUSHROOM_STEM",3.0,1.0},
+        // ── Sculk (Deep Dark) ──
+        {"SCULK",5.0,2.0},{"SCULK_VEIN",3.0,1.0},
+        {"SCULK_CATALYST",30.0,15.0},{"SCULK_SENSOR",20.0,10.0},{"SCULK_SHRIEKER",60.0,30.0},
         // ── Tools ──
         {"WOODEN_PICKAXE",12.0,5.0},{"STONE_PICKAXE",20.0,8.0},{"IRON_PICKAXE",60.0,25.0},{"GOLDEN_PICKAXE",50.0,20.0},{"DIAMOND_PICKAXE",300.0,120.0},
         {"WOODEN_AXE",12.0,5.0},{"STONE_AXE",20.0,8.0},{"IRON_AXE",60.0,25.0},{"GOLDEN_AXE",50.0,20.0},{"DIAMOND_AXE",300.0,120.0},
@@ -499,6 +521,7 @@ public class ShopManager {
         migrateMaceAndEnchants();
         migrateNetheriteTools();
         migrateSpawners();
+        migrateSculkAndFarmItems();
     }
 
     /**
@@ -736,6 +759,45 @@ public class ShopManager {
             }
         }
         shopConfig.set("migrated-spawners", true);
+        if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    /**
+     * Adds Sculk-family items and corrects the Kelp price on existing
+     * shop.yml files.  Guarded by its own migration flag so it runs only once.
+     */
+    private void migrateSculkAndFarmItems() {
+        if (shopConfig.getBoolean("migrated-sculk-farm", false)) return;
+
+        Object[][] newItems = {
+            // ── Sculk (Deep Dark) ──
+            {"SCULK",5.0,2.0},{"SCULK_VEIN",3.0,1.0},
+            {"SCULK_CATALYST",30.0,15.0},{"SCULK_SENSOR",20.0,10.0},{"SCULK_SHRIEKER",60.0,30.0},
+        };
+        boolean changed = false;
+        for (Object[] row : newItems) {
+            String key = ((String) row[0]).toUpperCase();
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+                changed = true;
+            }
+        }
+
+        // Fix previously-low Kelp and Dried Kelp prices.
+        double[] kelpP = items.get("KELP");
+        if (kelpP != null && kelpP[0] <= 1.0) {
+            kelpP[0] = 3.0; kelpP[1] = 1.5; changed = true;
+        }
+        double[] driedKelpP = items.get("DRIED_KELP");
+        if (driedKelpP != null && driedKelpP[0] <= 1.0) {
+            driedKelpP[0] = 2.0; driedKelpP[1] = 1.0; changed = true;
+        }
+        double[] driedKelpBlockP = items.get("DRIED_KELP_BLOCK");
+        if (driedKelpBlockP != null && driedKelpBlockP[0] <= 3.0) {
+            driedKelpBlockP[0] = 15.0; driedKelpBlockP[1] = 7.0; changed = true;
+        }
+
+        shopConfig.set("migrated-sculk-farm", true);
         if (changed) Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
     }
 
