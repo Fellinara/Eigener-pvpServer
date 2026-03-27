@@ -35,7 +35,7 @@ public class ClearLagManager {
 
     public ClearLagManager(KlassenPlugin plugin) {
         this.plugin = plugin;
-        if (plugin.getConfig().getBoolean("clearlag.enabled", true)) {
+        if (plugin.getConfig().getBoolean("clearlag.enabled", false)) {
             schedule();
         }
     }
@@ -43,7 +43,7 @@ public class ClearLagManager {
     /** Re-read config and reschedule. */
     public void reload() {
         cancel();
-        if (plugin.getConfig().getBoolean("clearlag.enabled", true)) {
+        if (plugin.getConfig().getBoolean("clearlag.enabled", false)) {
             schedule();
         }
     }
