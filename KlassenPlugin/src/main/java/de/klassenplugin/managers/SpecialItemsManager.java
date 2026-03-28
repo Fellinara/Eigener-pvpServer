@@ -206,30 +206,34 @@ public class SpecialItemsManager {
         Block block = loc.getBlock();
         if (block.getType() != Material.HOPPER) return;
 
-        // Pull from container above
+        // Pull from container above.
+        // IMPORTANT: check KapaChest FIRST because a Barrel is also a Container;
+        // pulling from the real barrel inventory would always yield nothing (it is
+        // kept empty – items are tracked in KapaChestData).
         Block above = block.getRelative(BlockFace.UP);
-        if (above.getState() instanceof Container c) {
-            for (int n = 0; n < 3; n++) moveOne(c.getInventory(), hopperInv);
-        }
-        // Also pull from a kapa chest above
         if (above.getType() == Material.BARREL && isKapaChest(above.getLocation())) {
             KapaChestData kd = getKapaChestData(above.getLocation());
             if (kd != null && kd.itemType != null && kd.count > 0) {
                 for (int n = 0; n < 3; n++) pullFromKapa(kd, hopperInv);
             }
+        } else if (above.getState() instanceof Container c) {
+            for (int n = 0; n < 3; n++) moveOne(c.getInventory(), hopperInv);
         }
 
-        // Push into container below
+        // Push into container below.
+        // IMPORTANT: check KapaChest FIRST – same reason as above.  Without this
+        // guard, moveOne() would fill the barrel's real inventory while pushToKapa()
+        // also increments KapaChestData, creating duplicate entries and eventually
+        // filling the real barrel, which would make ALL vanilla hoppers appear broken
+        // (Minecraft skips InventoryMoveItemEvent entirely for full containers).
         Block below = block.getRelative(BlockFace.DOWN);
-        if (below.getState() instanceof Container c) {
-            for (int n = 0; n < 3; n++) moveOne(hopperInv, c.getInventory());
-        }
-        // Also push into a kapa chest below
         if (below.getType() == Material.BARREL && isKapaChest(below.getLocation())) {
             KapaChestData kd = getKapaChestData(below.getLocation());
             if (kd != null) {
                 for (int n = 0; n < 3; n++) pushToKapa(hopperInv, kd);
             }
+        } else if (below.getState() instanceof Container c) {
+            for (int n = 0; n < 3; n++) moveOne(hopperInv, c.getInventory());
         }
     }
 

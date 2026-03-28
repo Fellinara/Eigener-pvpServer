@@ -175,15 +175,20 @@ public class SpecialItemsListener implements Listener {
                 if (kd.count >= kd.maxCapacity) return;
                 if (kd.itemType == null) kd.itemType = moving.getType();
                 kd.count++;
-                // Remove the item from the source inventory
+                // Remove exactly one item from the source inventory explicitly
                 Inventory src = event.getSource();
                 for (int i = 0; i < src.getSize(); i++) {
                     ItemStack s = src.getItem(i);
-                    if (s != null && s.isSimilar(event.getItem())) {
-                        s.setAmount(s.getAmount() - 1);
-                        if (s.getAmount() <= 0) src.setItem(i, null);
-                        break;
+                    if (s == null || s.getType() != moving.getType()) continue;
+                    int newAmt = s.getAmount() - 1;
+                    if (newAmt <= 0) {
+                        src.setItem(i, null);
+                    } else {
+                        ItemStack updated = s.clone();
+                        updated.setAmount(newAmt);
+                        src.setItem(i, updated);
                     }
+                    break;
                 }
                 sim.saveAsync();
             }
