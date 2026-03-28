@@ -13,6 +13,7 @@ import de.klassenplugin.gui.WarningsLogGui;
 import de.klassenplugin.listeners.AllianceListener;
 import de.klassenplugin.listeners.AntiCheatListener;
 import de.klassenplugin.listeners.ChatListener;
+import de.klassenplugin.listeners.CombatListener;
 import de.klassenplugin.listeners.DeathListener;
 import de.klassenplugin.listeners.GuiListener;
 import de.klassenplugin.listeners.HackClientBukkitListener;
@@ -280,6 +281,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new JoinListener(this), this);
         getServer().getPluginManager().registerEvents(new DeathListener(this), this);
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new CombatListener(this), this);
         getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
         getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
         getServer().getPluginManager().registerEvents(new SpawnerListener(), this);
