@@ -9,6 +9,7 @@ import org.bukkit.entity.Boat;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -327,20 +328,32 @@ public class AntiCheatListener implements Listener {
         }
     }
 
+    // ── Combat tag via projectile (arrow / trident / crossbow bolt) ──────────
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onProjectileDamage(EntityDamageByEntityEvent event) {
+        if (!(event.getDamager() instanceof Projectile proj)) return;
+        if (!(proj.getShooter() instanceof Player shooter)) return;
+        if (!(event.getEntity() instanceof Player victimPlayer)) return;
+        plugin.getCombatManager().tag(shooter.getUniqueId());
+        plugin.getCombatManager().tag(victimPlayer.getUniqueId());
+    }
+
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!manager.isEnabled()) return;
         if (!(event.getDamager() instanceof Player damager)) return;
         if (!(event.getEntity() instanceof LivingEntity victim)) return;
-        if (damager.hasPermission("klassenplugin.anticheat.bypass")) return;
 
-        UUID uuid = damager.getUniqueId();
-
-        // ── Combat tag both players when they hit each other ──────────────────
+        // ── Combat tag both players – runs before the bypass check so that OP
+        //    players are tagged just like everyone else. ───────────────────────
         if (victim instanceof Player victimPlayer) {
             plugin.getCombatManager().tag(damager.getUniqueId());
             plugin.getCombatManager().tag(victimPlayer.getUniqueId());
         }
+
+        if (damager.hasPermission("klassenplugin.anticheat.bypass")) return;
+
+        UUID uuid = damager.getUniqueId();
 
         // ── Reach check ───────────────────────────────────────────────────────
         if (manager.isCheckEnabled("reach")) {

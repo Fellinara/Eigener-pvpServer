@@ -18,6 +18,7 @@ import de.klassenplugin.listeners.GuiListener;
 import de.klassenplugin.listeners.HackClientBukkitListener;
 import de.klassenplugin.listeners.JoinListener;
 import de.klassenplugin.listeners.QuitListener;
+import de.klassenplugin.listeners.SpawnerListener;
 import de.klassenplugin.managers.*;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
@@ -281,6 +282,7 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new QuitListener(this), this);
         getServer().getPluginManager().registerEvents(new AntiCheatListener(this), this);
         getServer().getPluginManager().registerEvents(new AllianceListener(this), this);
+        getServer().getPluginManager().registerEvents(new SpawnerListener(), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(corpseManger, this);
