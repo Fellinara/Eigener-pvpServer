@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.type.Hopper;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -26,7 +27,7 @@ import java.util.*;
  * Manages the three special custom items:
  * <ul>
  *   <li><b>Verkaufsaxt</b> — breaks a chest and auto-sells its contents; chest respawns instantly.</li>
- *   <li><b>Turbo-Hopper</b> — 54-slot hopper that transfers items 20× faster.</li>
+ *   <li><b>Turbo-Hopper</b> — 54-slot hopper that transfers items at vanilla speed (1 item / 8 ticks), supports all facing directions.</li>
  *   <li><b>Kapazitätskiste</b> — bulk single-type storage; starts at 10 000 items, upgradeable to 2 000 000.</li>
  * </ul>
  */
@@ -109,9 +110,9 @@ public class SpecialItemsManager {
         meta.displayName(c("&b⚡ &3&lTurbo-Hopper &b⚡"));
         meta.lore(List.of(
                 c(""),
-                c("&7Speichert wie eine &bgroße Kiste &8(54 Slots)&7."),
-                c("&7Transportiert &b20× schneller &7als ein"),
-                c("&7normaler Hopper."),
+                c("&7Speichert wie eine &bDoppelkiste &8(54 Slots)&7."),
+                c("&7Funktioniert wie ein normaler Hopper,"),
+                c("&7aber mit viel mehr Platz."),
                 c(""),
                 c("&3&l⚡ SELTEN ⚡")));
         meta.addEnchant(Enchantment.UNBREAKING, 3, true);
@@ -193,13 +194,13 @@ public class SpecialItemsManager {
     // ── Turbo Hopper – scheduler ───────────────────────────────────────────
 
     private void startTurboScheduler() {
-        // Every 1 tick, transfer up to 3 items per hopper ≈ 24× vanilla rate.
+        // Run every 8 ticks = vanilla hopper rate (1 item per 8 game ticks).
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (Map.Entry<Location, TurboHopperHolder> entry :
                     new HashMap<>(turboHoppers).entrySet()) {
                 processTurboHopper(entry.getKey(), entry.getValue().inventory);
             }
-        }, 1L, 1L);
+        }, 1L, 8L);
     }
 
     private void processTurboHopper(Location loc, Inventory hopperInv) {
@@ -214,26 +215,29 @@ public class SpecialItemsManager {
         if (above.getType() == Material.BARREL && isKapaChest(above.getLocation())) {
             KapaChestData kd = getKapaChestData(above.getLocation());
             if (kd != null && kd.itemType != null && kd.count > 0) {
-                for (int n = 0; n < 3; n++) pullFromKapa(kd, hopperInv);
+                pullFromKapa(kd, hopperInv);
             }
         } else if (above.getState() instanceof Container c) {
-            for (int n = 0; n < 3; n++) moveOne(c.getInventory(), hopperInv);
+            moveOne(c.getInventory(), hopperInv);
         }
 
-        // Push into container below.
-        // IMPORTANT: check KapaChest FIRST – same reason as above.  Without this
-        // guard, moveOne() would fill the barrel's real inventory while pushToKapa()
-        // also increments KapaChestData, creating duplicate entries and eventually
-        // filling the real barrel, which would make ALL vanilla hoppers appear broken
-        // (Minecraft skips InventoryMoveItemEvent entirely for full containers).
-        Block below = block.getRelative(BlockFace.DOWN);
-        if (below.getType() == Material.BARREL && isKapaChest(below.getLocation())) {
-            KapaChestData kd = getKapaChestData(below.getLocation());
+        // Determine push direction from the hopper's facing data.
+        // Vanilla hoppers push in the direction they face (down or a horizontal face).
+        BlockFace pushFace = BlockFace.DOWN;
+        if (block.getBlockData() instanceof Hopper hopperData) {
+            pushFace = hopperData.getFacing();
+        }
+
+        // Push into container in the push direction.
+        // IMPORTANT: check KapaChest FIRST – same reason as above.
+        Block pushTarget = block.getRelative(pushFace);
+        if (pushTarget.getType() == Material.BARREL && isKapaChest(pushTarget.getLocation())) {
+            KapaChestData kd = getKapaChestData(pushTarget.getLocation());
             if (kd != null) {
-                for (int n = 0; n < 3; n++) pushToKapa(hopperInv, kd);
+                pushToKapa(hopperInv, kd);
             }
-        } else if (below.getState() instanceof Container c) {
-            for (int n = 0; n < 3; n++) moveOne(hopperInv, c.getInventory());
+        } else if (pushTarget.getState() instanceof Container c) {
+            moveOne(hopperInv, c.getInventory());
         }
     }
 
