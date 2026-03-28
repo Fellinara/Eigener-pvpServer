@@ -27,7 +27,7 @@ import java.util.*;
  * Manages the three special custom items:
  * <ul>
  *   <li><b>Verkaufsaxt</b> — breaks a chest and auto-sells its contents; chest respawns instantly.</li>
- *   <li><b>Turbo-Hopper</b> — 54-slot hopper that transfers items at vanilla speed (1 item / 8 ticks), supports all facing directions.</li>
+ *   <li><b>Turbo-Hopper</b> — 54-slot hopper that transfers items at 5× vanilla speed (5 items / 8 ticks), supports all facing directions.</li>
  *   <li><b>Kapazitätskiste</b> — bulk single-type storage; starts at 10 000 items, upgradeable to 2 000 000.</li>
  * </ul>
  */
@@ -111,8 +111,7 @@ public class SpecialItemsManager {
         meta.lore(List.of(
                 c(""),
                 c("&7Speichert wie eine &bDoppelkiste &8(54 Slots)&7."),
-                c("&7Funktioniert wie ein normaler Hopper,"),
-                c("&7aber mit viel mehr Platz."),
+                c("&75× &7schneller als ein normaler Hopper."),
                 c(""),
                 c("&3&l⚡ SELTEN ⚡")));
         meta.addEnchant(Enchantment.UNBREAKING, 3, true);
@@ -194,7 +193,7 @@ public class SpecialItemsManager {
     // ── Turbo Hopper – scheduler ───────────────────────────────────────────
 
     private void startTurboScheduler() {
-        // Run every 8 ticks = vanilla hopper rate (1 item per 8 game ticks).
+        // Run every 8 ticks, transferring 5 items per cycle = 5× vanilla hopper rate.
         Bukkit.getScheduler().runTaskTimer(plugin, () -> {
             for (Map.Entry<Location, TurboHopperHolder> entry :
                     new HashMap<>(turboHoppers).entrySet()) {
@@ -207,7 +206,7 @@ public class SpecialItemsManager {
         Block block = loc.getBlock();
         if (block.getType() != Material.HOPPER) return;
 
-        // Pull from container above.
+        // Pull from container above (5 items per cycle = 5× vanilla).
         // IMPORTANT: check KapaChest FIRST because a Barrel is also a Container;
         // pulling from the real barrel inventory would always yield nothing (it is
         // kept empty – items are tracked in KapaChestData).
@@ -215,10 +214,10 @@ public class SpecialItemsManager {
         if (above.getType() == Material.BARREL && isKapaChest(above.getLocation())) {
             KapaChestData kd = getKapaChestData(above.getLocation());
             if (kd != null && kd.itemType != null && kd.count > 0) {
-                pullFromKapa(kd, hopperInv);
+                for (int n = 0; n < 5; n++) pullFromKapa(kd, hopperInv);
             }
         } else if (above.getState() instanceof Container c) {
-            moveOne(c.getInventory(), hopperInv);
+            for (int n = 0; n < 5; n++) moveOne(c.getInventory(), hopperInv);
         }
 
         // Determine push direction from the hopper's facing data.
@@ -228,16 +227,16 @@ public class SpecialItemsManager {
             pushFace = hopperData.getFacing();
         }
 
-        // Push into container in the push direction.
+        // Push into container in the push direction (5 items per cycle = 5× vanilla).
         // IMPORTANT: check KapaChest FIRST – same reason as above.
         Block pushTarget = block.getRelative(pushFace);
         if (pushTarget.getType() == Material.BARREL && isKapaChest(pushTarget.getLocation())) {
             KapaChestData kd = getKapaChestData(pushTarget.getLocation());
             if (kd != null) {
-                pushToKapa(hopperInv, kd);
+                for (int n = 0; n < 5; n++) pushToKapa(hopperInv, kd);
             }
         } else if (pushTarget.getState() instanceof Container c) {
-            moveOne(hopperInv, c.getInventory());
+            for (int n = 0; n < 5; n++) moveOne(hopperInv, c.getInventory());
         }
     }
 
