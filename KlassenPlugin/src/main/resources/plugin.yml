@@ -1,0 +1,356 @@
+name: KlassenPlugin
+version: '${project.version}'
+main: de.klassenplugin.KlassenPlugin
+api-version: '1.21'
+description: Paper 1.21 Plugin mit Lobby, Homes, Warps, Kits und mehr
+authors: [Fellinara]
+softdepend: [ProtocolLib]
+
+commands:
+  lobby:
+    description: Teleportiert dich zur Lobby
+    usage: /lobby
+    permission: klassenplugin.lobby
+
+  setlobby:
+    description: Setzt die Lobby an deiner aktuellen Position
+    usage: /setlobby
+    permission: klassenplugin.setlobby
+
+  sethome:
+    description: Setzt ein Home an deiner aktuellen Position
+    usage: /sethome [name]
+    permission: klassenplugin.home
+
+  home:
+    description: Teleportiert dich zu einem Home
+    usage: /home [name]
+    permission: klassenplugin.home
+
+  delhome:
+    description: Löscht ein Home
+    usage: /delhome <name>
+    permission: klassenplugin.home
+
+  homes:
+    description: Zeigt alle deine Homes an
+    usage: /homes
+    permission: klassenplugin.home
+
+  back:
+    description: Teleportiert dich zur letzten Position (nach Tod oder Teleport)
+    usage: /back
+    permission: klassenplugin.back
+
+  setwarp:
+    description: Erstellt einen Warp an deiner aktuellen Position
+    usage: /setwarp <name>
+    permission: klassenplugin.setwarp
+
+  warp:
+    description: Teleportiert dich zu einem Warp
+    usage: /warp <name>
+    permission: klassenplugin.warp
+
+  delwarp:
+    description: Löscht einen Warp
+    usage: /delwarp <name>
+    permission: klassenplugin.delwarp
+
+  warps:
+    description: Zeigt alle verfügbaren Warps an
+    usage: /warps
+    permission: klassenplugin.warp
+
+  tpa:
+    description: Sendet eine Teleportanfrage an einen Spieler
+    usage: /tpa <Spieler>
+    permission: klassenplugin.tpa
+
+  tpaccept:
+    description: Akzeptiert eine ausstehende Teleportanfrage
+    usage: /tpaccept
+    permission: klassenplugin.tpa
+    aliases: [tpyes]
+
+  tpdeny:
+    description: Lehnt eine ausstehende Teleportanfrage ab
+    usage: /tpdeny
+    permission: klassenplugin.tpa
+    aliases: [tpno]
+
+  tpcancel:
+    description: Bricht die eigene gesendete Teleportanfrage ab
+    usage: /tpcancel
+    permission: klassenplugin.tpa
+
+  kit:
+    description: Gibt dir ein Kit
+    usage: /kit <Name>
+    permission: klassenplugin.kit
+
+  kits:
+    description: Zeigt alle verfügbaren Kits an
+    usage: /kits
+    permission: klassenplugin.kit
+
+  createkit:
+    description: Erstellt ein Kit aus deinem aktuellen Inventar
+    usage: /createkit <Name>
+    permission: klassenplugin.createkit
+
+  delkit:
+    description: Löscht ein Kit
+    usage: /delkit <Name>
+    permission: klassenplugin.createkit
+
+  heal:
+    description: Heilt einen Spieler vollständig
+    usage: /heal [Spieler]
+    permission: klassenplugin.heal
+
+  feed:
+    description: Sättigt einen Spieler vollständig
+    usage: /feed [Spieler]
+    permission: klassenplugin.feed
+
+  fly:
+    description: Schaltet den Flugmodus für einen Spieler um
+    usage: /fly [Spieler]
+    permission: klassenplugin.fly
+
+  msg:
+    description: Sendet eine private Nachricht an einen Spieler
+    usage: /msg <Spieler> <Nachricht>
+    permission: klassenplugin.msg
+    aliases: [tell, pm, w]
+
+  r:
+    description: Antwortet auf die letzte private Nachricht
+    usage: /r <Nachricht>
+    permission: klassenplugin.msg
+    aliases: [reply]
+
+  plugintoggle:
+    description: Aktiviert oder deaktiviert das Plugin
+    usage: /plugintoggle <enable|disable>
+    permission: klassenplugin.admin
+    aliases: [ptoggle]
+
+  spawn:
+    description: Teleportiert dich zum Spawn
+    usage: /spawn
+    permission: klassenplugin.spawn
+
+  setspawn:
+    description: Setzt den Spawn an deiner aktuellen Position
+    usage: /setspawn
+    permission: klassenplugin.setspawn
+
+  anticheat:
+    description: Verwaltet das Anti-Cheat System
+    usage: /anticheat <status|enable|disable|check|violations|reset>
+    permission: klassenplugin.anticheat.admin
+
+  rank:
+    description: Verwaltet das Rang-System
+    usage: /rank <create|delete|setprefix|addperm|removeperm|assign|remove|list|info|player|permissions>
+    permission: klassenplugin.rank.admin
+
+  klassenplugin:
+    description: Haupt-Befehl für das KlassenPlugin
+    usage: /klassenplugin <ban|unban|version>
+    permission: klassenplugin.admin
+    aliases: [kp]
+
+  balance:
+    description: Zeigt deinen Kontostand
+    usage: /balance [Spieler]
+    permission: klassenplugin.economy
+    aliases: [bal, money, geld]
+
+  pay:
+    description: Überweist Geld an einen Spieler
+    usage: /pay <Spieler> <Betrag>
+    permission: klassenplugin.economy.pay
+
+  shop:
+    description: Kauft und verkauft Artikel im Shop
+    usage: /shop <list|buy|sell|info>
+    permission: klassenplugin.shop
+
+  ah:
+    description: Auktionshaus - kaufe und verkaufe Artikel
+    usage: /ah <sell|list|buy|request|fulfill|cancel|search|meine>
+    permission: klassenplugin.auction
+    aliases: [auction, auktion]
+
+  order:
+    description: Auftragssystem - stelle Kaufanfragen und erfülle sie
+    usage: /order [list|meine|fulfill|cancel] [args...]
+    permission: klassenplugin.order
+    aliases: [auftrag]
+
+  sell:
+    description: Verkauft das Item in der Hand zum aktuellen Shop-Preis
+    usage: /sell [menge]
+    permission: klassenplugin.shop
+
+  changelog:
+    description: Zeigt den wöchentlichen Preischangelog
+    usage: /changelog
+    permission: klassenplugin.changelog
+    aliases: [cl]
+
+  ally:
+    description: Bündnis-System (1 Verbündeter)
+    usage: /ally <invite|accept|deny|info|leave>
+    permission: klassenplugin.ally
+    aliases: [alliance, bündnis]
+
+  vanish:
+    description: Macht dich für andere Spieler unsichtbar (Fake-Quit/Join)
+    usage: /vanish
+    permission: klassenplugin.vanish
+    aliases: [v]
+
+  wartungsarbeiten:
+    description: Schaltet den Wartungsmodus ein/aus
+    usage: /wartungsarbeiten [on|off]
+    permission: klassenplugin.maintenance
+    aliases: [maintenance, wartung]
+
+  ban:
+    description: Bannt einen Spieler mit einem optionalen Grund
+    usage: /ban <Spieler> [Grund]
+    permission: klassenplugin.ban
+
+  unban:
+    description: Entbannt einen Spieler oder eine IP
+    usage: /unban <Spieler|IP>
+    permission: klassenplugin.ban
+
+  adminpanel:
+    description: Öffnet das Admin-Kontrollzentrum (GUI)
+    usage: /adminpanel
+    permission: klassenplugin.admin
+    aliases: [admin, ap]
+
+permissions:
+  klassenplugin.lobby:
+    description: Erlaubt die Nutzung von /lobby
+    default: true
+  klassenplugin.setlobby:
+    description: Erlaubt das Setzen der Lobby
+    default: op
+  klassenplugin.home:
+    description: Erlaubt die Nutzung des Home-Systems
+    default: true
+  klassenplugin.back:
+    description: Erlaubt die Nutzung von /back
+    default: true
+  klassenplugin.warp:
+    description: Erlaubt die Nutzung von /warp und /warps
+    default: true
+  klassenplugin.setwarp:
+    description: Erlaubt das Erstellen von Warps
+    default: op
+  klassenplugin.delwarp:
+    description: Erlaubt das Löschen von Warps
+    default: op
+  klassenplugin.tpa:
+    description: Erlaubt die Nutzung des TPA-Systems
+    default: true
+  klassenplugin.kit:
+    description: Erlaubt die Nutzung von /kit und /kits
+    default: true
+  klassenplugin.createkit:
+    description: Erlaubt das Erstellen und Löschen von Kits
+    default: op
+  klassenplugin.heal:
+    description: Erlaubt die Nutzung von /heal
+    default: op
+  klassenplugin.feed:
+    description: Erlaubt die Nutzung von /feed
+    default: op
+  klassenplugin.fly:
+    description: Erlaubt die Nutzung von /fly
+    default: op
+  klassenplugin.msg:
+    description: Erlaubt private Nachrichten (/msg, /r)
+    default: true
+  klassenplugin.spawn:
+    description: Erlaubt die Nutzung von /spawn
+    default: true
+  klassenplugin.setspawn:
+    description: Erlaubt das Setzen des Spawns
+    default: op
+  klassenplugin.admin:
+    description: Admin-Berechtigungen für das Plugin
+    default: op
+  klassenplugin.anticheat.admin:
+    description: Verwaltet das Anti-Cheat System
+    default: op
+  klassenplugin.anticheat.bypass:
+    description: Umgeht das Anti-Cheat System
+    default: op
+  klassenplugin.anticheat.alert:
+    description: Empfängt Anti-Cheat Warnungen
+    default: op
+  klassenplugin.rank.admin:
+    description: Verwaltet das Rang-System
+    default: op
+  klassenplugin.ban:
+    description: Erlaubt das Bannen und Entbannen von Spielern (/ban, /unban)
+    default: op
+  klassenplugin.economy:
+    description: Zugriff auf Economy-Befehle (/balance)
+    default: true
+  klassenplugin.economy.pay:
+    description: Erlaubt Geldtransfers (/pay)
+    default: true
+  klassenplugin.economy.admin:
+    description: Admin-Zugriff auf Economy-Daten
+    default: op
+  klassenplugin.shop:
+    description: Erlaubt die Nutzung des Shops
+    default: true
+  klassenplugin.shop.admin:
+    description: Admin-Zugriff auf den Shop
+    default: op
+  klassenplugin.order:
+    description: Erlaubt die Nutzung des Auftragssystems (/order)
+    default: true
+  klassenplugin.order.admin:
+    description: Admin-Zugriff auf das Auftragssystem
+    default: op
+  klassenplugin.auction:
+    description: Erlaubt die Nutzung des Auktionshauses
+    default: true
+  klassenplugin.auction.admin:
+    description: Admin-Zugriff auf das Auktionshaus
+    default: op
+  klassenplugin.changelog:
+    description: Zeigt den Changelog
+    default: true
+  klassenplugin.changelog.admin:
+    description: Admin-Zugriff auf den Changelog
+    default: op
+  klassenplugin.ally:
+    description: Erlaubt die Nutzung des Bündnis-Systems
+    default: true
+  klassenplugin.vanish:
+    description: Erlaubt die Nutzung von /vanish
+    default: op
+  klassenplugin.vanish.see:
+    description: Kann unsichtbare Spieler sehen (Info-Nachricht)
+    default: op
+  klassenplugin.maintenance:
+    description: Kann den Wartungsmodus aktivieren/deaktivieren
+    default: op
+  klassenplugin.maintenance.bypass:
+    description: Kann sich auch während der Wartung einloggen
+    default: op
+  klassenplugin.nightlock.bypass:
+    description: Kann sich auch während der Nacht-Sperre (00:00–07:00) einloggen
+    default: op

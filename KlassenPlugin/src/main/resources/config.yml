@@ -1,0 +1,441 @@
+# KlassenPlugin Konfiguration
+
+# Plugin aktiviert/deaktiviert
+plugin-enabled: true
+
+# Maximale Anzahl an Homes pro Spieler (0 = unbegrenzt)
+max-homes: 5
+
+# Willkommensnachricht beim Betreten des Servers
+join-message:
+  enabled: true
+  message: "&aWillkommen auf dem Server, &e{player}&a!"
+
+# Nachricht beim Verlassen des Servers (wird von /vanish als Fake-Quit verwendet)
+quit-message:
+  message: "&e{player} hat den Server verlassen"
+
+# Teleport-Cooldown in Sekunden (0 = kein Cooldown)
+teleport-cooldown: 3
+
+# /back Einstellungen
+back:
+  # Position bei Tod speichern
+  on-death: true
+
+# /tpa Einstellungen
+tpa:
+  # Sekunden bis eine Anfrage abläuft
+  expire-seconds: 60
+
+# Nachrichten (Farben mit & möglich)
+messages:
+  prefix: "&8[&bKlassenPlugin&8] "
+  lobby-teleported: "&aDu wurdest zur Lobby teleportiert!"
+  lobby-set: "&aLobby wurde gesetzt!"
+  lobby-not-set: "&cDie Lobby wurde noch nicht gesetzt! Benutze /setlobby"
+  home-set: "&aHome &e{name} &awurde gesetzt!"
+  home-teleported: "&aDu wurdest zu Home &e{name} &ateleportiert!"
+  home-deleted: "&aHome &e{name} &awurde gelöscht!"
+  home-not-found: "&cHome &e{name} &cwurde nicht gefunden!"
+  home-limit: "&cDu hast die maximale Anzahl an Homes erreicht ({max})!"
+  homes-list: "&aHomes: &e{homes}"
+  homes-empty: "&cDu hast noch keine Homes gesetzt!"
+  back-teleported: "&aDu wurdest zu deiner letzten Position zurückteleportiert!"
+  back-no-location: "&cEs gibt keine gespeicherte Position für /back!"
+  warp-set: "&aWarp &e{name} &awurde erstellt!"
+  warp-teleported: "&aDu wurdest zum Warp &e{name} &ateleportiert!"
+  warp-deleted: "&aWarp &e{name} &awurde gelöscht!"
+  warp-not-found: "&cWarp &e{name} &cwurde nicht gefunden!"
+  warps-list: "&aWarps: &e{warps}"
+  warps-empty: "&cEs gibt noch keine Warps!"
+  spawn-teleported: "&aDu wurdest zum Spawn teleportiert!"
+  spawn-set: "&aSpawn wurde gesetzt!"
+  spawn-not-set: "&cDer Spawn wurde noch nicht gesetzt! Benutze /setspawn"
+  teleport-cooldown: "&cBitte warte noch &e{seconds} &cSekunden!"
+  tpa-request-sent: "&aDu hast eine Teleportanfrage an &e{player} &ageschickt."
+  tpa-request-received: "&e{player} &amöchte zu dir teleportieren! Benutze &e/tpaccept &aoder &c/tpdeny&a."
+  tpa-accepted: "&aDu hast die Anfrage von &e{player} &aakzeptiert."
+  tpa-teleported: "&aDeine Anfrage wurde akzeptiert. Du wurdest zu &e{player} &ateleportiert!"
+  tpa-denied-sender: "&cDu hast die Anfrage von &e{player} &cabgelehnt."
+  tpa-denied-receiver: "&cDeine Anfrage wurde von &e{player} &cabgelehnt."
+  tpa-no-request: "&cDu hast keine ausstehende Teleportanfrage."
+  tpa-no-outgoing: "&cDu hast keine aktive ausgehende Anfrage."
+  tpa-requester-offline: "&cDer Spieler ist offline gegangen."
+  tpa-cancelled-sender: "&cDeine Teleportanfrage wurde abgebrochen."
+  tpa-cancelled-receiver: "&c{player} hat die Teleportanfrage zurückgezogen."
+  tpa-self: "&cDu kannst dir selbst keine Anfrage schicken!"
+  kit-received: "&aDu hast das Kit &e{name} &aerhalten!"
+  kit-not-found: "&cKit &e{name} &cwurde nicht gefunden!"
+  kit-created: "&aKit &e{name} &awurde erstellt!"
+  kit-deleted: "&aKit &e{name} &awurde gelöscht!"
+  kits-list: "&aKits: &e{kits}"
+  kits-empty: "&cEs gibt noch keine Kits!"
+  heal-healed: "&aDu wurdest vollständig geheilt!"
+  heal-healed-other: "&aDu hast &e{player} &agelheilt!"
+  feed-fed: "&aDu bist jetzt satt!"
+  feed-fed-other: "&aDu hast &e{player} &asattgemacht!"
+  fly-enabled: "&aDer Flugmodus wurde aktiviert!"
+  fly-disabled: "&cDer Flugmodus wurde deaktiviert!"
+  fly-enabled-other: "&aDer Flugmodus für &e{player} &awurde aktiviert!"
+  fly-disabled-other: "&cDer Flugmodus für &e{player} &cwurde deaktiviert!"
+  msg-sent: "&8[&bDu &8→ &b{target}&8] &f{message}"
+  msg-received: "&8[&b{sender} &8→ &bDu&8] &f{message}"
+  msg-self: "&cDu kannst dir selbst keine Nachricht schicken!"
+  reply-no-one: "&cDu hast noch keine Nachricht erhalten oder geschickt."
+  reply-offline: "&cDer Spieler ist nicht mehr online."
+  player-not-found: "&cSpieler &e{player} &cwurde nicht gefunden!"
+  plugin-enabled: "&aDas Plugin wurde aktiviert!"
+  plugin-disabled: "&cDas Plugin wurde deaktiviert!"
+  plugin-already-enabled: "&cDas Plugin ist bereits aktiviert!"
+  plugin-already-disabled: "&cDas Plugin ist bereits deaktiviert!"
+  no-permission: "&cDu hast keine Berechtigung für diesen Befehl!"
+  player-only: "&cDieser Befehl kann nur von Spielern ausgeführt werden!"
+
+# Scoreboard (Sidebar rechts im Spiel)
+scoreboard:
+  enabled: true
+  # Titel des Scoreboards (&-Farbcodes erlaubt)
+  title: "&6&lKlassenPlugin"
+  # Zeilen von oben nach unten.
+  # Platzhalter: {player} {rank} {balance} {online} {server}
+  # Leere Zeilen werden als Trennlinie dargestellt.
+  lines:
+    - " "
+    - "&7Server: &eKlassen Server"
+    - "&7Online: &e{online}"
+    - " "
+    - "&6&lEconomy"
+    - "&7Geld: &6{balance}"
+    - " "
+    - "&7Rang: &f{rank}"
+    - " "
+    - "&8bonn.jodaitis.net"
+
+# Anti-Cheat Einstellungen
+anticheat:
+  enabled: true
+  # Benachrichtige Admins bei Verstößen (klassenplugin.anticheat.alert Berechtigung)
+  alert-admins: true
+  # Aktion bei zu vielen Verstößen: warn, kick, ban
+  action: ban
+  # Anzahl Verstöße bevor eine Aktion ausgeführt wird
+  violations-before-action: 3
+  # Spieler die KEINE Verwarnungen erhalten (exakte Spielernamen, Groß-/Kleinschreibung egal)
+  exempt-players: []
+
+  xray:
+    enabled: true
+    # Anzahl überwachter Erze die in 'time-window' Sekunden abgebaut werden dürfen
+    ore-threshold: 10
+    # Zeitfenster in Sekunden
+    time-window: 60
+    # Überwachte Erze (Material-Namen)
+    monitored-ores:
+      - DIAMOND_ORE
+      - DEEPSLATE_DIAMOND_ORE
+      - EMERALD_ORE
+      - DEEPSLATE_EMERALD_ORE
+      - ANCIENT_DEBRIS
+      - GOLD_ORE
+      - DEEPSLATE_GOLD_ORE
+
+  speed:
+    enabled: true
+    # Maximale Blöcke pro Sekunde (Sprinten ~7.1, Speed I ~10, Speed II ~12.5)
+    max-blocks-per-second: 16.0
+    # Speed-Potion-Bonus pro Verstärkungsstufe (in Blöcken pro Sekunde)
+    speed-potion-bonus-per-level: 3.5
+
+  fly:
+    enabled: true
+    # Ticks in der Luft bevor ein Verstoß – niedrigerer Wert = aggressiver
+    # Erhöht auf 40 (2 Sekunden) für schnellere Fly-Erkennung
+    max-air-ticks: 40
+
+  reach:
+    enabled: true
+    # Maximale Angriffsreichweite in Blöcken (normal: 3.0, mit Hitbox: ~4.0)
+    max-reach: 5.0
+
+  killaura:
+    enabled: true
+    # Maximale Treffer pro Sekunde
+    max-hits-per-second: 12
+    # Maximale Anzahl unterschiedlicher Ziele innerhalb von 500 ms
+    # KillAura wechselt Ziele weit schneller als ein Mensch zielen kann
+    max-targets-per-500ms: 3
+
+  scaffold:
+    enabled: true
+    max-blocks-per-second: 8
+
+  nofall:
+    enabled: true
+    # Mindest-Fallhöhe (Blöcke) bevor NoFall-Erkennung greift
+    # Vanille-Fallschaden beginnt ab ~3 Blöcken; 4.5 vermeidet Treppen-Fehlalarme
+    min-drop-height: 4.5
+
+  # Erkennt Spieler, die durch solide Blöcke laufen (Phase/NoClip)
+  phase:
+    enabled: true
+
+  # Erkennt Spieler, die auf Wasser laufen (Jesus-Hack)
+  jesus:
+    enabled: true
+
+  # Erkennt unmögliche Positionssprünge (Teleport-Hack)
+  teleport:
+    enabled: true
+    # Maximale Distanz die ein Spieler in einem Tick zurücklegen kann (in Blöcken)
+    max-distance: 20.0
+
+  # Erkennt Sprint-Hack (Sprinten ohne ausreichend Hunger oder bei Blindheit)
+  # Vanilla verhindert Sprint bei Hunger 0 und Blindheit absolut.
+  invalidsprint:
+    enabled: true
+
+  # ProtocolLib-Paket-Checks (nur aktiv wenn ProtocolLib installiert ist)
+  packet:
+    # Erkennt unmögliche Bewegungsdistanzen direkt auf Paketebene
+    packetmove:
+      enabled: true
+      # Maximale Distanz pro Paket in Blöcken (verhindert Teleport-Hacks)
+      max-distance: 10.0
+
+    # Erkennt Spieler, die zu viele Pakete pro Sekunde senden (Bot/Exploit)
+    packetflood:
+      enabled: true
+      # Maximale Pakete pro Sekunde
+      max-per-second: 200
+
+    # Erkennt FreeCam: eingefrorene Server-Position bei aktiven POSITION-Paketen
+    freecam:
+      enabled: false
+      # Sekunden, die eine Serverposition unverändert bleiben darf, während
+      # gleichzeitig POSITION/POSITION_LOOK-Pakete ankommen (lastPosPkt-Zeitstempel,
+      # NICHT FLYING-Pakete), bevor ein FreeCam-Verstoß registriert wird.
+      # Da stehende Spieler nur FLYING-Pakete senden (kein lastPosPkt), löst
+      # der Stall-Check für sie NICHT aus → keine Fehlalarme beim Herumstehen.
+      # FreeCam-Clients, die eingefrorene POSITION-Pakete senden, haben ein
+      # frisches lastPosPkt und werden korrekt erkannt.
+      # 5 Sekunden: guter Kompromiss zwischen Erkennungsgeschwindigkeit und
+      # Vermeidung von Fehlalarmen bei kurzem Stehenbleiben.
+      # (Standardwert von 2 auf 5 erhöht, um Fehlalarme zu reduzieren.)
+      stall-seconds: 5
+      # Anzahl aufeinanderfolgender POSITION-Pakete mit identischen Koordinaten
+      # (innerhalb 0.002 Blöcke) bevor ein Verstoß registriert wird.
+      # Echte Spieler haben immer Mikro-Bewegungsrauschen; perfekte Koordinaten-
+      # Einfrierung ist das zuverlässigste FreeCam-Kennzeichen.
+      # 30 Pakete (~1.5 s) verhindert Fehlalarme beim kurzen Stehenbleiben.
+      frozen-packets: 30
+
+    # Prüft Entfernungen bei Entitäts-Interaktions-Paketen (Reach-Hack)
+    packetreach:
+      enabled: true
+      # Maximale Reichweite in Blöcken
+      max-reach: 6.0
+
+    # Prüft Entfernungen bei Block-Abbau-Paketen
+    packetdig:
+      enabled: true
+      # Maximale Reichweite in Blöcken.
+      # Auf 8.5 erhöht, um Fehlalarme beim schnellen Abbauen kleiner Blöcke
+      # (Blumen, Gras) zu vermeiden: Positions-Lag zwischen Client und Server
+      # kann die scheinbare Distanz kurzfristig erhöhen.
+      max-reach: 8.5
+
+    # Erkennt Timer-Hack: Client sendet zu viele Bewegungspakete pro Sekunde.
+    # Vanilla sendet exakt 1 POSITION/POSITION_LOOK-Paket pro Tick (≈ 20/s).
+    # Timer beschleunigt die Client-Uhr → 30–100 Pakete/s.
+    # 22 lässt etwas Spielraum für Netzwerkjitter und TPS-Schwankungen.
+    timer:
+      enabled: true
+      max-packets-per-second: 22
+
+    # Erkennt AutoClicker: zu viele ARM_ANIMATION-Pakete (Mausklinks) pro Sekunde.
+    # Ein Mensch klickt maximal ~16–18×/s (Butterfly/Jitter-Klicken).
+    # Beim schnellen Abbauen von Instant-Break-Blöcken (Blumen, Gras) sendet
+    # der Client ebenfalls ARM_ANIMATION-Pakete – daher Schwellwert auf 28
+    # erhöht, um Fehlalarme beim schnellen Abbauen zu vermeiden.
+    # AutoClicker-Module erzeugen typischerweise 30–50+ Klicks/s.
+    autoclicker:
+      enabled: false
+      max-swings-per-second: 28
+
+  # Hack-Client-Erkennung via Client-Brand und Plugin-Kanal-Registrierung
+  # (Erfordert ProtocolLib – wird automatisch aktiviert wenn ProtocolLib verfügbar ist)
+  hack-client:
+    enabled: true
+    # Aktion bei Erkennung: "kick" oder "ban"
+    # "ban" empfohlen: verhindert sofortiges Wiederverbinden nach Erkennung
+    action: ban
+    # Kick-Nachricht (& Farbcodes; {client} wird durch den erkannten Client ersetzt)
+    kick-message: "&c&lHack-Client erkannt!\n\n&7Dein Client ist auf diesem Server nicht erlaubt.\n&eDu verwendest: &c{client}"
+    # Client-Brands, die geblockt werden (Kleinschreibung; Teilstring-Suche)
+    blocked-brands:
+      - "wurst"
+      - "meteor-client"
+      - "meteor"
+      - "impact"
+      - "aristois"
+      - "sigma"
+      - "liquidbounce"
+      - "rise"
+      - "hacked"
+      - "future"
+      - "inertia"
+      - "rusherhack"
+      - "novoline"
+      - "wolfram"
+      - "zeroday"
+      - "xray"
+      - "killaura"
+      - "vape"
+      - "ice"
+      - "bzler"
+      - "rectify"
+      - "salhack"
+      - "pandaleak"
+      - "pyro"
+      - "ghost"
+      - "flex"
+      - "entropy"
+    # Plugin-Kanal-Präfixe, die von Hack-Clients registriert werden
+    blocked-channels:
+      # ── Wurst Client (standalone + Fabric mod) ─────────────────────────────
+      # Wurst registers "wurst:" channels whether it runs as a standalone client
+      # or as a Fabric mod inside launchers like NoRisk.
+      - "wurst:"
+      # ── Meteor Client (standalone + Fabric mod) ────────────────────────────
+      # Meteor registers these channels even when loaded as a Fabric mod under
+      # other launchers (e.g. NoRisk).  Brand detection alone won't catch it
+      # in that case, but channel detection will.
+      - "meteor-client:"
+      - "meteor:"
+      # ── FreeCam (Fabric mod) ────────────────────────────────────────────────
+      # FreeCam variants are purely client-side and do NOT register plugin channels.
+      # Channel-based detection cannot catch them.
+      # FreeCam is instead detected by the packet-level "freecam" check above
+      # (anticheat.packet.freecam): frozen server position + active position packets.
+      # ── Other known hack clients ────────────────────────────────────────────
+      - "impact:"
+      - "aristois:"
+      - "sigma:"
+      - "liquidbounce:"
+      - "inertia:"
+      - "rusherhack:"
+      - "vape:"
+      - "future:"
+      - "rise:"
+      - "wolfram:"
+      - "novoline:"
+      - "salhack:"
+      - "pyro:"
+      - "ghost:"
+      # Generic patterns – any channel containing these keywords is suspicious.
+      # Keep these broad so that new clients with custom prefixes are caught.
+      - "hack"
+      - "cheat"
+
+    # Brand-Whitelist (opt-in, Standard: deaktiviert)
+    # Wenn aktiviert: ALLE Brands, die nicht in der Whitelist stehen, werden geblockt.
+    # Das ist die paranoideste Variante und blockiert unbekannte Hack-Clients automatisch.
+    # Nur aktivieren, wenn der Server ausschließlich bekannte Clients erlaubt.
+    brand-whitelist:
+      enabled: false
+      allowed-brands:
+        - "vanilla"
+        - "fabric"
+        - "forge"
+        - "quilt"
+        - "neoforge"
+        - "optifine"
+        - "lunar"
+        - "feather"
+        - "badlion"
+        - "labymod"
+        - "essential"
+        - "pvplounge"
+        - "modrinth"
+
+# Rang-System
+ranks:
+  # Standardrang für neue Spieler (leer = kein Standardrang)
+  default-rank: ""
+
+# Wirtschaft (Economy)
+economy:
+  currency-name: "Coins"
+  starting-balance: 500.0
+  # Fallback-Verkaufspreis (Coins pro Item) für Gegenstände, die nicht in shop.yml stehen.
+  # Auf -1 setzen, um das Verkaufen unbekannter Gegenstände zu deaktivieren.
+  default-sell-price: 0.5
+  inflation:
+    target-balance-per-player: 1000.0
+
+# Auktionshaus
+auction:
+  max-listings-per-player: 10
+  # Dauer eines Angebots in Stunden (danach wird es automatisch entfernt)
+  listing-duration-hours: 24
+
+# Wöchentlicher Changelog
+changelog:
+  week-duration-hours: 168
+  boosts-per-week: 4
+  min-boost: 1.3
+  max-boost: 2.5
+
+# Bündnis-System
+alliance:
+  protect-pvp: true
+
+# ClearLag – automatische Lag-Bereinigung
+clearlag:
+  enabled: false
+  # Intervall zwischen Bereinigungen in Minuten
+  interval-minutes: 30
+  # Warnung X Minuten/Sekunden vor der Bereinigung (komma-separierte Sekunden)
+  warnings-before-seconds:
+    - 300   # 5 Minuten
+    - 60    # 1 Minute
+    - 30    # 30 Sekunden
+    - 10    # 10 Sekunden
+  # Mindestabstand zur Bereinigung (in Chunks) – Entities näher dran werden verschont
+  safe-radius-chunks: 3
+  # Welche Entity-Typen werden entfernt (neben Items)
+  remove-mobs: true
+  # Entities nahe Spielern auch entfernen?
+  protect-near-players: true
+
+# Wartungsmodus
+maintenance:
+  enabled: false
+  # Nachricht die beim Verbinden während Wartung gezeigt wird
+  kick-message: |
+    &8▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+      &e&l⚙ WARTUNGSARBEITEN ⚙
+
+      &7Der Server befindet sich gerade in
+      &7der Wartung. Bitte versuche es
+      &7später erneut.
+
+      &8▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
+# Nacht-Sperre – Server gesperrt von 00:00 bis 07:00 Uhr
+night-lock:
+  enabled: true
+  # Nachricht die beim Verbinden während der Nacht-Sperre gezeigt wird
+  kick-message: |
+    &8▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+
+      &c&l🌙 SERVER GESPERRT 🌙
+
+      &7Der Server ist von &e00:00 &7bis &e07:00 Uhr
+      &7gesperrt. Bitte versuche es
+      &7nach 7 Uhr morgens erneut.
+
+      &8▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+
