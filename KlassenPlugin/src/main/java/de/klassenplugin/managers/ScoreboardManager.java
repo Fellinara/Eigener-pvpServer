@@ -18,6 +18,9 @@ public class ScoreboardManager {
     private final KlassenPlugin plugin;
     private final Map<UUID, Scoreboard> boards = new HashMap<>();
 
+    /** Name of the scoreboard team used to hide all player nametags. */
+    private static final String HIDE_TAGS_TEAM = "kp_hide_tags";
+
     // Serializers used to convert & color codes → § color codes for the
     // legacy Bukkit scoreboard String API, which requires § codes (not &).
     private static final LegacyComponentSerializer AMP  = LegacyComponentSerializer.legacyAmpersand();
@@ -37,8 +40,29 @@ public class ScoreboardManager {
                 Criteria.DUMMY,
                 AMP.deserialize(titleRaw));
         obj.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        // Hide all player nametags on this player's board.
+        Team hideTeam = board.registerNewTeam(HIDE_TAGS_TEAM);
+        hideTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER);
+        for (Player online : Bukkit.getOnlinePlayers()) {
+            hideTeam.addEntry(online.getName());
+        }
+
         boards.put(player.getUniqueId(), board);
         player.setScoreboard(board);
+
+        // Also add this player to every existing player's hide-tags team so
+        // they don't see the new player's nametag either.
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            if (other.equals(player)) continue;
+            Scoreboard otherBoard = boards.get(other.getUniqueId());
+            if (otherBoard == null) continue;
+            Team otherHideTeam = otherBoard.getTeam(HIDE_TAGS_TEAM);
+            if (otherHideTeam != null) {
+                otherHideTeam.addEntry(player.getName());
+            }
+        }
+
         update(player);
     }
 
@@ -140,5 +164,15 @@ public class ScoreboardManager {
     public void remove(Player player) {
         boards.remove(player.getUniqueId());
         player.setScoreboard(Bukkit.getScoreboardManager().getMainScoreboard());
+
+        // Remove the leaving player from every remaining player's hide-tags team.
+        for (Player other : Bukkit.getOnlinePlayers()) {
+            Scoreboard otherBoard = boards.get(other.getUniqueId());
+            if (otherBoard == null) continue;
+            Team team = otherBoard.getTeam(HIDE_TAGS_TEAM);
+            if (team != null) {
+                team.removeEntry(player.getName());
+            }
+        }
     }
 }
