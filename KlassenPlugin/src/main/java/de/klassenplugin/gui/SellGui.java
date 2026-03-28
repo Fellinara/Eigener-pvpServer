@@ -3,6 +3,7 @@ package de.klassenplugin.gui;
 import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.managers.EconomyManager;
 import de.klassenplugin.managers.ShopManager;
+import de.klassenplugin.managers.SpecialItemsManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -74,6 +75,12 @@ public class SellGui {
             if (slot == INFO_SLOT) continue;
             ItemStack item = inv.getItem(slot);
             if (item == null || item.getType() == Material.AIR) continue;
+
+            // Never sell special custom items (Verkaufsaxt, Turbo-Hopper, Kapa-Chest)
+            if (SpecialItemsManager.isSpecialItem(item)) {
+                returnItem(player, item);
+                continue;
+            }
 
             String matName = item.getType().name();
             double price = shop.getEffectiveSellPrice(matName);

@@ -1,0 +1,175 @@
+package de.klassenplugin.listeners;
+
+import de.klassenplugin.KlassenPlugin;
+import de.klassenplugin.managers.SpecialItemsManager;
+import de.klassenplugin.managers.SpecialItemsManager.KapaChestHolder;
+import de.klassenplugin.managers.SpecialItemsManager.TurboHopperHolder;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
+import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemStack;
+
+/**
+ * Handles all game-play events for the three special items
+ * (Verkaufsaxt, Turbo-Hopper, Kapazitätskiste).
+ */
+public class SpecialItemsListener implements Listener {
+
+    private final KlassenPlugin plugin;
+
+    public SpecialItemsListener(KlassenPlugin plugin) {
+        this.plugin = plugin;
+    }
+
+    // ── BlockBreakEvent ───────────────────────────────────────────────────────
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockBreak(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        Block block   = event.getBlock();
+        SpecialItemsManager sim = plugin.getSpecialItemsManager();
+
+        // ── Verkaufsaxt: sell chest contents ──────────────────────────────
+        ItemStack hand = player.getInventory().getItemInMainHand();
+        if (SpecialItemsManager.isSpecialItem(hand, SpecialItemsManager.TYPE_VERKAUFSAXT)
+                && isChestLike(block.getType())) {
+            event.setCancelled(true);
+            sim.applyVerkaufsaxt(player, block);
+            return;
+        }
+
+        // ── Turbo Hopper: drop custom item + virtual inventory contents ────
+        if (block.getType() == Material.HOPPER && sim.isTurboHopper(block.getLocation())) {
+            event.setCancelled(true);
+            Inventory inv = sim.getTurboHopperInventory(block.getLocation());
+            if (inv != null) {
+                for (ItemStack item : inv.getContents()) {
+                    if (item != null && item.getType() != Material.AIR) {
+                        block.getWorld().dropItemNaturally(block.getLocation(), item);
+                    }
+                }
+            }
+            block.getWorld().dropItemNaturally(
+                    block.getLocation(), SpecialItemsManager.buildTurboHopper());
+            block.setType(Material.AIR, false);
+            sim.removeTurboHopper(block.getLocation());
+            return;
+        }
+
+        // ── Kapazitätskiste: prevent breaking if items stored ─────────────
+        if (block.getType() == Material.BARREL && sim.isKapaChest(block.getLocation())) {
+            SpecialItemsManager.KapaChestData data = sim.getKapaChestData(block.getLocation());
+            if (data != null && data.count > 0) {
+                event.setCancelled(true);
+                player.sendMessage(KlassenPlugin.colorizeComponent(
+                        "&cDie Kapazitätskiste enthält noch &e"
+                        + SpecialItemsManager.fmtNum(data.count)
+                        + " &cItems! Leere sie zuerst."));
+                return;
+            }
+            // Empty → let the player break it; drop the special item instead
+            event.setCancelled(true);
+            block.getWorld().dropItemNaturally(
+                    block.getLocation(), SpecialItemsManager.buildKapaChest());
+            block.setType(Material.AIR, false);
+            sim.removeKapaChest(block.getLocation());
+        }
+    }
+
+    // ── BlockPlaceEvent ───────────────────────────────────────────────────────
+
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    public void onBlockPlace(BlockPlaceEvent event) {
+        ItemStack item  = event.getItemInHand();
+        Block block     = event.getBlockPlaced();
+        SpecialItemsManager sim = plugin.getSpecialItemsManager();
+
+        if (SpecialItemsManager.isSpecialItem(item, SpecialItemsManager.TYPE_TURBO_HOPPER)) {
+            sim.registerTurboHopper(block.getLocation());
+        } else if (SpecialItemsManager.isSpecialItem(item, SpecialItemsManager.TYPE_KAPAZITAETSKISTE)) {
+            sim.registerKapaChest(block.getLocation());
+        }
+    }
+
+    // ── PlayerInteractEvent: open GUIs ────────────────────────────────────────
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onPlayerInteract(PlayerInteractEvent event) {
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) return;
+        // Ignore the off-hand duplicate event
+        if (event.getHand() != org.bukkit.inventory.EquipmentSlot.HAND) return;
+        Block block = event.getClickedBlock();
+        if (block == null) return;
+        Player player = event.getPlayer();
+        SpecialItemsManager sim = plugin.getSpecialItemsManager();
+
+        // Turbo Hopper → open virtual 54-slot inventory
+        if (block.getType() == Material.HOPPER && sim.isTurboHopper(block.getLocation())) {
+            event.setCancelled(true);
+            Inventory inv = sim.getTurboHopperInventory(block.getLocation());
+            if (inv != null) player.openInventory(inv);
+            return;
+        }
+
+        // Kapazitätskiste → open kapa-chest GUI
+        if (block.getType() == Material.BARREL && sim.isKapaChest(block.getLocation())) {
+            event.setCancelled(true);
+            sim.openKapaGui(player, block.getLocation());
+        }
+    }
+
+    // ── InventoryClickEvent: kapa-chest GUI ───────────────────────────────────
+
+    @EventHandler(priority = EventPriority.HIGH)
+    public void onInventoryClick(InventoryClickEvent event) {
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        Inventory topInv = event.getView().getTopInventory();
+
+        if (topInv.getHolder() instanceof KapaChestHolder holder) {
+            event.setCancelled(true);
+            if (event.getClickedInventory() == topInv) {
+                plugin.getSpecialItemsManager()
+                      .handleKapaGuiClick(player, holder, event.getSlot(), event.getClick());
+            }
+        }
+    }
+
+    // ── InventoryMoveItemEvent: suppress vanilla hopper for turbo hoppers ─────
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onInventoryMove(InventoryMoveItemEvent event) {
+        SpecialItemsManager sim = plugin.getSpecialItemsManager();
+        if (isTurboHopperInv(event.getSource(),      sim)
+         || isTurboHopperInv(event.getDestination(), sim)
+         || isTurboHopperInv(event.getInitiator(),   sim)) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isTurboHopperInv(Inventory inv, SpecialItemsManager sim) {
+        if (inv == null) return false;
+        if (inv.getHolder() instanceof TurboHopperHolder) return true;
+        if (inv.getHolder() instanceof org.bukkit.block.Hopper hopper) {
+            return sim.isTurboHopper(hopper.getLocation());
+        }
+        return false;
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static boolean isChestLike(Material mat) {
+        return mat == Material.CHEST
+            || mat == Material.TRAPPED_CHEST
+            || mat == Material.BARREL
+            || mat.name().endsWith("_SHULKER_BOX");
+    }
+}

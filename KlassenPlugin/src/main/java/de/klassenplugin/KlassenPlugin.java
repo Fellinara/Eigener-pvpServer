@@ -63,6 +63,7 @@ public class KlassenPlugin extends JavaPlugin {
     private HackClientBukkitListener hackClientBukkitListener;
     private CorpseManager corpseManger;
     private CombatManager combatManager;
+    private de.klassenplugin.managers.SpecialItemsManager specialItemsManager;
 
     @Override
     public void onEnable() {
@@ -102,6 +103,7 @@ public class KlassenPlugin extends JavaPlugin {
         clearLagManager = new ClearLagManager(this);
         corpseManger = new CorpseManager(this);
         combatManager = new CombatManager(this);
+        specialItemsManager = new de.klassenplugin.managers.SpecialItemsManager(this);
 
         // ProtocolLib integration – only if the soft dependency is present.
         if (getServer().getPluginManager().getPlugin("ProtocolLib") != null) {
@@ -143,6 +145,7 @@ public class KlassenPlugin extends JavaPlugin {
         if (auctionManager != null) auctionManager.save();
         if (allianceManager != null) allianceManager.save();
         if (weeklyChangelogManager != null) weeklyChangelogManager.save();
+        if (specialItemsManager != null) specialItemsManager.save();
         if (protocolLibManager != null) protocolLibManager.disable();
         getLogger().info("KlassenPlugin wurde deaktiviert!");
     }
@@ -288,6 +291,8 @@ public class KlassenPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new GuiListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(corpseManger, this);
+        getServer().getPluginManager().registerEvents(
+                new de.klassenplugin.listeners.SpecialItemsListener(this), this);
     }
 
     public static KlassenPlugin getInstance() {
@@ -334,6 +339,7 @@ public class KlassenPlugin extends JavaPlugin {
     public ClearLagManager getClearLagManager() { return clearLagManager; }
     public CorpseManager getCorpseManager() { return corpseManger; }
     public CombatManager getCombatManager() { return combatManager; }
+    public de.klassenplugin.managers.SpecialItemsManager getSpecialItemsManager() { return specialItemsManager; }
     /** Returns the ProtocolLib manager, or {@code null} if ProtocolLib is not installed. */
     public ProtocolLibManager getProtocolLibManager() { return protocolLibManager; }
     /** Returns the always-active Bukkit hack-client listener. */

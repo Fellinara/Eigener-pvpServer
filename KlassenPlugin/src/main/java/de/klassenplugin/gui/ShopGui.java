@@ -3,6 +3,7 @@ package de.klassenplugin.gui;
 import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.managers.EconomyManager;
 import de.klassenplugin.managers.ShopManager;
+import de.klassenplugin.managers.SpecialItemsManager;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -163,7 +164,10 @@ public class ShopGui {
             // Determine icon and display name (special handling for enchanted books and spawners)
             final ItemStack icon;
             final String displayName;
-            if (ShopManager.isEnchantedBookKey(matName)) {
+            if (SpecialItemsManager.isSpecialItemShopKey(matName)) {
+                icon        = SpecialItemsManager.buildByShopKey(matName);
+                displayName = SpecialItemsManager.getShopDisplayName(matName);
+            } else if (ShopManager.isEnchantedBookKey(matName)) {
                 icon        = ShopManager.buildEnchantedBook(matName);
                 displayName = ShopManager.getEnchantedBookDisplayName(matName);
             } else if (ShopManager.isSpawnerKey(matName)) {
@@ -282,7 +286,15 @@ public class ShopGui {
 
         final ItemStack item;
         final String displayName;
-        if (ShopManager.isEnchantedBookKey(matName)) {
+        if (SpecialItemsManager.isSpecialItemShopKey(matName)) {
+            if (amount > 1) {
+                player.sendMessage(KlassenPlugin.colorizeComponent(
+                        "&cSpezial-Items können nur einzeln gekauft werden!"));
+                return;
+            }
+            item        = SpecialItemsManager.buildByShopKey(matName);
+            displayName = SpecialItemsManager.getShopDisplayName(matName);
+        } else if (ShopManager.isEnchantedBookKey(matName)) {
             ItemStack book = ShopManager.buildEnchantedBook(matName);
             book.setAmount(amount);
             item        = book;
@@ -319,7 +331,8 @@ public class ShopGui {
 
         int total = 0;
         for (ItemStack is : player.getInventory().getContents()) {
-            if (is != null && is.getType() == mat) total += is.getAmount();
+            if (is != null && is.getType() == mat && !SpecialItemsManager.isSpecialItem(is))
+                total += is.getAmount();
         }
         if (total == 0) {
             player.sendMessage(KlassenPlugin.colorizeComponent(
@@ -328,7 +341,7 @@ public class ShopGui {
         }
         int rem = total;
         for (ItemStack is : player.getInventory().getContents()) {
-            if (is != null && is.getType() == mat && rem > 0) {
+            if (is != null && is.getType() == mat && !SpecialItemsManager.isSpecialItem(is) && rem > 0) {
                 if (is.getAmount() <= rem) {
                     rem -= is.getAmount();
                     is.setAmount(0);

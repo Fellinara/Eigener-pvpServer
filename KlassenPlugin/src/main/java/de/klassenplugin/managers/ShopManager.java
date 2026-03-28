@@ -238,6 +238,12 @@ public class ShopManager {
             "GLOW_LICHEN","MOSS_BLOCK","MOSS_CARPET","FLOWERING_AZALEA","AZALEA"
         });
         CATEGORY_ICONS.put("Natur", Material.SCULK_CATALYST);
+
+        // ── Spezial-Items ────────────────────────────────────────────────────
+        CATEGORIES.put("Spezial", new String[]{
+            "VERKAUFSAXT", "TURBO_HOPPER", "KAPAZITAETSKISTE"
+        });
+        CATEGORY_ICONS.put("Spezial", Material.NETHER_STAR);
     }
 
     /**
@@ -480,6 +486,8 @@ public class ShopManager {
         {"MUSIC_DISC_PIGSTEP",200.0,100.0},{"MUSIC_DISC_RELIC",200.0,100.0},
         // ── Spawner (buy-only, not re-sellable) ──
         {"ZOMBIE_SPAWNER",100000.0,-1.0},{"SKELETON_SPAWNER",100000.0,-1.0},
+        // ── Special items (buy-only) ─────────────────────────────────────────
+        {"VERKAUFSAXT",10000000.0,-1.0},{"TURBO_HOPPER",100000.0,-1.0},{"KAPAZITAETSKISTE",1000000.0,-1.0},
     };
 
     private final KlassenPlugin plugin;
@@ -522,6 +530,7 @@ public class ShopManager {
         migrateNetheriteTools();
         migrateSpawners();
         migrateSculkAndFarmItems();
+        migrateSpecialItems();
     }
 
     /**
@@ -907,7 +916,28 @@ public class ShopManager {
         return book;
     }
 
-    // ── Spawner helpers ───────────────────────────────────────────────────────
+    // ── Special Items migration ───────────────────────────────────────────────
+
+    /** Adds the three custom special-item prices the first time this runs. */
+    private void migrateSpecialItems() {
+        if (shopConfig.getBoolean("migrated-special-items", false)) return;
+
+        Object[][] specialItems = {
+            {"VERKAUFSAXT",      10_000_000.0, -1.0},
+            {"TURBO_HOPPER",        100_000.0, -1.0},
+            {"KAPAZITAETSKISTE",  1_000_000.0, -1.0},
+        };
+        for (Object[] row : specialItems) {
+            String key = (String) row[0];
+            if (!items.containsKey(key)) {
+                items.put(key, new double[]{(double) row[1], (double) row[2]});
+            }
+        }
+        shopConfig.set("migrated-special-items", true);
+        Bukkit.getScheduler().runTaskAsynchronously(plugin, this::save);
+    }
+
+    // ── Spawner helpers ────────────────────────────────────────────────────────
 
     /** Returns {@code true} if {@code key} is a registered spawner shop entry. */
     public static boolean isSpawnerKey(String key) {
