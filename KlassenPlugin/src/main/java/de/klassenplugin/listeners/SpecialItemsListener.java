@@ -2,10 +2,12 @@ package de.klassenplugin.listeners;
 
 import de.klassenplugin.KlassenPlugin;
 import de.klassenplugin.managers.SpecialItemsManager;
+import de.klassenplugin.managers.SpecialItemsManager.KapaChestData;
 import de.klassenplugin.managers.SpecialItemsManager.KapaChestHolder;
 import de.klassenplugin.managers.SpecialItemsManager.TurboHopperHolder;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.BlockState;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -16,6 +18,7 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 
 /**
@@ -38,7 +41,7 @@ public class SpecialItemsListener implements Listener {
         Block block   = event.getBlock();
         SpecialItemsManager sim = plugin.getSpecialItemsManager();
 
-        // ── Verkaufsaxt: sell chest contents ──────────────────────────────
+        // ── Verkaufsaxt: sell chest / kapa-chest contents ─────────────────
         ItemStack hand = player.getInventory().getItemInMainHand();
         if (SpecialItemsManager.isSpecialItem(hand, SpecialItemsManager.TYPE_VERKAUFSAXT)
                 && isChestLike(block.getType())) {
@@ -67,7 +70,7 @@ public class SpecialItemsListener implements Listener {
 
         // ── Kapazitätskiste: prevent breaking if items stored ─────────────
         if (block.getType() == Material.BARREL && sim.isKapaChest(block.getLocation())) {
-            SpecialItemsManager.KapaChestData data = sim.getKapaChestData(block.getLocation());
+            KapaChestData data = sim.getKapaChestData(block.getLocation());
             if (data != null && data.count > 0) {
                 event.setCancelled(true);
                 player.sendMessage(KlassenPlugin.colorizeComponent(
@@ -143,15 +146,47 @@ public class SpecialItemsListener implements Listener {
         }
     }
 
-    // ── InventoryMoveItemEvent: suppress vanilla hopper for turbo hoppers ─────
+    // ── InventoryMoveItemEvent ────────────────────────────────────────────────
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onInventoryMove(InventoryMoveItemEvent event) {
         SpecialItemsManager sim = plugin.getSpecialItemsManager();
+
+        // Suppress vanilla hopper transfers for turbo-hopper inventories
         if (isTurboHopperInv(event.getSource(),      sim)
          || isTurboHopperInv(event.getDestination(), sim)
          || isTurboHopperInv(event.getInitiator(),   sim)) {
             event.setCancelled(true);
+            return;
+        }
+
+        // Intercept vanilla hopper pushing INTO a Kapazitätskiste barrel.
+        // We cancel the event and handle the transfer ourselves so the kapa
+        // chest data (not the real barrel inventory) receives the item.
+        Inventory dest = event.getDestination();
+        if (isKapaChestInv(dest, sim)) {
+            KapaChestData kd = getKapaDataForInv(dest, sim);
+            if (kd != null) {
+                event.setCancelled(true);
+                ItemStack moving = event.getItem().clone();
+                moving.setAmount(1);
+                // Check type compatibility
+                if (kd.itemType != null && kd.itemType != moving.getType()) return;
+                if (kd.count >= kd.maxCapacity) return;
+                if (kd.itemType == null) kd.itemType = moving.getType();
+                kd.count++;
+                // Remove the item from the source inventory
+                Inventory src = event.getSource();
+                for (int i = 0; i < src.getSize(); i++) {
+                    ItemStack s = src.getItem(i);
+                    if (s != null && s.isSimilar(event.getItem())) {
+                        s.setAmount(s.getAmount() - 1);
+                        if (s.getAmount() <= 0) src.setItem(i, null);
+                        break;
+                    }
+                }
+                sim.saveAsync();
+            }
         }
     }
 
@@ -162,6 +197,24 @@ public class SpecialItemsListener implements Listener {
             return sim.isTurboHopper(hopper.getLocation());
         }
         return false;
+    }
+
+    private boolean isKapaChestInv(Inventory inv, SpecialItemsManager sim) {
+        if (inv == null) return false;
+        InventoryHolder holder = inv.getHolder();
+        if (holder instanceof BlockState bs) {
+            return bs.getType() == Material.BARREL
+                    && sim.isKapaChest(bs.getLocation());
+        }
+        return false;
+    }
+
+    private KapaChestData getKapaDataForInv(Inventory inv, SpecialItemsManager sim) {
+        InventoryHolder holder = inv.getHolder();
+        if (holder instanceof BlockState bs) {
+            return sim.getKapaChestData(bs.getLocation());
+        }
+        return null;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

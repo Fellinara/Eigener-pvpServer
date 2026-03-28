@@ -7,6 +7,7 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Container;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -24,7 +25,7 @@ import java.util.*;
 /**
  * Manages the three special custom items:
  * <ul>
- *   <li><b>Verkaufsaxt</b> — breaks a chest and auto-sells its contents; chest respawns after 10 s.</li>
+ *   <li><b>Verkaufsaxt</b> — breaks a chest and auto-sells its contents; chest respawns instantly.</li>
  *   <li><b>Turbo-Hopper</b> — 54-slot hopper that transfers items 20× faster.</li>
  *   <li><b>Kapazitätskiste</b> — bulk single-type storage; starts at 10 000 items, upgradeable to 2 000 000.</li>
  * </ul>
@@ -89,7 +90,7 @@ public class SpecialItemsManager {
                 c("&7Breche eine &bKiste &7auf, um den"),
                 c("&7Inhalt automatisch zu &averkaufen&7."),
                 c(""),
-                c("&8⏱ Kiste respawnt nach &e10 Sekunden&8."),
+                c("&8⟳ Kiste respawnt &esofort&8."),
                 c(""),
                 c("&5&l✦ LEGENDÄR ✦")));
         meta.addEnchant(Enchantment.EFFICIENCY, 5, true);
@@ -223,6 +224,13 @@ public class SpecialItemsManager {
         if (below.getState() instanceof Container c) {
             for (int n = 0; n < 3; n++) moveOne(hopperInv, c.getInventory());
         }
+        // Also push into a kapa chest below
+        if (below.getType() == Material.BARREL && isKapaChest(below.getLocation())) {
+            KapaChestData kd = getKapaChestData(below.getLocation());
+            if (kd != null) {
+                for (int n = 0; n < 3; n++) pushToKapa(hopperInv, kd);
+            }
+        }
     }
 
     /** Moves one item from {@code from} to {@code to}. */
@@ -247,6 +255,24 @@ public class SpecialItemsManager {
         if (to.addItem(single).isEmpty()) {
             kd.count--;
             if (kd.count == 0) kd.itemType = null;
+        }
+    }
+
+    /**
+     * Pushes one item from {@code from} into a {@link KapaChestData}.
+     * Only transfers if the item type matches (or the kapa chest is empty).
+     */
+    public static void pushToKapa(Inventory from, KapaChestData kd) {
+        if (kd.count >= kd.maxCapacity) return;
+        for (int i = 0; i < from.getSize(); i++) {
+            ItemStack item = from.getItem(i);
+            if (item == null || item.getType() == Material.AIR) continue;
+            if (kd.itemType != null && kd.itemType != item.getType()) continue;
+            if (kd.itemType == null) kd.itemType = item.getType();
+            kd.count++;
+            item.setAmount(item.getAmount() - 1);
+            if (item.getAmount() == 0) from.setItem(i, null);
+            return;
         }
     }
 
@@ -427,14 +453,49 @@ public class SpecialItemsManager {
 
     // ── Verkaufsaxt ───────────────────────────────────────────────────────────
 
-    /** Sells the contents of a chest-like block and schedules its respawn. */
+    /**
+     * Sells the contents of a chest-like block or a Kapazitätskiste.
+     * For normal containers: clears the block and restores it instantly with
+     * the original block data (facing direction preserved).
+     * For Kapazitätskiste: sells the stored items and resets the counter in-place
+     * (the barrel block stays where it is).
+     */
     public void applyVerkaufsaxt(Player player, Block block) {
-        if (!(block.getState() instanceof Container container)) return;
-
         ShopManager shop = plugin.getShopManager();
         EconomyManager eco  = plugin.getEconomyManager();
-        Inventory inv = container.getInventory();
 
+        // ── Kapazitätskiste: sell stored count, keep the barrel block ──────
+        if (block.getType() == Material.BARREL && isKapaChest(block.getLocation())) {
+            KapaChestData data = getKapaChestData(block.getLocation());
+            if (data == null || data.itemType == null || data.count == 0) {
+                player.sendMessage(KlassenPlugin.colorizeComponent(
+                        "&5✦ &d&lVerkaufsaxt &7Die Kapazitätskiste ist leer."));
+                return;
+            }
+            double sellPrice = shop.getSellPrice(data.itemType.name());
+            if (sellPrice <= 0) {
+                player.sendMessage(KlassenPlugin.colorizeComponent(
+                        "&5✦ &d&lVerkaufsaxt &cDas gespeicherte Item ist nicht verkäuflich!"));
+                return;
+            }
+            long sold  = data.count;
+            double total = sellPrice * sold;
+            data.count    = 0;
+            data.itemType = null;
+            saveAsync();
+            eco.deposit(player.getUniqueId(), total);
+            eco.saveAsync();
+            plugin.getScoreboardManager().update(player);
+            player.sendMessage(KlassenPlugin.colorizeComponent(
+                    "&5✦ &d&lVerkaufsaxt &7Kapazitätskiste geleert! &6+"
+                    + eco.format(total) + " &7(" + fmtNum(sold) + " Items)"));
+            return;
+        }
+
+        // ── Normal container: sell inventory, restore block instantly ──────
+        if (!(block.getState() instanceof Container container)) return;
+
+        Inventory inv = container.getInventory();
         double total = 0.0;
         int soldCount = 0;
         for (ItemStack item : inv.getContents()) {
@@ -449,9 +510,11 @@ public class SpecialItemsManager {
         }
 
         inv.clear();
-        Material chestType = block.getType();
-        Location loc = block.getLocation().clone();
+        // Capture block data BEFORE clearing so facing is preserved
+        BlockData savedData = block.getBlockData().clone();
         block.setType(Material.AIR, false);
+        // Restore instantly on the same tick
+        block.setBlockData(savedData, false);
 
         if (total > 0) {
             eco.deposit(player.getUniqueId(), total);
@@ -464,15 +527,6 @@ public class SpecialItemsManager {
             player.sendMessage(KlassenPlugin.colorizeComponent(
                     "&5✦ &d&lVerkaufsaxt &7Die Kiste war leer oder enthielt keine verkäuflichen Items."));
         }
-
-        // Respawn the chest after 10 seconds (200 ticks)
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            if (loc.getBlock().getType() == Material.AIR) {
-                loc.getBlock().setType(chestType, false);
-                player.sendMessage(KlassenPlugin.colorizeComponent(
-                        "&7Die Kiste ist wieder da!"));
-            }
-        }, 200L);
     }
 
     // ── Persistence ───────────────────────────────────────────────────────────
